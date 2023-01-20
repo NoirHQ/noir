@@ -402,8 +402,7 @@ impl TraitPair for Pair {
 		let secret =
 			SigningKey::from_bytes(seed_slice).map_err(|_| SecretStringError::InvalidSeed)?;
 		let public = PublicKey::from(secret.verifying_key());
-		let public = Public::from_slice(public.to_encoded_point(true).as_bytes())
-			.expect("public key has valid length; qed");
+		let public = Public::from_slice(public.to_encoded_point(true).as_bytes()).unwrap();
 		Ok(Pair { public, secret })
 	}
 
@@ -443,7 +442,7 @@ impl TraitPair for Pair {
 	/// This doesn't use the type system to ensure that `sig` and `pubkey` are the correct
 	/// size. Use it only if you're coming from byte buffers and need the speed.
 	fn verify_weak<P: AsRef<[u8]>, M: AsRef<[u8]>>(sig: &[u8], message: M, pubkey: P) -> bool {
-		self::verify_prehashed(sig, &blake2_256(message.as_ref()), pubkey.as_ref())
+		self::verify_prehash_unchecked(sig, &blake2_256(message.as_ref()), pubkey.as_ref())
 	}
 
 	/// Return a vec filled with raw data.
@@ -452,10 +451,10 @@ impl TraitPair for Pair {
 	}
 }
 
-fn verify_prehashed(sig: &[u8], message: &[u8; 32], pubkey: &[u8]) -> bool {
-	let pubkey = VerifyingKey::from_sec1_bytes(pubkey).expect("");
-	let sig = EcdsaSignature::try_from(sig).expect("");
-	pubkey.verify_prehash(message, &sig).is_ok()
+fn verify_prehash_unchecked(sig: &[u8], message: &[u8; 32], pubkey: &[u8]) -> bool {
+	let ver = VerifyingKey::from_sec1_bytes(pubkey).unwrap();
+	let sig = EcdsaSignature::try_from(sig).unwrap();
+	ver.verify_prehash(message, &sig).is_ok()
 }
 
 #[cfg(feature = "full_crypto")]
@@ -467,14 +466,14 @@ impl Pair {
 
 	/// Sign a pre-hashed message
 	pub fn sign_prehashed(&self, message: &[u8; 32]) -> Signature {
-		let sig: EcdsaSignature = self.secret.sign_prehash(message).expect("");
+		let sig: EcdsaSignature = self.secret.sign_prehash(message).unwrap();
 		Signature(sig.to_bytes().into())
 	}
 
 	/// Verify a signature on a pre-hashed message. Return `true` if the signature is valid
 	/// and thus matches the given `public` key.
 	pub fn verify_prehashed(sig: &Signature, message: &[u8; 32], pubkey: &Public) -> bool {
-		self::verify_prehashed(sig.as_ref(), message, pubkey.as_ref())
+		self::verify_prehash_unchecked(sig.as_ref(), message, pubkey.as_ref())
 	}
 }
 
@@ -491,4 +490,262 @@ impl CryptoType for Signature {
 #[cfg(feature = "full_crypto")]
 impl CryptoType for Pair {
 	type Pair = Pair;
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use serde_json;
+	use sp_core::crypto::{
+		default_ss58_version, set_default_ss58_version, PublicError, Ss58AddressFormat,
+		Ss58AddressFormatRegistry, DEV_PHRASE,
+	};
+
+	#[test]
+	fn default_phrase_should_be_used() {
+		assert_eq!(
+			Pair::from_string("//Alice///password", None).unwrap().public(),
+			Pair::from_string(&format!("{}//Alice", DEV_PHRASE), Some("password"))
+				.unwrap()
+				.public(),
+		);
+	}
+
+	#[test]
+	fn seed_and_derive_should_work() {
+		let seed = array_bytes::hex2array_unchecked(
+			"9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		);
+		let pair = Pair::from_seed(&seed);
+		assert_eq!(pair.seed(), seed);
+		let path = vec![DeriveJunction::Hard([0u8; 32])];
+		let derived = pair.derive(path.into_iter(), None).ok().unwrap();
+		assert_eq!(
+			derived.0.seed(),
+			array_bytes::hex2array_unchecked::<32>(
+				"7ef571a7bc8f2e0c4b641e30d55018a6058b6003506967150fcc4349c1af4cbb"
+			)
+		);
+	}
+
+	#[test]
+	fn test_vector_should_work() {
+		let pair = Pair::from_seed(&array_bytes::hex2array_unchecked(
+			"9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		));
+		let public = pair.public();
+		assert_eq!(
+			public,
+			Public::from_full(
+				&array_bytes::hex2bytes_unchecked("667fef5f7578a801037ed144092dcf7c7c44e3bf3e09cfc8a67fcf70fcd8123a3a29739e598824b33aef8068c6057a2f9fa1661253f1ea799e6ef7ce89a00438"),
+			).unwrap(),
+		);
+		let message = b"";
+		let signature = array_bytes::hex2array_unchecked("97a98171d9c2ba5a566f51c246ba8390b817d8664d00eb9edace9e042f26e333433bafa6a9ac4ed52a4b68d429ad95a447fa6157ad76bef561cbe76f498c00c0");
+		let signature = Signature::from_raw(signature);
+		assert!(pair.sign(&message[..]) == signature);
+		assert!(Pair::verify(&signature, &message[..], &public));
+	}
+
+	#[test]
+	fn test_vector_by_string_should_work() {
+		let pair = Pair::from_string(
+			"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+			None,
+		)
+		.unwrap();
+		let public = pair.public();
+		assert_eq!(
+			public,
+			Public::from_full(
+				&array_bytes::hex2bytes_unchecked("667fef5f7578a801037ed144092dcf7c7c44e3bf3e09cfc8a67fcf70fcd8123a3a29739e598824b33aef8068c6057a2f9fa1661253f1ea799e6ef7ce89a00438"),
+			).unwrap(),
+		);
+		let message = b"";
+		let signature = array_bytes::hex2array_unchecked("97a98171d9c2ba5a566f51c246ba8390b817d8664d00eb9edace9e042f26e333433bafa6a9ac4ed52a4b68d429ad95a447fa6157ad76bef561cbe76f498c00c0");
+		let signature = Signature::from_raw(signature);
+		assert!(pair.sign(&message[..]) == signature);
+		assert!(Pair::verify(&signature, &message[..], &public));
+	}
+
+	#[test]
+	fn generated_pair_should_work() {
+		let (pair, _) = Pair::generate();
+		let public = pair.public();
+		let message = b"Something important";
+		let signature = pair.sign(&message[..]);
+		assert!(Pair::verify(&signature, &message[..], &public));
+		assert!(!Pair::verify(&signature, b"Something else", &public));
+	}
+
+	#[test]
+	fn seeded_pair_should_work() {
+		let pair = Pair::from_seed(b"12345678901234567890123456789012");
+		let public = pair.public();
+		assert_eq!(
+			public,
+			Public::from_full(
+				&array_bytes::hex2bytes_unchecked("6223e55c8ab75407c630ca15cc0281db060bcb47b99fd9d89239806c1088741b7763fc4f252598cd63a29d72507f9f1c161781b8a3174218e1f3c0edb419b831"),
+			).unwrap(),
+		);
+		let message = array_bytes::hex2bytes_unchecked("2f8c6129d816cf51c374bc7f08c3e63ed156cf78aefb4a6550d97b87997977ee00000000000000000200d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a4500000000000000");
+		let signature = pair.sign(&message[..]);
+		println!("Correct signature: {:?}", signature);
+		assert!(Pair::verify(&signature, &message[..], &public));
+		assert!(!Pair::verify(&signature, "Other message", &public));
+	}
+
+	#[test]
+	fn generate_with_phrase_recovery_possible() {
+		let (pair1, phrase, _) = Pair::generate_with_phrase(None);
+		let (pair2, _) = Pair::from_phrase(&phrase, None).unwrap();
+
+		assert_eq!(pair1.public(), pair2.public());
+	}
+
+	#[test]
+	fn generate_with_password_phrase_recovery_possible() {
+		let (pair1, phrase, _) = Pair::generate_with_phrase(Some("password"));
+		let (pair2, _) = Pair::from_phrase(&phrase, Some("password")).unwrap();
+
+		assert_eq!(pair1.public(), pair2.public());
+	}
+
+	#[test]
+	fn password_does_something() {
+		let (pair1, phrase, _) = Pair::generate_with_phrase(Some("password"));
+		let (pair2, _) = Pair::from_phrase(&phrase, None).unwrap();
+
+		assert_ne!(pair1.public(), pair2.public());
+	}
+
+	#[test]
+	fn ss58check_roundtrip_works() {
+		let pair = Pair::from_seed(b"12345678901234567890123456789012");
+		let public = pair.public();
+		let s = public.to_ss58check();
+		println!("Correct: {}", s);
+		let cmp = Public::from_ss58check(&s).unwrap();
+		assert_eq!(cmp, public);
+	}
+
+	#[test]
+	fn ss58check_format_check_works() {
+		let pair = Pair::from_seed(b"12345678901234567890123456789012");
+		let public = pair.public();
+		let format = Ss58AddressFormatRegistry::Reserved46Account.into();
+		let s = public.to_ss58check_with_version(format);
+		assert_eq!(Public::from_ss58check_with_version(&s), Err(PublicError::FormatNotAllowed));
+	}
+
+	#[test]
+	fn ss58check_full_roundtrip_works() {
+		let pair = Pair::from_seed(b"12345678901234567890123456789012");
+		let public = pair.public();
+		let format = Ss58AddressFormatRegistry::PolkadotAccount.into();
+		let s = public.to_ss58check_with_version(format);
+		let (k, f) = Public::from_ss58check_with_version(&s).unwrap();
+		assert_eq!(k, public);
+		assert_eq!(f, format);
+
+		let format = Ss58AddressFormat::custom(64);
+		let s = public.to_ss58check_with_version(format);
+		let (k, f) = Public::from_ss58check_with_version(&s).unwrap();
+		assert_eq!(k, public);
+		assert_eq!(f, format);
+	}
+
+	#[test]
+	fn ss58check_custom_format_works() {
+		// We need to run this test in its own process to not interfere with other tests running in
+		// parallel and also relying on the ss58 version.
+		if std::env::var("RUN_CUSTOM_FORMAT_TEST") == Ok("1".into()) {
+			// temp save default format version
+			let default_format = default_ss58_version();
+			// set current ss58 version is custom "200" `Ss58AddressFormat::Custom(200)`
+
+			set_default_ss58_version(Ss58AddressFormat::custom(200));
+			// custom addr encoded by version 200
+			let addr = "4pbsSkWcBaYoFHrKJZp5fDVUKbqSYD9dhZZGvpp3vQ5ysVs5ybV";
+			Public::from_ss58check(addr).unwrap();
+
+			set_default_ss58_version(default_format);
+			// set current ss58 version to default version
+			let addr = "KWAfgC2aRG5UVD6CpbPQXCx4YZZUhvWqqAJE6qcYc9Rtr6g5C";
+			Public::from_ss58check(addr).unwrap();
+
+			println!("CUSTOM_FORMAT_SUCCESSFUL");
+		} else {
+			let executable = std::env::current_exe().unwrap();
+			let output = std::process::Command::new(executable)
+				.env("RUN_CUSTOM_FORMAT_TEST", "1")
+				.args(&["--nocapture", "ss58check_custom_format_works"])
+				.output()
+				.unwrap();
+
+			let output = String::from_utf8(output.stdout).unwrap();
+			assert!(output.contains("CUSTOM_FORMAT_SUCCESSFUL"));
+		}
+	}
+
+	#[test]
+	fn signature_serialization_works() {
+		let pair = Pair::from_seed(b"12345678901234567890123456789012");
+		let message = b"Something important";
+		let signature = pair.sign(&message[..]);
+		let serialized_signature = serde_json::to_string(&signature).unwrap();
+		// Signature is 64 bytes, so 128 chars + 2 quote chars
+		assert_eq!(serialized_signature.len(), 130);
+		let signature = serde_json::from_str(&serialized_signature).unwrap();
+		assert!(Pair::verify(&signature, &message[..], &pair.public()));
+	}
+
+	#[test]
+	fn signature_serialization_doesnt_panic() {
+		fn deserialize_signature(text: &str) -> Result<Signature, serde_json::error::Error> {
+			serde_json::from_str(text)
+		}
+		assert!(deserialize_signature("Not valid json.").is_err());
+		assert!(deserialize_signature("\"Not an actual signature.\"").is_err());
+		// Poorly-sized
+		assert!(deserialize_signature("\"abc123\"").is_err());
+	}
+
+	#[test]
+	fn sign_prehashed_works() {
+		let (pair, _, _) = Pair::generate_with_phrase(Some("password"));
+
+		// `msg` shouldn't be mangled
+		let msg = [0u8; 32];
+		let sig1 = pair.sign_prehashed(&msg);
+		let sig2: Signature = {
+			let sig: EcdsaSignature = pair.secret.sign_prehash(&msg).unwrap();
+			Signature(sig.to_bytes().into())
+		};
+		assert_eq!(sig1, sig2);
+
+		// signature is actually different
+		let sig2 = pair.sign(&msg);
+		assert_ne!(sig1, sig2);
+
+		// using pre-hashed `msg` works
+		let msg = b"this should be hashed";
+		let sig1 = pair.sign_prehashed(&blake2_256(msg));
+		let sig2 = pair.sign(msg);
+		assert_eq!(sig1, sig2);
+	}
+
+	#[test]
+	fn verify_prehashed_works() {
+		let (pair, _, _) = Pair::generate_with_phrase(Some("password"));
+
+		// `msg` and `sig` match
+		let msg = blake2_256(b"this should be hashed");
+		let sig = pair.sign_prehashed(&msg);
+		assert!(Pair::verify_prehashed(&sig, &msg, &pair.public()));
+
+		// `msg` and `sig` don't match
+		let msg = blake2_256(b"this is a different message");
+		assert!(!Pair::verify_prehashed(&sig, &msg, &pair.public()));
+	}
 }
