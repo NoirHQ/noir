@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+
+members = [
+	"primitives/crypto",
+]
+
+[profile.release]
+panic = "unwind"
+
+[profile.production]
+inherits = "release"
+
+lto = "fat"
+codegen-units = 1
