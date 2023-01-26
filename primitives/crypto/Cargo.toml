@@ -6,7 +6,7 @@ license = "Apache-2.0"
 repository = "https://github.com/noir-protocol/noir/"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
 	"derive",
 	"max-encoded-len",
 ] }
@@ -41,4 +41,5 @@ std = [
 full_crypto = [
 	"array-bytes",
 	"p256",
+	"sp-core/full_crypto",
 ]
