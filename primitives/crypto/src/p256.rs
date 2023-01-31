@@ -451,6 +451,7 @@ impl TraitPair for Pair {
 	}
 }
 
+#[cfg(feature = "full_crypto")]
 fn verify_prehash_unchecked(sig: &[u8], message: &[u8; 32], pubkey: &[u8]) -> bool {
 	let ver = VerifyingKey::from_sec1_bytes(pubkey).unwrap();
 	let sig = EcdsaSignature::try_from(sig).unwrap();
