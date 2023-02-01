@@ -21,3 +21,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod p256;
+
+pub mod bip32;
