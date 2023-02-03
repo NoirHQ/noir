@@ -21,18 +21,15 @@
 #![doc(hidden)]
 
 #[cfg(feature = "full_crypto")]
-pub mod k1;
-#[cfg(feature = "full_crypto")]
-pub mod r1;
-
 use codec::{Decode, Encode};
-
 #[cfg(feature = "full_crypto")]
 use hmac::{Hmac, Mac};
 #[cfg(feature = "full_crypto")]
 use sha2::Sha512;
 #[cfg(feature = "full_crypto")]
 use sp_core::crypto::SecretStringError;
+#[cfg(feature = "full_crypto")]
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[cfg(feature = "std")]
 use regex::Regex;
@@ -129,18 +126,28 @@ impl TryFrom<&str> for DeriveJunction {
 }
 
 #[cfg(feature = "full_crypto")]
-pub trait ExtendedPrivateKey: Sized + zeroize::ZeroizeOnDrop {
-	fn new(secret: [u8; 32], chain_code: [u8; 32]) -> Self;
-
-	fn secret(&self) -> &[u8];
-
-	fn chain_code(&self) -> &[u8];
-
+pub trait Curve {
+	fn secret(secret: &[u8]) -> Result<[u8; 32], ()>;
 	fn public(secret: &[u8]) -> Result<[u8; 33], ()>;
-
 	fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32];
+}
 
-	fn derive<Iter: Iterator<Item = DeriveJunction>>(seed: &[u8], path: Iter) -> Result<Self, ()> {
+#[cfg(feature = "full_crypto")]
+#[derive(Clone, PartialEq, Eq, Debug, Zeroize, ZeroizeOnDrop)]
+pub struct ExtendedPrivateKey<C: Curve> {
+	secret: [u8; 32],
+	chain_code: [u8; 32],
+	marker: sp_std::marker::PhantomData<C>,
+}
+
+#[cfg(feature = "full_crypto")]
+impl<C: Curve> ExtendedPrivateKey<C> {
+	fn new(secret: [u8; 32], chain_code: [u8; 32]) -> Result<Self, ()> {
+		C::secret(&secret[..])?;
+		Ok(Self { secret, chain_code, marker: Default::default() })
+	}
+
+	fn from_seed(seed: &[u8]) -> Result<Self, ()> {
 		let mut mac = Hmac::<Sha512>::new_from_slice(b"Bitcoin seed").unwrap();
 		mac.update(seed);
 
@@ -152,7 +159,19 @@ pub trait ExtendedPrivateKey: Sized + zeroize::ZeroizeOnDrop {
 		secret.copy_from_slice(&result[0..32]);
 		chain_code.copy_from_slice(&result[32..]);
 
-		let mut ext: Self = ExtendedPrivateKey::new(secret, chain_code);
+		Self::new(secret, chain_code)
+	}
+
+	fn public(&self) -> [u8; 33] {
+		C::public(self.as_ref()).unwrap()
+	}
+
+	fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32] {
+		C::scalar_add(v, w)
+	}
+
+	fn derive<Iter: Iterator<Item = DeriveJunction>>(seed: &[u8], path: Iter) -> Result<Self, ()> {
+		let mut ext = Self::from_seed(seed)?;
 		for i in path {
 			ext = ext.child(i)?;
 		}
@@ -161,16 +180,16 @@ pub trait ExtendedPrivateKey: Sized + zeroize::ZeroizeOnDrop {
 	}
 
 	fn child(&mut self, i: DeriveJunction) -> Result<Self, ()> {
-		let mut mac = Hmac::<Sha512>::new_from_slice(self.chain_code()).unwrap();
+		let mut mac = Hmac::<Sha512>::new_from_slice(&self.chain_code[..]).unwrap();
 
 		match i {
 			DeriveJunction::Soft(_) => {
-				let pubkey = Self::public(self.secret())?;
+				let pubkey = self.public();
 				mac.update(&pubkey);
 			},
 			DeriveJunction::Hard(_) => {
 				mac.update(&[0u8; 1]);
-				mac.update(self.secret());
+				mac.update(self.as_ref());
 			},
 		};
 		mac.update(i.as_ref());
@@ -183,15 +202,94 @@ pub trait ExtendedPrivateKey: Sized + zeroize::ZeroizeOnDrop {
 		secret.copy_from_slice(&result[0..32]);
 		chain_code.copy_from_slice(&result[32..]);
 
-		secret = Self::scalar_add(&secret, self.secret());
+		secret = Self::scalar_add(&secret, self.as_ref());
 
-		Ok(ExtendedPrivateKey::new(secret, chain_code))
+		Self::new(secret, chain_code)
+	}
+}
+
+#[cfg(feature = "full_crypto")]
+impl<C: Curve> AsRef<[u8]> for ExtendedPrivateKey<C> {
+	fn as_ref(&self) -> &[u8] {
+		&self.secret[..]
+	}
+}
+
+#[cfg(feature = "full_crypto")]
+mod secp256k1 {
+	use k256::{
+		elliptic_curve::{ops::Add, sec1::ToEncodedPoint, ScalarCore},
+		Secp256k1, SecretKey,
+	};
+
+	pub type ExtendedPrivateKey = super::ExtendedPrivateKey<Curve>;
+
+	pub struct Curve;
+
+	impl super::Curve for Curve {
+		fn secret(secret: &[u8]) -> Result<[u8; 32], ()> {
+			SecretKey::from_be_bytes(secret).map_err(|_| ())?;
+			<[u8; 32]>::try_from(secret).map_err(|_| ())
+		}
+
+		fn public(secret: &[u8]) -> Result<[u8; 33], ()> {
+			let s = SecretKey::from_be_bytes(secret).map_err(|_| ())?;
+			let p = s.public_key().to_encoded_point(true);
+			let mut x = [0u8; 33];
+			x.copy_from_slice(p.as_bytes());
+			Ok(x)
+		}
+
+		fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32] {
+			let v = ScalarCore::<Secp256k1>::from_be_slice(v).unwrap();
+			let w = ScalarCore::<Secp256k1>::from_be_slice(w).unwrap();
+			let mut x = [0u8; 32];
+			x.copy_from_slice(&v.add(&w).to_be_bytes()[..]);
+			x
+		}
+	}
+}
+
+#[cfg(feature = "full_crypto")]
+mod secp256r1 {
+	use p256::{
+		elliptic_curve::{ops::Add, sec1::ToEncodedPoint, ScalarCore},
+		NistP256, SecretKey,
+	};
+
+	pub type ExtendedPrivateKey = super::ExtendedPrivateKey<Curve>;
+
+	pub struct Curve;
+
+	impl super::Curve for Curve {
+		fn secret(secret: &[u8]) -> Result<[u8; 32], ()> {
+			SecretKey::from_be_bytes(secret).map_err(|_| ())?;
+			<[u8; 32]>::try_from(secret).map_err(|_| ())
+		}
+
+		fn public(secret: &[u8]) -> Result<[u8; 33], ()> {
+			let s = SecretKey::from_be_bytes(secret).map_err(|_| ())?;
+			let p = s.public_key().to_encoded_point(true);
+			let mut x = [0u8; 33];
+			x.copy_from_slice(p.as_bytes());
+			Ok(x)
+		}
+
+		fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32] {
+			let v = ScalarCore::<NistP256>::from_be_slice(v).unwrap();
+			let w = ScalarCore::<NistP256>::from_be_slice(w).unwrap();
+			let mut x = [0u8; 32];
+			x.copy_from_slice(&v.add(&w).to_be_bytes()[..]);
+			x
+		}
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+	use super::{secp256k1::ExtendedPrivateKey, DeriveJunction};
+	use bip39::{Language, Mnemonic, Seed};
+	use sp_core::crypto::DEV_PHRASE;
 
 	const DEV_PATH: &str = "m/44'/60'/0'/0/0";
 
@@ -207,5 +305,19 @@ mod tests {
 		let a = DeriveJunction::parse(DEV_PATH);
 		assert!(a.is_ok());
 		assert_eq!(a.unwrap(), junctions);
+	}
+
+	#[test]
+	fn derive_from_dev_phrase() {
+		let mnemonic = Mnemonic::from_phrase(DEV_PHRASE, Language::English).unwrap();
+		let seed = Seed::new(&mnemonic, "");
+		let junctions = DeriveJunction::parse(DEV_PATH).unwrap();
+
+		let a = ExtendedPrivateKey::derive(seed.as_bytes(), junctions.into_iter());
+		assert!(a.is_ok());
+		assert_eq!(
+			array_bytes::bytes2hex("", a.unwrap().as_ref()),
+			"5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133"
+		);
 	}
 }
