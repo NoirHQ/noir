@@ -6,21 +6,26 @@ license = "Apache-2.0"
 repository = "https://github.com/noir-protocol/noir/"
 
 [dependencies]
+array-bytes = { version = "4.1", optional = true }
 codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
 	"derive",
 	"max-encoded-len",
 ] }
+hmac = { version = "0.12.1", default-features = false, optional = true }
+lazy_static = { version = "1.4.0", default-features = false, optional = true }
+k256 = { version = "0.12.0", default-features = false, features = ["ecdsa", "alloc"], optional = true }
+p256 = { version = "0.12.0", default-features = false, features = ["ecdsa", "alloc"], optional = true }
+regex = { version = "1.6.0", optional = true }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-serde = { version = "1.0.136", optional = true, features = ["derive"] }
+secrecy = { version = "0.8.0", default-features = false }
+serde = { version = "1.0.136", features = ["derive"], optional = true }
+sha2 = { version = "0.10.6", default-features = false, optional = true }
 sp-core = { version = "7.0.0", default-features = false }
 sp-runtime-interface = { version = "7.0.0", default-features = false }
 sp-std = { version = "5.0.0", default-features = false }
 substrate-bip39 = { version = "0.4.4", optional = true }
 tiny-bip39 = { version = "1.0.0", optional = true }
-
-# full crypto
-array-bytes = { version = "4.1", optional = true }
-p256 = { version = "0.12.0", default-features = false, features = ["ecdsa", "alloc"], optional = true }
+zeroize = { version = "1.4.3", default-features = false, optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"
@@ -30,16 +35,27 @@ default = ["std"]
 std = [
 	"full_crypto",
 	"codec/std",
+	"hmac/std",
+	"k256/std",
+	"lazy_static",
+	"p256/std",
+	"regex",
 	"scale-info/std",
+	"secrecy/alloc",
 	"serde",
+	"sha2/std",
 	"sp-core/std",
 	"sp-std/std",
 	"substrate-bip39",
 	"tiny-bip39",
-	"p256/std",
+	"zeroize/alloc",
 ]
 full_crypto = [
 	"array-bytes",
+	"hmac",
+	"k256",
 	"p256",
+	"sha2",
 	"sp-core/full_crypto",
+	"zeroize",
 ]
