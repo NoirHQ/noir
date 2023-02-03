@@ -172,7 +172,10 @@ impl<C: Curve> ExtendedPrivateKey<C> {
 		C::scalar_add(v, w)
 	}
 
-	pub fn derive<Iter: Iterator<Item = DeriveJunction>>(seed: &[u8], path: Iter) -> Result<Self, ()> {
+	pub fn derive<Iter: Iterator<Item = DeriveJunction>>(
+		seed: &[u8],
+		path: Iter,
+	) -> Result<Self, ()> {
 		let mut ext = Self::from_seed(seed)?;
 		for i in path {
 			ext = ext.child(i)?;
