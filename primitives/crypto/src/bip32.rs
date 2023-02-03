@@ -32,148 +32,99 @@ use hmac::{Hmac, Mac};
 #[cfg(feature = "full_crypto")]
 use sha2::Sha512;
 #[cfg(feature = "full_crypto")]
-use sp_core::crypto::{SecretStringError, DEV_PHRASE};
+use sp_core::crypto::SecretStringError;
 
 #[cfg(feature = "std")]
 use regex::Regex;
-#[cfg(feature = "std")]
-use secrecy::SecretString;
-
-#[cfg(feature = "full_crypto")]
-pub const JUNCTION_ID_LEN: usize = 4;
 
 #[cfg(feature = "std")]
 lazy_static::lazy_static! {
-	static ref SECRET_PHRASE_REGEX: Regex = Regex::new(r"^(((?P<phrase>[\d\w ]+)/m)?|m)(?P<path>(/[^/']+'?)*)(///(?P<password>.*))?$")
+	static ref PATH_REGEX: Regex = Regex::new(r"^m(?P<path>(/\d+'?)*)$")
 		.expect("constructed from known-good static value; qed");
 	static ref JUNCTION_REGEX: Regex = Regex::new(r"/([^/']+'?)")
 		.expect("constructed from known-good static value; qed");
 }
 
-#[cfg(feature = "std")]
-pub struct SecretUri {
-	pub phrase: SecretString,
-	pub password: Option<SecretString>,
-	pub junctions: Vec<DeriveJunction>,
-}
-
-impl sp_std::str::FromStr for SecretUri {
-	type Err = SecretStringError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let cap = SECRET_PHRASE_REGEX.captures(s).ok_or(SecretStringError::InvalidFormat)?;
-
-		let junctions = JUNCTION_REGEX
-			.captures_iter(&cap["path"])
-			.map(|f| DeriveJunction::from(&f[1]))
-			.collect::<Vec<_>>();
-
-		let phrase = cap.name("phrase").map(|r| r.as_str()).unwrap_or(DEV_PHRASE);
-		let password = cap.name("password");
-
-		Ok(Self {
-			phrase: SecretString::from_str(phrase).expect("Returns infallible error; qed"),
-			password: password.map(|v| {
-				SecretString::from_str(v.as_str()).expect("Returns infallible error; qed")
-			}),
-			junctions,
-		})
-	}
-}
-
 #[cfg(feature = "full_crypto")]
+#[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Encode, Decode)]
 pub enum DeriveJunction {
-	Soft([u8; JUNCTION_ID_LEN]),
-	Hard([u8; JUNCTION_ID_LEN]),
+	Soft([u8; 4]),
+	Hard([u8; 4]),
 }
 
 #[cfg(feature = "full_crypto")]
 impl DeriveJunction {
-	pub fn soften(self) -> Self {
-		let mut inner = self.unwrap_inner();
-		inner[0] &= !(0x80u8);
-		DeriveJunction::Soft(inner)
-	}
+	const HARDENED_MODIFIER: u32 = 0x80000000u32;
 
-	pub fn harden(self) -> Self {
-		let mut inner = self.unwrap_inner();
-		inner[0] |= 0x80u8;
-		DeriveJunction::Hard(inner)
-	}
+	#[cfg(feature = "std")]
+	pub fn parse(path: &str) -> Result<Vec<Self>, SecretStringError> {
+		let cap = PATH_REGEX.captures(path).ok_or(SecretStringError::InvalidPath)?;
 
-	pub fn soft<T: Encode>(index: T) -> Self {
-		let mut cc: [u8; JUNCTION_ID_LEN] = Default::default();
-		index.using_encoded(|data| {
-			if data.len() > JUNCTION_ID_LEN {
-				cc.copy_from_slice(&sp_core::hashing::blake2_256(data)[0..JUNCTION_ID_LEN]);
-			} else {
-				cc[0..data.len()].copy_from_slice(data);
+		JUNCTION_REGEX.captures_iter(&cap["path"]).try_fold(vec![], |mut junctions, j| {
+			match Self::try_from(&j[1]) {
+				Ok(j) => {
+					junctions.push(j);
+					Ok(junctions)
+				},
+				Err(_) => Err(SecretStringError::InvalidPath),
 			}
-		});
-		DeriveJunction::Soft(cc)
+		})
 	}
 
-	pub fn hard<T: Encode>(index: T) -> Self {
-		Self::soft(index).harden()
-	}
-
-	pub fn unwrap_inner(self) -> [u8; JUNCTION_ID_LEN] {
+	fn unwrap(self) -> [u8; 4] {
 		match self {
-			DeriveJunction::Hard(c) | DeriveJunction::Soft(c) => c,
+			Self::Soft(inner) | Self::Hard(inner) => inner,
 		}
 	}
 
-	pub fn inner(&self) -> &[u8; JUNCTION_ID_LEN] {
-		match self {
-			DeriveJunction::Hard(ref c) | DeriveJunction::Soft(ref c) => c,
-		}
-	}
-
-	pub fn is_soft(&self) -> bool {
-		matches!(*self, DeriveJunction::Soft(_))
-	}
-
-	pub fn is_hard(&self) -> bool {
-		matches!(*self, DeriveJunction::Hard(_))
+	fn harden(self) -> Self {
+		let mut inner = self.unwrap();
+		inner[0] |= 0x80u8;
+		Self::Hard(inner)
 	}
 }
 
 #[cfg(feature = "full_crypto")]
-impl<T: AsRef<str>> From<T> for DeriveJunction {
-	fn from(j: T) -> DeriveJunction {
-		let j = j.as_ref();
-		let (code, mut hard) =
-			if let Some(stripped) = j.strip_suffix("'") { (stripped, true) } else { (j, false) };
+impl AsRef<[u8]> for DeriveJunction {
+	fn as_ref(&self) -> &[u8] {
+		match self {
+			Self::Soft(ref x) | Self::Hard(ref x) => x,
+		}
+	}
+}
 
-		let res = if let Ok(n) = str::parse::<u32>(code) {
-			if n < 0x80000000u32 {
-				DeriveJunction::soft(n.to_be())
-			} else {
-				hard = true;
-				DeriveJunction::soft((n & !(0x80000000u32)).to_be())
-			}
+#[cfg(feature = "full_crypto")]
+impl From<u32> for DeriveJunction {
+	fn from(index: u32) -> Self {
+		if index >= Self::HARDENED_MODIFIER {
+			Self::Hard(index.to_be_bytes())
 		} else {
-			DeriveJunction::soft(code)
+			Self::Soft(index.to_be_bytes())
+		}
+	}
+}
+
+#[cfg(feature = "full_crypto")]
+impl TryFrom<&str> for DeriveJunction {
+	type Error = ();
+
+	fn try_from(index_str: &str) -> Result<Self, ()> {
+		let (code, hard) = if let Some(stripped) = index_str.strip_suffix("'") {
+			(stripped, true)
+		} else {
+			(index_str, false)
 		};
 
+		let mut index = str::parse::<u32>(code).map_err(|_| ())?;
 		if hard {
-			res.harden()
-		} else {
-			res
+			if index < Self::HARDENED_MODIFIER {
+				index += Self::HARDENED_MODIFIER;
+			} else {
+				return Err(())
+			}
 		}
-	}
-}
-
-#[cfg(feature = "full_crypto")]
-impl Into<sp_core::DeriveJunction> for DeriveJunction {
-	fn into(self) -> sp_core::DeriveJunction {
-		let mut x = [0u8; sp_core::crypto::JUNCTION_ID_LEN];
-		x.copy_from_slice(&self.inner()[0..JUNCTION_ID_LEN]);
-		match self {
-			DeriveJunction::Soft(_) => sp_core::DeriveJunction::Soft(x),
-			DeriveJunction::Hard(_) => sp_core::DeriveJunction::Hard(x),
-		}
+		Ok(Self::from(index))
 	}
 }
 
@@ -222,7 +173,7 @@ pub trait ExtendedPrivateKey: Sized + zeroize::ZeroizeOnDrop {
 				mac.update(self.secret());
 			},
 		};
-		mac.update(i.inner());
+		mac.update(i.as_ref());
 
 		let result = mac.finalize().into_bytes();
 
@@ -235,5 +186,26 @@ pub trait ExtendedPrivateKey: Sized + zeroize::ZeroizeOnDrop {
 		secret = Self::scalar_add(&secret, self.secret());
 
 		Ok(ExtendedPrivateKey::new(secret, chain_code))
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	const DEV_PATH: &str = "m/44'/60'/0'/0/0";
+
+	#[test]
+	fn parse_derivation_path() {
+		let junctions = vec![
+			DeriveJunction::from(44).harden(),
+			DeriveJunction::from(60).harden(),
+			DeriveJunction::from(0).harden(),
+			DeriveJunction::from(0),
+			DeriveJunction::from(0),
+		];
+		let a = DeriveJunction::parse(DEV_PATH);
+		assert!(a.is_ok());
+		assert_eq!(a.unwrap(), junctions);
 	}
 }
