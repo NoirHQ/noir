@@ -71,13 +71,13 @@ impl DeriveJunction {
 		})
 	}
 
-	fn unwrap(self) -> [u8; 4] {
+	pub fn unwrap(self) -> [u8; 4] {
 		match self {
 			Self::Soft(inner) | Self::Hard(inner) => inner,
 		}
 	}
 
-	fn harden(self) -> Self {
+	pub fn harden(self) -> Self {
 		let mut inner = self.unwrap();
 		inner[0] |= 0x80u8;
 		Self::Hard(inner)
@@ -144,12 +144,12 @@ pub struct ExtendedPrivateKey<C: Curve> {
 
 #[cfg(feature = "full_crypto")]
 impl<C: Curve> ExtendedPrivateKey<C> {
-	fn new(secret: [u8; 32], chain_code: [u8; 32]) -> Result<Self, ()> {
+	pub fn new(secret: [u8; 32], chain_code: [u8; 32]) -> Result<Self, ()> {
 		C::secret(&secret[..])?;
 		Ok(Self { secret, chain_code, marker: Default::default() })
 	}
 
-	fn from_seed(seed: &[u8]) -> Result<Self, ()> {
+	pub fn from_seed(seed: &[u8]) -> Result<Self, ()> {
 		let mut mac = Hmac::<Sha512>::new_from_slice(b"Bitcoin seed").unwrap();
 		mac.update(seed);
 
@@ -164,15 +164,15 @@ impl<C: Curve> ExtendedPrivateKey<C> {
 		Self::new(secret, chain_code)
 	}
 
-	fn public(&self) -> [u8; 33] {
+	pub fn public(&self) -> [u8; 33] {
 		C::public(self.as_ref()).unwrap()
 	}
 
-	fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32] {
+	pub fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32] {
 		C::scalar_add(v, w)
 	}
 
-	fn derive<Iter: Iterator<Item = DeriveJunction>>(seed: &[u8], path: Iter) -> Result<Self, ()> {
+	pub fn derive<Iter: Iterator<Item = DeriveJunction>>(seed: &[u8], path: Iter) -> Result<Self, ()> {
 		let mut ext = Self::from_seed(seed)?;
 		for i in path {
 			ext = ext.child(i)?;
@@ -181,7 +181,7 @@ impl<C: Curve> ExtendedPrivateKey<C> {
 		Ok(ext)
 	}
 
-	fn child(&mut self, i: DeriveJunction) -> Result<Self, ()> {
+	pub fn child(&mut self, i: DeriveJunction) -> Result<Self, ()> {
 		let mut mac = Hmac::<Sha512>::new_from_slice(&self.chain_code[..]).unwrap();
 
 		match i {
@@ -218,7 +218,7 @@ impl<C: Curve> AsRef<[u8]> for ExtendedPrivateKey<C> {
 }
 
 #[cfg(feature = "full_crypto")]
-mod secp256k1 {
+pub mod secp256k1 {
 	use k256::{
 		elliptic_curve::{ops::Add, sec1::ToEncodedPoint, ScalarCore},
 		Secp256k1, SecretKey,
@@ -253,7 +253,7 @@ mod secp256k1 {
 }
 
 #[cfg(feature = "full_crypto")]
-mod secp256r1 {
+pub mod secp256r1 {
 	use p256::{
 		elliptic_curve::{ops::Add, sec1::ToEncodedPoint, ScalarCore},
 		NistP256, SecretKey,
