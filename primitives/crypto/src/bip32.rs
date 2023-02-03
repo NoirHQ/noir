@@ -27,12 +27,14 @@ use hmac::{Hmac, Mac};
 #[cfg(feature = "full_crypto")]
 use sha2::Sha512;
 #[cfg(feature = "full_crypto")]
-use sp_core::crypto::SecretStringError;
-#[cfg(feature = "full_crypto")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[cfg(feature = "std")]
 use regex::Regex;
+#[cfg(feature = "std")]
+use sp_core::crypto::SecretStringError;
+#[cfg(feature = "std")]
+use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
 lazy_static::lazy_static! {
