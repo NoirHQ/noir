@@ -128,7 +128,7 @@ impl TryFrom<&str> for DeriveJunction {
 }
 
 #[cfg(feature = "full_crypto")]
-pub trait Curve {
+pub trait Curve: Clone {
 	fn secret(secret: &[u8]) -> Result<[u8; 32], ()>;
 	fn public(secret: &[u8]) -> Result<[u8; 33], ()>;
 	fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32];
@@ -164,6 +164,14 @@ impl<C: Curve> ExtendedPrivateKey<C> {
 		Self::new(secret, chain_code)
 	}
 
+	#[cfg(feature = "std")]
+	pub fn from_phrase(phrase: &str, password: Option<&str>) -> Result<Self, ()> {
+		use bip39::{Language, Mnemonic, Seed};
+		let mnemonic = Mnemonic::from_phrase(phrase, Language::English).map_err(|_| ())?;
+		let seed = Seed::new(&mnemonic, password.unwrap_or(""));
+		Self::from_seed(seed.as_bytes())
+	}
+
 	pub fn public(&self) -> [u8; 33] {
 		C::public(self.as_ref()).unwrap()
 	}
@@ -173,10 +181,10 @@ impl<C: Curve> ExtendedPrivateKey<C> {
 	}
 
 	pub fn derive<Iter: Iterator<Item = DeriveJunction>>(
-		seed: &[u8],
+		&self,
 		path: Iter,
 	) -> Result<Self, ()> {
-		let mut ext = Self::from_seed(seed)?;
+		let mut ext = self.clone();
 		for i in path {
 			ext = ext.child(i)?;
 		}
@@ -229,6 +237,7 @@ pub mod secp256k1 {
 
 	pub type ExtendedPrivateKey = super::ExtendedPrivateKey<Curve>;
 
+	#[derive(Clone)]
 	pub struct Curve;
 
 	impl super::Curve for Curve {
@@ -264,6 +273,7 @@ pub mod secp256r1 {
 
 	pub type ExtendedPrivateKey = super::ExtendedPrivateKey<Curve>;
 
+	#[derive(Clone)]
 	pub struct Curve;
 
 	impl super::Curve for Curve {
@@ -293,7 +303,6 @@ pub mod secp256r1 {
 #[cfg(test)]
 mod tests {
 	use super::{secp256k1::ExtendedPrivateKey, DeriveJunction};
-	use bip39::{Language, Mnemonic, Seed};
 	use sp_core::crypto::DEV_PHRASE;
 
 	const DEV_PATH: &str = "m/44'/60'/0'/0/0";
@@ -314,11 +323,11 @@ mod tests {
 
 	#[test]
 	fn derive_from_dev_phrase() {
-		let mnemonic = Mnemonic::from_phrase(DEV_PHRASE, Language::English).unwrap();
-		let seed = Seed::new(&mnemonic, "");
 		let junctions = DeriveJunction::parse(DEV_PATH).unwrap();
 
-		let a = ExtendedPrivateKey::derive(seed.as_bytes(), junctions.into_iter());
+		let a = ExtendedPrivateKey::from_phrase(DEV_PHRASE, None);
+		assert!(a.is_ok());
+		let a = a.unwrap().derive(junctions.into_iter());
 		assert!(a.is_ok());
 		assert_eq!(
 			array_bytes::bytes2hex("", a.unwrap().as_ref()),
