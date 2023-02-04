@@ -184,7 +184,7 @@ impl<C: Curve> ExtendedPrivateKey<C> {
 		Ok(ext)
 	}
 
-	pub fn child(&mut self, i: DeriveJunction) -> Result<Self, ()> {
+	pub fn child(&self, i: DeriveJunction) -> Result<Self, ()> {
 		let mut mac = Hmac::<Sha512>::new_from_slice(&self.chain_code[..]).unwrap();
 
 		match i {
