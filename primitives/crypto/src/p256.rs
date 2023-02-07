@@ -442,20 +442,13 @@ impl TraitPair for Pair {
 	/// This doesn't use the type system to ensure that `sig` and `pubkey` are the correct
 	/// size. Use it only if you're coming from byte buffers and need the speed.
 	fn verify_weak<P: AsRef<[u8]>, M: AsRef<[u8]>>(sig: &[u8], message: M, pubkey: P) -> bool {
-		self::verify_prehash_unchecked(sig, &blake2_256(message.as_ref()), pubkey.as_ref())
+		Self::verify_prehashed_weak(sig, &blake2_256(message.as_ref()), pubkey.as_ref())
 	}
 
 	/// Return a vec filled with raw data.
 	fn to_raw_vec(&self) -> Vec<u8> {
 		self.seed().to_vec()
 	}
-}
-
-#[cfg(feature = "full_crypto")]
-fn verify_prehash_unchecked(sig: &[u8], message: &[u8; 32], pubkey: &[u8]) -> bool {
-	let ver = VerifyingKey::from_sec1_bytes(pubkey).unwrap();
-	let sig = EcdsaSignature::try_from(sig).unwrap();
-	ver.verify_prehash(message, &sig).is_ok()
 }
 
 #[cfg(feature = "full_crypto")]
@@ -474,7 +467,17 @@ impl Pair {
 	/// Verify a signature on a pre-hashed message. Return `true` if the signature is valid
 	/// and thus matches the given `public` key.
 	pub fn verify_prehashed(sig: &Signature, message: &[u8; 32], pubkey: &Public) -> bool {
-		self::verify_prehash_unchecked(sig.as_ref(), message, pubkey.as_ref())
+		Self::verify_prehashed_weak(sig, message, pubkey)
+	}
+
+	fn verify_prehashed_weak<S: AsRef<[u8]>, P: AsRef<[u8]>>(
+		sig: S,
+		message: &[u8; 32],
+		pubkey: P,
+	) -> bool {
+		let ver = VerifyingKey::from_sec1_bytes(pubkey.as_ref()).unwrap();
+		let sig = EcdsaSignature::try_from(sig.as_ref()).unwrap();
+		ver.verify_prehash(message, &sig).is_ok()
 	}
 }
 
