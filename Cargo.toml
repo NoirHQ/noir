@@ -5,6 +5,7 @@ members = [
 	"core-primitives",
 	"primitives/crypto",
 	"primitives/runtime",
+	"runtime",
 ]
 
 [profile.release]
