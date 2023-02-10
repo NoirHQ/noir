@@ -23,3 +23,66 @@
 pub mod bip32;
 pub mod p256;
 pub mod webauthn;
+
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use sp_core::RuntimeDebug;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_std::{hash::Hash, vec::Vec};
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Hash))]
+pub struct UniversalAccountId(Vec<u8>);
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum UniversalSigner {
+	WebAuthn(crate::p256::Public),
+}
+
+impl IdentifyAccount for UniversalSigner {
+	type AccountId = UniversalAccountId;
+
+	fn into_account(self) -> Self::AccountId {
+		match self {
+			Self::WebAuthn(who) => UniversalAccountId(who.0.to_vec()),
+		}
+	}
+}
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Eq, PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct AuthenticatorAssertionResponse {
+	pub client_data_json: Vec<u8>,
+	pub authenticator_data: Vec<u8>,
+	// after decoding or before decoding by ASN.1?
+	pub signature: crate::p256::Signature,
+}
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Eq, PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum UniversalSignature {
+	WebAuthn(AuthenticatorAssertionResponse),
+}
+
+impl Verify for UniversalSignature {
+	type Signer = UniversalSigner;
+
+	fn verify<L: sp_runtime::traits::Lazy<[u8]>>(
+		&self,
+		mut msg: L,
+		signer: &<Self::Signer as sp_runtime::traits::IdentifyAccount>::AccountId,
+	) -> bool {
+		match self {
+			UniversalSignature::WebAuthn(res) => crate::webauthn::crypto::webauthn_es256_verify(
+				&res.signature,
+				msg.get(),
+				res.client_data_json.as_slice(),
+				res.authenticator_data.as_slice(),
+				signer.0.as_slice(),
+			),
+		}
+	}
+}
