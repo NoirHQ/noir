@@ -1,7 +1,6 @@
 // This file is part of Noir.
 
 // Copyright (C) 2023 Haderech Pte. Ltd.
-// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +18,12 @@
 //! Simple WebAuthn API.
 
 use codec::{Decode, Encode};
+use sp_runtime_interface::runtime_interface;
+
+#[cfg(feature = "std")]
+use base64ct::{Base64UrlUnpadded as Base64, Encoding};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime_interface::runtime_interface;
 
 #[cfg(feature = "std")]
 #[derive(Serialize, Deserialize, Encode, Decode, Debug)]
@@ -35,7 +37,7 @@ struct ClientDataJson {
 #[cfg(feature = "std")]
 impl ClientDataJson {
 	pub fn verify_challenge(&self, msg: &[u8]) -> bool {
-		let challenge = match base64_url::decode(self.challenge.as_str()) {
+		let challenge = match Base64::decode_vec(self.challenge.as_str()) {
 			Ok(challenge) => challenge,
 			Err(_) => return false,
 		};
@@ -90,7 +92,7 @@ mod tests {
 	#[test]
 	fn parse_client_data_json_test() {
 		let client_data_json = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiT212TVJpd0dPMW5oZy1WdXBrUUZ0bVJybUp6MEUwdTlnNXc1RWtpYnctVEhmYkJ4dUx4ek5PMVgtVmd6cnVWNDloQ3ZyMGIxT2NuQnJBOUVfaWFhREEiLCJvcmlnaW4iOiJodHRwczovL3dlYmF1dGhuLmlvIiwiY3Jvc3NPcmlnaW4iOmZhbHNlfQ";
-		let client_data_json = base64_url::decode(client_data_json).unwrap();
+		let client_data_json = Base64::decode_vec(client_data_json).unwrap();
 		let client_data: ClientDataJson =
 			serde_json::from_slice(client_data_json.as_slice()).unwrap();
 
@@ -102,12 +104,12 @@ mod tests {
 	#[test]
 	fn verify_origin_test() {
 		let client_data_json = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiT212TVJpd0dPMW5oZy1WdXBrUUZ0bVJybUp6MEUwdTlnNXc1RWtpYnctVEhmYkJ4dUx4ek5PMVgtVmd6cnVWNDloQ3ZyMGIxT2NuQnJBOUVfaWFhREEiLCJvcmlnaW4iOiJodHRwczovL3dlYmF1dGhuLmlvIiwiY3Jvc3NPcmlnaW4iOmZhbHNlfQ";
-		let client_data_json = base64_url::decode(client_data_json).unwrap();
+		let client_data_json = Base64::decode_vec(client_data_json).unwrap();
 		let client_data: ClientDataJson =
 			serde_json::from_slice(client_data_json.as_slice()).unwrap();
 
 		let authenticator_data = "dKbqkhPJnC90siSSsyDPQCYqlMGpUKA5fyklC2CEHvABAAAAAg";
-		let authenticator_data = base64_url::decode(authenticator_data).unwrap();
+		let authenticator_data = Base64::decode_vec(authenticator_data).unwrap();
 		assert!(client_data.verify_origin(authenticator_data.as_slice()));
 	}
 }

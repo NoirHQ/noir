@@ -28,9 +28,9 @@ tiny-bip39 = { version = "1.0.0", optional = true }
 zeroize = { version = "1.4.3", default-features = false, optional = true }
 
 # webauthn
+base64ct = { version = "1.5.3", default-features = false, optional = true }
 sp-io = { version = "7.0.0", default-features = false }
 serde_json = "1.0"
-base64-url = "1.4.13"
 
 [dev-dependencies]
 
@@ -38,6 +38,7 @@ base64-url = "1.4.13"
 default = ["std"]
 std = [
 	"full_crypto",
+	"base64ct/std",
 	"codec/std",
 	"hmac/std",
 	"k256/std",
@@ -57,6 +58,7 @@ std = [
 ]
 full_crypto = [
 	"array-bytes",
+	"base64ct",
 	"hmac",
 	"k256",
 	"p256",
