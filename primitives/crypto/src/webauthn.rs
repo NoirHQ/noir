@@ -41,7 +41,7 @@ impl ClientDataJson {
 			Ok(challenge) => challenge,
 			Err(_) => return false,
 		};
-		let msg_hash = sp_io::hashing::sha2_256(msg).to_vec();
+		let msg_hash = sp_core::hashing::sha2_256(msg).to_vec();
 		msg_hash == challenge
 	}
 
@@ -50,7 +50,7 @@ impl ClientDataJson {
 			true => &self.origin["https://".len()..],
 			false => return false,
 		};
-		let rp_id_hash = sp_io::hashing::sha2_256(rp_id.as_bytes()).to_vec();
+		let rp_id_hash = sp_core::hashing::sha2_256(rp_id.as_bytes()).to_vec();
 		rp_id_hash == *&authenticator_data[0..32].to_vec()
 	}
 }
@@ -77,9 +77,9 @@ pub trait Crypto {
 
 		let mut signed_message: Vec<u8> = Vec::new();
 		signed_message.extend_from_slice(authenticator_data);
-		let client_data_hash = sp_io::hashing::sha2_256(client_data_json);
+		let client_data_hash = sp_core::hashing::sha2_256(client_data_json);
 		signed_message.extend_from_slice(client_data_hash.as_ref());
-		let signed_message = sp_io::hashing::sha2_256(signed_message.as_slice());
+		let signed_message = sp_core::hashing::sha2_256(signed_message.as_slice());
 		let public = crate::p256::Public::from_full(pub_key).unwrap();
 		crate::p256::Pair::verify_prehashed(sig, &signed_message, &public)
 	}

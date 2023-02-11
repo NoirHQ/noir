@@ -29,8 +29,7 @@ zeroize = { version = "1.4.3", default-features = false, optional = true }
 
 # webauthn
 base64ct = { version = "1.5.3", default-features = false, optional = true }
-sp-io = { version = "7.0.0", default-features = false }
-serde_json = "1.0"
+serde_json = { version = "1.0", default-features = false, optional = true }
 
 [dev-dependencies]
 
@@ -47,6 +46,7 @@ std = [
 	"regex",
 	"scale-info/std",
 	"serde",
+	"serde_json",
 	"sha2/std",
 	"sp-core/std",
 	"sp-runtime/std",
@@ -54,7 +54,6 @@ std = [
 	"substrate-bip39",
 	"tiny-bip39",
 	"zeroize/alloc",
-	"sp-io/std",
 ]
 full_crypto = [
 	"array-bytes",
