@@ -21,6 +21,8 @@ jobs:
         toolchain: nightly
         override: true
         components: rustfmt
+    - name: Setup build dependency
+      run: apt-get install protobuf-compiler
     - name: Lint
       run: cargo fmt -- --check
     - name: Build
