@@ -22,7 +22,7 @@ jobs:
         target: wasm32-unknown-unknown
         override: true
         components: rustfmt
-    - name: Setup build dependency
+    - name: Install build dependencies
       run: sudo apt-get install protobuf-compiler
     - name: Lint
       run: cargo fmt -- --check
