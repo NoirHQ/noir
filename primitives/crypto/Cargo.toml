@@ -20,7 +20,6 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 serde = { version = "1.0.136", features = ["derive"], optional = true }
 sha2 = { version = "0.10.6", default-features = false, optional = true }
 sp-core = { version = "7.0.0", default-features = false }
-sp-runtime = { version = "7.0.0", default-features = false }
 sp-runtime-interface = { version = "7.0.0", default-features = false }
 sp-std = { version = "5.0.0", default-features = false }
 substrate-bip39 = { version = "0.4.4", optional = true }
@@ -49,7 +48,6 @@ std = [
 	"serde_json",
 	"sha2/std",
 	"sp-core/std",
-	"sp-runtime/std",
 	"sp-std/std",
 	"substrate-bip39",
 	"tiny-bip39",
