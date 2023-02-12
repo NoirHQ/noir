@@ -3,8 +3,10 @@ resolver = "2"
 
 members = [
 	"core-primitives",
+	"node",
 	"primitives/crypto",
 	"primitives/runtime",
+	"runtime",
 ]
 
 [profile.release]

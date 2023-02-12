@@ -6,8 +6,12 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/noir-protocol/noir/"
 
 [dependencies]
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 
 [features]
 default = ["std"]
 std = [
+  "sp-core/std",
+  "sp-runtime/std",
 ]
