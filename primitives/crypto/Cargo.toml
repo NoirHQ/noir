@@ -13,10 +13,10 @@ codec = { package = "parity-scale-codec", version = "3.2.2", default-features = 
 ] }
 hmac = { version = "0.12.1", default-features = false, optional = true }
 lazy_static = { version = "1.4.0", default-features = false, optional = true }
-k256 = { version = "0.12.0", default-features = false, features = ["ecdsa", "alloc"], optional = true }
 p256 = { version = "0.12.0", default-features = false, features = ["ecdsa", "alloc"], optional = true }
 regex = { version = "1.6.0", optional = true }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+secp256k1 = { version = "0.24.3", default-features = false, features = ["alloc"], optional = true }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
 sha2 = { version = "0.10.6", default-features = false, optional = true }
 sp-core = { version = "7.0.0", default-features = false }
@@ -35,11 +35,11 @@ std = [
 	"full_crypto",
 	"codec/std",
 	"hmac/std",
-	"k256/std",
 	"lazy_static",
 	"p256/std",
 	"regex",
 	"scale-info/std",
+	"secp256k1/global-context",
 	"serde",
 	"sha2/std",
 	"sp-core/std",
@@ -51,9 +51,9 @@ std = [
 full_crypto = [
 	"array-bytes",
 	"hmac",
-	"k256",
 	"p256",
 	"sha2",
+	"secp256k1",
 	"sp-core/full_crypto",
 	"zeroize",
 ]

@@ -131,7 +131,7 @@ impl TryFrom<&str> for DeriveJunction {
 pub trait Curve: Clone {
 	fn secret(secret: &[u8]) -> Result<[u8; 32], ()>;
 	fn public(secret: &[u8]) -> Result<[u8; 33], ()>;
-	fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32];
+	fn scalar_add(v: &[u8], w: &[u8]) -> Result<[u8; 32], ()>;
 }
 
 #[cfg(feature = "full_crypto")]
@@ -176,7 +176,7 @@ impl<C: Curve> ExtendedPrivateKey<C> {
 		C::public(self.as_ref()).unwrap()
 	}
 
-	pub fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32] {
+	pub fn scalar_add(v: &[u8], w: &[u8]) -> Result<[u8; 32], ()> {
 		C::scalar_add(v, w)
 	}
 
@@ -212,7 +212,7 @@ impl<C: Curve> ExtendedPrivateKey<C> {
 		secret.copy_from_slice(&result[0..32]);
 		chain_code.copy_from_slice(&result[32..]);
 
-		secret = Self::scalar_add(&secret, self.as_ref());
+		secret = Self::scalar_add(&secret, self.as_ref())?;
 
 		Self::new(secret, chain_code)
 	}
@@ -227,10 +227,12 @@ impl<C: Curve> AsRef<[u8]> for ExtendedPrivateKey<C> {
 
 #[cfg(feature = "full_crypto")]
 pub mod secp256k1 {
-	use k256::{
-		elliptic_curve::{ops::Add, sec1::ToEncodedPoint, ScalarCore},
-		Secp256k1, SecretKey,
-	};
+	use secp256k1::{Scalar, SecretKey};
+
+	#[cfg(all(feature = "full_crypto", not(feature = "std")))]
+	use secp256k1::Secp256k1;
+	#[cfg(feature = "std")]
+	use secp256k1::SECP256K1;
 
 	pub type ExtendedPrivateKey = super::ExtendedPrivateKey<Curve>;
 
@@ -239,24 +241,25 @@ pub mod secp256k1 {
 
 	impl super::Curve for Curve {
 		fn secret(secret: &[u8]) -> Result<[u8; 32], ()> {
-			SecretKey::from_be_bytes(secret).map_err(|_| ())?;
-			<[u8; 32]>::try_from(secret).map_err(|_| ())
+			Ok(SecretKey::from_slice(secret).map_err(|_| ())?.secret_bytes())
 		}
 
 		fn public(secret: &[u8]) -> Result<[u8; 33], ()> {
-			let s = SecretKey::from_be_bytes(secret).map_err(|_| ())?;
-			let p = s.public_key().to_encoded_point(true);
-			let mut x = [0u8; 33];
-			x.copy_from_slice(p.as_bytes());
-			Ok(x)
+			let s = SecretKey::from_slice(secret).map_err(|_| ())?;
+
+			#[cfg(feature = "std")]
+			let context = SECP256K1;
+			#[cfg(not(feature = "std"))]
+			let context = Secp256k1::signing_only();
+
+			Ok(s.public_key(context).serialize())
 		}
 
-		fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32] {
-			let v = ScalarCore::<Secp256k1>::from_be_slice(v).unwrap();
-			let w = ScalarCore::<Secp256k1>::from_be_slice(w).unwrap();
-			let mut x = [0u8; 32];
-			x.copy_from_slice(&v.add(&w).to_be_bytes()[..]);
-			x
+		fn scalar_add(v: &[u8], w: &[u8]) -> Result<[u8; 32], ()> {
+			let v = SecretKey::from_slice(v).map_err(|_| ())?;
+			let w = <[u8; 32]>::try_from(w).map_err(|_| ())?;
+			let w = Scalar::from_be_bytes(w).map_err(|_| ())?;
+			Ok(v.add_tweak(&w).map_err(|_| ())?.secret_bytes())
 		}
 	}
 }
@@ -287,12 +290,12 @@ pub mod secp256r1 {
 			Ok(x)
 		}
 
-		fn scalar_add(v: &[u8], w: &[u8]) -> [u8; 32] {
+		fn scalar_add(v: &[u8], w: &[u8]) -> Result<[u8; 32], ()> {
 			let v = ScalarCore::<NistP256>::from_be_slice(v).unwrap();
 			let w = ScalarCore::<NistP256>::from_be_slice(w).unwrap();
 			let mut x = [0u8; 32];
 			x.copy_from_slice(&v.add(&w).to_be_bytes()[..]);
-			x
+			Ok(x)
 		}
 	}
 }
