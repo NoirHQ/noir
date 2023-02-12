@@ -327,6 +327,15 @@ impl Signature {
 		r.copy_from_slice(data);
 		Some(Signature(r))
 	}
+
+	/// A new instance from ASN.1 DER encoded bytes.
+	#[cfg(feature = "std")]
+	pub fn from_der(data: &[u8]) -> Option<Self> {
+		match EcdsaSignature::from_der(data) {
+			Ok(sig) => Some(Self(sig.to_bytes().into())),
+			Err(..) => None,
+		}
+	}
 }
 
 /// Derive a single hard junction.

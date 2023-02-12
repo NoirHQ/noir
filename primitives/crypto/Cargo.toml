@@ -13,10 +13,10 @@ codec = { package = "parity-scale-codec", version = "3.2.2", default-features = 
 ] }
 hmac = { version = "0.12.1", default-features = false, optional = true }
 lazy_static = { version = "1.4.0", default-features = false, optional = true }
-k256 = { version = "0.12.0", default-features = false, features = ["ecdsa", "alloc"], optional = true }
 p256 = { version = "0.12.0", default-features = false, features = ["ecdsa", "alloc"], optional = true }
 regex = { version = "1.6.0", optional = true }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+secp256k1 = { version = "0.24.3", default-features = false, features = ["alloc"], optional = true }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
 sha2 = { version = "0.10.6", default-features = false, optional = true }
 substrate-bip39 = { version = "0.4.4", optional = true }
@@ -28,21 +28,24 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-
 sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 
-[dev-dependencies]
-serde_json = "1.0"
+# webauthn
+base64ct = { version = "1.5.3", default-features = false, optional = true }
+serde_json = { version = "1.0", default-features = false, optional = true }
 
 [features]
 default = ["std"]
 std = [
 	"full_crypto",
+	"base64ct/std",
 	"codec/std",
 	"hmac/std",
-	"k256/std",
 	"lazy_static",
 	"p256/std",
 	"regex",
 	"scale-info/std",
+	"secp256k1/global-context",
 	"serde",
+	"serde_json",
 	"sha2/std",
 	"sp-core/std",
 	"sp-std/std",
@@ -52,10 +55,11 @@ std = [
 ]
 full_crypto = [
 	"array-bytes",
+	"base64ct",
 	"hmac",
-	"k256",
 	"p256",
 	"sha2",
+	"secp256k1",
 	"sp-core/full_crypto",
 	"zeroize",
 ]
