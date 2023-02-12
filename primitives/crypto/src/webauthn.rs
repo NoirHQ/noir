@@ -135,7 +135,7 @@ impl ClientDataJson {
 	fn check_message(&self, message_hash: &[u8]) -> bool {
 		match Base64::decode_vec(&self.challenge) {
 			Ok(c) => c == message_hash,
-			Err(..) => false,
+			Err(_) => false,
 		}
 	}
 
@@ -173,7 +173,7 @@ impl TryFrom<&[u8]> for ClientDataJson {
 	fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
 		let client_data: ClientDataJson = match serde_json::from_slice(data) {
 			Ok(c) => c,
-			Err(..) => return Err(()),
+			Err(_) => return Err(()),
 		};
 		if client_data.type_ != "webauthn.get" {
 			return Err(())
@@ -209,7 +209,7 @@ impl Signature {
 	pub fn verify_prehashed(&self, message_hash: &[u8; 32], pubkey: &Public) -> bool {
 		let client_data = match ClientDataJson::try_from(&self.client_data_json[..]) {
 			Ok(c) => c,
-			Err(..) => return false,
+			Err(_) => return false,
 		};
 		if !client_data.check_message(message_hash) {
 			return false
