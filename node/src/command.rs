@@ -43,7 +43,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/noir-protocol/noir".into()
+		"https://github.com/noir-protocol/noir/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
