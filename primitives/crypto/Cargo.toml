@@ -26,13 +26,17 @@ substrate-bip39 = { version = "0.4.4", optional = true }
 tiny-bip39 = { version = "1.0.0", optional = true }
 zeroize = { version = "1.4.3", default-features = false, optional = true }
 
+# webauthn
+base64ct = { version = "1.5.3", default-features = false, optional = true }
+serde_json = { version = "1.0", default-features = false, optional = true }
+
 [dev-dependencies]
-serde_json = "1.0"
 
 [features]
 default = ["std"]
 std = [
 	"full_crypto",
+	"base64ct/std",
 	"codec/std",
 	"hmac/std",
 	"lazy_static",
@@ -41,6 +45,7 @@ std = [
 	"scale-info/std",
 	"secp256k1/global-context",
 	"serde",
+	"serde_json",
 	"sha2/std",
 	"sp-core/std",
 	"sp-std/std",
@@ -50,6 +55,7 @@ std = [
 ]
 full_crypto = [
 	"array-bytes",
+	"base64ct",
 	"hmac",
 	"p256",
 	"sha2",
