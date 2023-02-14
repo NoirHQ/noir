@@ -16,14 +16,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use sc_cli::RunCmd;
+use crate::service::EthConfiguration;
+
+/// Available Sealing methods.
+#[derive(Debug, Copy, Clone, clap::ValueEnum)]
+pub enum Sealing {
+	// Seal using rpc method.
+	Manual,
+	// Seal when transaction is executed.
+	Instant,
+}
+
+impl Default for Sealing {
+	fn default() -> Sealing {
+		Sealing::Manual
+	}
+}
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
 	#[command(subcommand)]
 	pub subcommand: Option<Subcommand>,
-	#[clap(flatten)]
-	pub run: RunCmd,
+	#[allow(missing_docs)]
+	#[command(flatten)]
+	pub run: sc_cli::RunCmd,
+	/// Choose sealing method.
+	#[arg(long, value_enum, ignore_case = true)]
+	pub sealing: Option<Sealing>,
+	#[command(flatten)]
+	pub eth: EthConfiguration,
 }
 
 #[derive(Debug, clap::Subcommand)]
@@ -46,5 +67,5 @@ pub enum Subcommand {
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),
 	/// Db meta columns information.
-	ChainInfo(sc_cli::ChainInfoCmd),
+	FrontierDb(fc_cli::FrontierDbCmd),
 }
