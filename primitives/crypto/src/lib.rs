@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Cryptography extensions to Substrate
+//! Cryptography extensions for Noir.
 
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
