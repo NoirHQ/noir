@@ -240,11 +240,10 @@ impl Signature {
 impl sp_std::fmt::Debug for Signature {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		f.debug_struct("WebAuthnSignature")
-			.field("clientDataJson", &self.client_data_json)
-			.field("authenticatorData", &self.authenticator_data)
-			.field("signature", &self.signature)
-			.finish()
+		write!(f, "WebAuthnSignature {{ ")?;
+		write!(f, "clientDataJson: \"{}\", ", Base64::encode_string(&self.client_data_json))?;
+		write!(f, "authenticatorData: \"{}\", ", Base64::encode_string(&self.authenticator_data))?;
+		write!(f, "signature: \"{}\" }}", Base64::encode_string(&self.signature))
 	}
 
 	#[cfg(not(feature = "std"))]
