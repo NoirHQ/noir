@@ -21,7 +21,9 @@
 
 mod chain_spec;
 mod cli;
+mod client;
 mod command;
+mod eth;
 mod rpc;
 mod service;
 
