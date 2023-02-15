@@ -20,12 +20,13 @@
 
 mod eth;
 
+pub use self::eth::{create_eth, overrides_handle, EthDeps};
 use futures::channel::mpsc;
 use jsonrpsee::RpcModule;
 use noir_core_primitives::Block;
 use noir_runtime::{AccountId, Balance, Hash, Index};
 use sc_client_api::{
-  backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	backend::{AuxStore, Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_consensus_manual_seal::rpc::EngineCommand;
@@ -33,7 +34,6 @@ use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
 use sc_service::TransactionPool;
 use sc_transaction_pool::ChainApi;
-pub use self::eth::{create_eth, overrides_handle, EthDeps};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
