@@ -26,6 +26,9 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod account_name;
+pub use account_name::AccountName;
+
 mod precompiles;
 
 use codec::{Decode, Encode};
@@ -38,7 +41,7 @@ use frame_support::{
 		IdentityFee, Weight,
 	},
 };
-pub use noir_core_primitives::{AccountId, Address, Balance, BlockNumber, Hash, Index, Signature};
+pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{
 	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
@@ -91,6 +94,8 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
+/// The address format for describing accounts.
+pub type Address = sp_runtime::MultiAddress<AccountId, AccountName>;
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
@@ -210,7 +215,7 @@ impl frame_system::Config for Runtime {
 	/// The aggregated dispatch type that is available for extrinsics.
 	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-	type Lookup = AccountIdLookup<AccountId, ()>;
+	type Lookup = AccountIdLookup<AccountId, AccountName>;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Index = Index;
 	/// The index type for blocks.

@@ -39,5 +39,7 @@ pub type Signature = sp_runtime::MultiSignature;
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 /// Index of a transaction in the chain.
 pub type Index = u32;
+/// The type for looking up accounts.
+pub type AccountIndex = u128;
 /// The address format for describing accounts.
-pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
+pub type Address = sp_runtime::MultiAddress<AccountId, AccountIndex>;
