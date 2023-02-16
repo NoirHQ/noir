@@ -6,8 +6,18 @@ license = "Apache-2.0"
 repository = "https://github.com/noir-protocol/noir/"
 
 [dependencies]
+codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 
 [features]
 default = ["std"]
 std = [
+	"codec/std",
+	"scale-info/std",
+	"sp-std/std",
 ]

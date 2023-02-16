@@ -31,6 +31,7 @@ use sp_std::vec::Vec;
 pub struct AccountName(pub(crate) u128);
 
 impl AccountName {
+	/// Create a new instance. Given name and tag number should be valid.
 	pub fn new(name: &str, tag: u16) -> Result<Self, ()> {
 		// name cannot exceed 14 bytes.
 		if name.is_empty() || name.as_bytes().len() > 14 {

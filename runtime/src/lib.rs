@@ -26,9 +26,6 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-mod account_name;
-pub use account_name::AccountName;
-
 mod precompiles;
 
 use codec::{Decode, Encode};
@@ -42,6 +39,7 @@ use frame_support::{
 	},
 };
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
+use np_runtime::AccountName;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{
 	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
