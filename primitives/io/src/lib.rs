@@ -15,13 +15,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Noir Runtime Shareable types.
+//! I/O host interface for Noir runtime.
 
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod account_name;
-pub use account_name::AccountName;
+use np_crypto::{p256, webauthn};
+use sp_runtime_interface::runtime_interface;
 
-mod universal;
-pub use universal::{UniversalAddress, UniversalSignature, UniversalSigner};
+/// Interfaces for working with crypto related types from within the runtime.
+#[runtime_interface]
+pub trait Crypto {
+	/// Verify P-256 signature.
+	fn p256_verify(sig: &p256::Signature, msg: &[u8], pubkey: &p256::Public) -> bool {
+		p256::Pair::verify_prehashed(sig, &sp_io::hashing::sha2_256(msg), pubkey)
+	}
+
+	/// Verify WebAuthn ES256 signature.
+	fn webauthn_verify(
+		sig: &webauthn::Signature,
+		msg: &[u8],
+		pubkey: &webauthn::Public,
+	) -> bool {
+		sig.verify(msg, pubkey)
+	}
+}

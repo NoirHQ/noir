@@ -6,18 +6,34 @@ license = "Apache-2.0"
 repository = "https://github.com/noir-protocol/noir/"
 
 [dependencies]
+array-bytes = { version = "4.1", optional = true }
 codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
 	"derive",
 	"max-encoded-len",
 ] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+serde = { version = "1.0.136", features = ["derive"], optional = true }
+
+# noir
+np-crypto = { version = "0.1.0", default-features = false, path = "../crypto" }
+np-io = { version = "0.1.0", default-features = false, path = "../io" }
+
+# substrate
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 
 [features]
 default = ["std"]
 std = [
+	"array-bytes",
 	"codec/std",
 	"scale-info/std",
+	"serde",
+	"np-crypto/std",
+	"np-io/std",
+	"sp-core/std",
+	"sp-runtime/std",
 	"sp-std/std",
 ]
