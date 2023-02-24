@@ -31,7 +31,9 @@ mod precompiles;
 use codec::{Decode, Encode};
 use fp_rpc::TransactionStatus;
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	crypto::ecdsa::ECDSAExt,
+	parameter_types,
 	traits::{ConstU128, ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, OnTimestampSet},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -58,8 +60,8 @@ use sp_core::{
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable, Get,
-		NumberFor, One, PostDispatchInfoOf, UniqueSaturatedInto,
+		BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable, Get, NumberFor, One,
+		PostDispatchInfoOf, UniqueSaturatedInto,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
 	ApplyExtrinsicResult, ConsensusEngineId, Perbill, Permill,
@@ -223,7 +225,7 @@ impl frame_system::Config for Runtime {
 	/// The aggregated dispatch type that is available for extrinsics.
 	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-	type Lookup = AccountIdLookup<AccountId, AccountName>;
+	type Lookup = AccountAliasRegistry;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Index = Index;
 	/// The index type for blocks.
@@ -260,6 +262,65 @@ impl frame_system::Config for Runtime {
 	/// The set code logic, just the default since we're not a parachain.
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
+}
+
+pub struct TagProvider;
+impl pallet_account_alias_registry::TagProvider<Runtime> for TagProvider {
+	fn tag(id: &AccountId, name: &str) -> Result<u16, ()> {
+		let salt = pallet_timestamp::Pallet::<Runtime>::get() / 86400000u64;
+		Self::tag_inner(id.as_slice(), name, salt)
+	}
+}
+impl TagProvider {
+	fn tag_inner(id: &[u8], name: &str, salt: u64) -> Result<u16, ()> {
+		let hash = (name, id, salt).using_encoded(sp_io::hashing::blake2_256);
+		let mut rand = [0u8; 2];
+		let mut index = 0;
+
+		loop {
+			if index == hash.len() {
+				return Err(())
+			}
+			rand.copy_from_slice(&hash[index..index + 2]);
+			let num = u16::from_be_bytes(rand) % 10000u16;
+			if num > 0 && num < 9999 {
+				return Ok(num)
+			} else {
+				index += 2;
+			}
+		}
+	}
+}
+pub struct EthAddressGenerator;
+impl pallet_account_alias_registry::EthAddressGenerator<Runtime> for EthAddressGenerator {
+	fn generate(id: &AccountId) -> Result<[u8; 20], ()> {
+		Self::generate_inner(id.as_slice())
+	}
+}
+
+impl EthAddressGenerator {
+	fn generate_inner(id: &[u8]) -> Result<[u8; 20], ()> {
+		let public = sp_core::ecdsa::Public::try_from(id)?;
+		public.to_eth_address()
+	}
+}
+
+parameter_types! {
+	pub AccountAliasRegistryDeposit: Balance = deposit(1, 0);
+}
+
+impl pallet_account_alias_registry::Config for Runtime {
+	type Currency = Balances;
+	/// The deposit needed for reserving an index.
+	type Deposit = AccountAliasRegistryDeposit;
+	/// The overarching event type.
+	type RuntimeEvent = RuntimeEvent;
+	/// Weight information for extrinsics in this pallet.
+	type WeightInfo = pallet_account_alias_registry::weights::SubstrateWeight<Runtime>;
+	/// The provider for tag number that discriminates the same name accounts.
+	type TagProvider = TagProvider;
+	/// The generator for ethereum address.
+	type EthAddressGenerator = EthAddressGenerator;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -471,6 +532,7 @@ construct_runtime!(
 		NodeBlock = noir_core_primitives::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
+		AccountAliasRegistry: pallet_account_alias_registry,
 		Aura: pallet_aura,
 		Balances: pallet_balances,
 		BaseFee: pallet_base_fee,
@@ -808,5 +870,32 @@ impl_runtime_apis! {
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
 			opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use sp_runtime::app_crypto::Ss58Codec;
+
+	#[test]
+	fn tag_inner_test() {
+		let now: u64 = 1_676_679_312_000;
+		let id = [0u8; 32];
+		let name = "test";
+		let tag = crate::TagProvider::tag_inner(&id, name, now).unwrap();
+		assert_eq!(tag, 4123);
+	}
+
+	#[test]
+	fn eth_address_generate_inner_test() {
+		let id = sp_core::ecdsa::Public::from_string(
+			"0x0284a1451704b8902fbac6a1e75487ab10bb387f6bd82fd3bb9959d29666f3a404",
+		)
+		.unwrap();
+		let eth_address = crate::EthAddressGenerator::generate_inner(id.0.as_slice()).unwrap();
+		assert_eq!(
+			"[2a, 2b, 37, 90, c3, c3, 07, 89, fa, 02, 42, 9f, 70, 09, d2, 25, 5f, a1, 6d, fe]",
+			format!("{:02x?}", eth_address)
+		);
 	}
 }
