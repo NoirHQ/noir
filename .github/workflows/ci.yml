@@ -24,6 +24,8 @@ jobs:
         components: rustfmt
     - name: Install build dependencies
       run: sudo apt-get install protobuf-compiler
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2.2.1
     - name: Lint
       run: cargo fmt -- --check
     - name: Build
