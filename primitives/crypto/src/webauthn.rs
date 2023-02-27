@@ -17,10 +17,9 @@
 
 //! Simple WebAuthn API.
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sp_core::crypto::ByteArray;
-use sp_runtime_interface::pass_by::{PassByCodec, PassByInner};
+use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::vec::Vec;
 
 use crate::p256;
@@ -31,94 +30,10 @@ use base64ct::{Base64UrlUnpadded as Base64, Encoding};
 use sp_core::hashing::sha2_256;
 
 #[cfg(feature = "std")]
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "std")]
-use sp_core::crypto::Ss58Codec;
+use serde::{Deserialize, Serialize};
 
 /// Webauthn es256 public key.
-#[cfg_attr(feature = "full_crypto", derive(Hash))]
-#[derive(
-	Clone,
-	Copy,
-	Encode,
-	Decode,
-	PassByInner,
-	MaxEncodedLen,
-	TypeInfo,
-	Eq,
-	PartialEq,
-	PartialOrd,
-	Ord,
-)]
-pub struct Public(pub p256::Public);
-
-impl ByteArray for Public {
-	const LEN: usize = p256::Public::LEN;
-}
-
-impl AsRef<[u8]> for Public {
-	fn as_ref(&self) -> &[u8] {
-		self.0.as_ref()
-	}
-}
-
-impl AsMut<[u8]> for Public {
-	fn as_mut(&mut self) -> &mut [u8] {
-		self.0.as_mut()
-	}
-}
-
-impl TryFrom<&[u8]> for Public {
-	type Error = ();
-
-	fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
-		Ok(Self(p256::Public::try_from(data)?))
-	}
-}
-
-#[cfg(feature = "std")]
-impl Ss58Codec for Public {}
-
-#[cfg(feature = "std")]
-impl std::fmt::Display for Public {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		write!(f, "{}", self.to_ss58check())
-	}
-}
-
-impl sp_std::fmt::Debug for Public {
-	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		let s = self.to_ss58check();
-		write!(f, "{} ({}...)", sp_core::hexdisplay::HexDisplay::from(&self.as_ref()), &s[0..8])
-	}
-
-	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
-
-#[cfg(feature = "std")]
-impl Serialize for Public {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: Serializer,
-	{
-		serializer.serialize_str(&self.to_ss58check())
-	}
-}
-
-#[cfg(feature = "std")]
-impl<'de> Deserialize<'de> for Public {
-	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-	where
-		D: Deserializer<'de>,
-	{
-		Public::from_ss58check(&String::deserialize(deserializer)?)
-			.map_err(|e| de::Error::custom(format!("{:?}", e)))
-	}
-}
+pub type Public = p256::Public;
 
 #[cfg(feature = "full_crypto")]
 #[derive(Serialize, Deserialize, Debug)]
@@ -226,7 +141,7 @@ impl Signature {
 		signed_message.extend(sha2_256(&self.client_data_json));
 		match p256::Signature::from_der(&self.signature[..]) {
 			Some(sig) =>
-				p256::Pair::verify_prehashed(&sig, &sha2_256(&signed_message[..]), &pubkey.0),
+				p256::Pair::verify_prehashed(&sig, &sha2_256(&signed_message[..]), &pubkey),
 			None => false,
 		}
 	}
