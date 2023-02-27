@@ -169,5 +169,9 @@ mod tests {
 		assert_eq!("alice#5148", account_name.to_string());
 		let account_name = AccountName(129_445_976_357_405_452_681_402_526_503_014_632_977u128);
 		assert_eq!("abcabcabcabcab#3601", account_name.to_string());
+		let account_name = AccountName(110_369_760_935_936u128);
+		assert_eq!("dave#0000", account_name.to_string());
+		let account_name = AccountName(7_952_979_429_530_055_700_424_299_970_569u128);
+		assert_eq!("daveisalive#0009", account_name.to_string());
 	}
 }

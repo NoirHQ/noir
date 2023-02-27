@@ -28,6 +28,7 @@ pub trait WeightInfo {
   fn claim_account_name() -> Weight;
   fn reclaim_account_name() -> Weight;
   fn claim_k1_address() -> Weight;
+	fn force_claim_account_name() -> Weight;
 }
 
 /// Weights for pallet_account_alias_registy using the Substrate node and recommended hardware.
@@ -53,5 +54,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(50_000_000)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
+	}	
+	// Storage: AccountNames (r:1 w:2), AccountNamesIndex (r:1 w:1)
+	fn force_claim_account_name() -> Weight {
+		// Base fee
+		Weight::from_ref_time(50_000_000)
+			.saturating_add(T::DbWeight::get().reads(2 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}	
 }

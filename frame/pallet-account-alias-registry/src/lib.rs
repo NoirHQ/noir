@@ -24,15 +24,16 @@ pub mod weights;
 
 use crate::weights::WeightInfo;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::traits::{Currency, ReservableCurrency};
 use np_runtime::AccountName;
 pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{LookupError, StaticLookup},
-	MultiAddress,
+	DispatchError, MultiAddress,
 };
 use sp_std::prelude::*;
+
+type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 
 /// A provider for tag number that discriminates the same name accounts.
 pub trait TagProvider<T: Config> {
@@ -43,9 +44,6 @@ pub trait TagProvider<T: Config> {
 pub trait EthAddressGenerator<T: Config> {
 	fn generate(id: &T::AccountId) -> Result<[u8; 20], ()>;
 }
-
-type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[cfg_attr(feature = "std", derive(Hash))]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, MaxEncodedLen, TypeInfo)]
@@ -64,11 +62,6 @@ pub mod pallet {
 	/// The module's config trait.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// The currency trait.
-		type Currency: ReservableCurrency<Self::AccountId>;
-		/// The deposit needed for reserving an index.
-		#[pallet::constant]
-		type Deposit: Get<BalanceOf<Self>>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight information for extrinsics in this pallet.
@@ -100,8 +93,7 @@ pub mod pallet {
 				AccountAlias::AccountName(account_name),
 				|maybe_value| -> DispatchResult {
 					ensure!(maybe_value.is_none(), Error::<T>::InUse);
-					*maybe_value = Some((who.clone(), T::Deposit::get()));
-					T::Currency::reserve(&who, T::Deposit::get())?;
+					*maybe_value = Some(who.clone());
 					Ok(())
 				},
 			)?;
@@ -125,7 +117,7 @@ pub mod pallet {
 				AccountAlias::AccountName(new_account_name),
 				|maybe_value| -> DispatchResult {
 					ensure!(maybe_value.is_none(), Error::<T>::InUse);
-					*maybe_value = Some((who.clone(), T::Deposit::get()));
+					*maybe_value = Some(who.clone());
 					Ok(())
 				},
 			)?;
@@ -143,17 +135,42 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::claim_k1_address())]
 		pub fn claim_k1_address(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			let ethereum_address = T::EthAddressGenerator::generate(&who)
-				.map_err(|_| Error::<T>::FailedEthAddressGeneration)?;
+			let ethereum_address = Self::claim_k1_address_from_id(&who)?;
+			Self::deposit_event(Event::<T>::EthAddressAliased { who, aliased: ethereum_address });
+			Ok(())
+		}
+
+		#[pallet::call_index(3)]
+		#[pallet::weight(T::WeightInfo::force_claim_account_name())]
+		pub fn force_claim_account_name(
+			origin: OriginFor<T>,
+			dest: AccountIdLookupOf<T>,
+			name: Vec<u8>,
+			tag: u16,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			let dest = T::Lookup::lookup(dest)?;
+			ensure!(tag < 10, Error::<T>::NotAllowedTag);
+			let name =
+				sp_std::str::from_utf8(&name[..]).map_err(|_| Error::<T>::InvalidNameFormat)?;
+			let new_account_name =
+				AccountName::new(&name, tag).map_err(|_| Error::<T>::InvalidNameFormat)?;
+			if let Some(past_name) = AccountNamesIndex::<T>::get(&dest) {
+				AccountAliases::<T>::remove(AccountAlias::AccountName(past_name));
+			}
 			AccountAliases::<T>::try_mutate(
-				AccountAlias::EthereumAddress(ethereum_address),
+				AccountAlias::AccountName(new_account_name),
 				|maybe_value| -> DispatchResult {
 					ensure!(maybe_value.is_none(), Error::<T>::InUse);
-					*maybe_value = Some((who.clone(), T::Deposit::get()));
+					*maybe_value = Some(dest.clone());
 					Ok(())
 				},
 			)?;
-			Self::deposit_event(Event::<T>::EthAddressAliased { who, aliased: ethereum_address });
+			AccountNamesIndex::<T>::insert(&dest, new_account_name);
+			Self::deposit_event(Event::<T>::AccountNameForceAliased {
+				who: dest,
+				aliased: new_account_name,
+			});
 			Ok(())
 		}
 	}
@@ -171,6 +188,8 @@ pub mod pallet {
 		},
 		/// An ethereum address was aliased.
 		EthAddressAliased { who: T::AccountId, aliased: [u8; 20] },
+		/// An account name was forcibly aliased.
+		AccountNameForceAliased { who: T::AccountId, aliased: AccountName },
 	}
 
 	#[pallet::error]
@@ -187,11 +206,13 @@ pub mod pallet {
 		FailedTagGeneration,
 		/// Failed to generate ethereum address.
 		FailedEthAddressGeneration,
+		/// Not allowed tag for force_claim.
+		NotAllowedTag,
 	}
 
 	#[pallet::storage]
 	pub type AccountAliases<T: Config> =
-		StorageMap<_, Blake2_128Concat, AccountAlias, (T::AccountId, BalanceOf<T>)>;
+		StorageMap<_, Blake2_128Concat, AccountAlias, T::AccountId>;
 	#[pallet::storage]
 	pub type AccountNamesIndex<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, AccountName>;
@@ -202,7 +223,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Lookup an AccountName to get an Id, if there's one there.
 	pub fn lookup_name(name: AccountName) -> Option<T::AccountId> {
-		AccountAliases::<T>::get(AccountAlias::AccountName(name)).map(|x| x.0)
+		AccountAliases::<T>::get(AccountAlias::AccountName(name)).map(|x| x)
 	}
 
 	/// Lookup an address to get an Id, if there's one there.
@@ -212,6 +233,13 @@ impl<T: Config> Pallet<T> {
 			MultiAddress::Index(i) => Self::lookup_name(i),
 			_ => None,
 		}
+	}
+
+	pub fn claim_k1_address_from_id(who: &T::AccountId) -> Result<[u8; 20], DispatchError> {
+		let ethereum_address = T::EthAddressGenerator::generate(who)
+			.map_err(|_| Error::<T>::FailedEthAddressGeneration)?;
+		AccountAliases::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
+		Ok(ethereum_address)
 	}
 }
 
