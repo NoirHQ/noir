@@ -144,7 +144,7 @@ impl IdentifyAccount for UniversalSigner {
 	fn into_account(self) -> Self::AccountId {
 		match self {
 			Self::P256(k) => k.into(),
-			Self::WebAuthn(k) => k.0.into(),
+			Self::WebAuthn(k) => k.into(),
 		}
 	}
 }
