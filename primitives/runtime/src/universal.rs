@@ -36,6 +36,8 @@ pub mod multicodec {
 	pub const SECP256K1_PUB: [u8; 2] = [0xe7, 0x01];
 	/// Multicodec code for Ed25519 public key. (0xed)
 	pub const ED25519_PUB: [u8; 2] = [0xed, 0x01];
+	/// Multicodec code for Sr25519 public key. (0xef)
+	pub const SR25519_PUB: [u8; 2] = [0xef, 0x01];
 	/// Multicodec code for P-256 public key. (0x1200)
 	pub const P256_PUB: [u8; 2] = [0x80, 0x24];
 }
