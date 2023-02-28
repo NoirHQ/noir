@@ -98,6 +98,16 @@ pub type Address = sp_runtime::MultiAddress<AccountId, AccountName>;
 pub type UncheckedExtrinsic =
 	fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
+/// Constant values used within the runtime.
+pub const MICROUNIT: Balance = 1_000_000;
+pub const MILLIUNIT: Balance = 1_000 * MICROUNIT;
+pub const UNIT: Balance = 1_000 * MILLIUNIT;
+// TODO: Need to set deposit rule.
+/// Charge fee for stored bytes and items.
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+	(items as Balance * UNIT) + (bytes as Balance * 100 * MICROUNIT)
+}
+
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	type SignedInfo = H160;
 
