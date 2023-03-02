@@ -20,6 +20,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use np_crypto::{p256, webauthn};
 use scale_info::TypeInfo;
+use sp_core::ecdsa;
 use sp_runtime::{
 	traits::{IdentifyAccount, Lazy, Verify},
 	RuntimeDebug,
@@ -82,6 +83,15 @@ impl From<p256::Public> for UniversalAddress {
 	}
 }
 
+impl From<ecdsa::Public> for UniversalAddress {
+	fn from(k: ecdsa::Public) -> Self {
+		let mut v: Vec<u8> = Vec::new();
+		v.extend_from_slice(&multicodec::SECP256K1_PUB[..]);
+		v.extend_from_slice(k.as_ref());
+		Self(v)
+	}
+}
+
 #[cfg(feature = "std")]
 impl std::fmt::Display for UniversalAddress {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -109,6 +119,8 @@ pub enum UniversalSignature {
 	P256(p256::Signature),
 	/// A WebAuthn ES256 signature.
 	WebAuthn(webauthn::Signature),
+	/// A Secp256k1 signature.
+	Secp256k1(ecdsa::Signature),
 }
 
 impl Verify for UniversalSignature {
@@ -124,6 +136,16 @@ impl Verify for UniversalSignature {
 				Ok(signer) => np_io::crypto::webauthn_verify(sig, msg.get(), &signer),
 				Err(_) => false,
 			},
+			(Self::Secp256k1(ref sig), who) => match ecdsa::Public::try_from(who.as_ref()) {
+				Ok(signer) => {
+					let m = sp_io::hashing::blake2_256(msg.get());
+					match sp_io::crypto::secp256k1_ecdsa_recover_compressed(sig.as_ref(), &m) {
+						Ok(pubkey) => pubkey == signer.0,
+						_ => false,
+					}
+				},
+				Err(_) => false,
+			},
 		}
 	}
 }
@@ -136,6 +158,8 @@ pub enum UniversalSigner {
 	P256(p256::Public),
 	/// A WebAuthn ES256 identity.
 	WebAuthn(webauthn::Public),
+	/// A secp256k1 identity.
+	Secp256k1(ecdsa::Public),
 }
 
 impl IdentifyAccount for UniversalSigner {
@@ -145,6 +169,7 @@ impl IdentifyAccount for UniversalSigner {
 		match self {
 			Self::P256(k) => k.into(),
 			Self::WebAuthn(k) => k.into(),
+			Self::Secp256k1(k) => k.into(),
 		}
 	}
 }
