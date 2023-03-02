@@ -132,7 +132,7 @@ impl Verify for UniversalSignature {
 				Ok(signer) => np_io::crypto::p256_verify(sig, msg.get(), &signer),
 				Err(_) => false,
 			},
-			(Self::WebAuthn(ref sig), who) => match webauthn::Public::try_from(who.as_ref()) {
+			(Self::WebAuthn(ref sig), who) => match p256::Public::try_from(who.as_ref()) {
 				Ok(signer) => np_io::crypto::webauthn_verify(sig, msg.get(), &signer),
 				Err(_) => false,
 			},
@@ -156,8 +156,6 @@ impl Verify for UniversalSignature {
 pub enum UniversalSigner {
 	/// A P-256 identity.
 	P256(p256::Public),
-	/// A WebAuthn ES256 identity.
-	WebAuthn(webauthn::Public),
 	/// A secp256k1 identity.
 	Secp256k1(ecdsa::Public),
 }
@@ -168,7 +166,6 @@ impl IdentifyAccount for UniversalSigner {
 	fn into_account(self) -> Self::AccountId {
 		match self {
 			Self::P256(k) => k.into(),
-			Self::WebAuthn(k) => k.into(),
 			Self::Secp256k1(k) => k.into(),
 		}
 	}
@@ -177,5 +174,11 @@ impl IdentifyAccount for UniversalSigner {
 impl From<p256::Public> for UniversalSigner {
 	fn from(k: p256::Public) -> Self {
 		Self::P256(k)
+	}
+}
+
+impl From<ecdsa::Public> for UniversalSigner {
+	fn from(k: ecdsa::Public) -> Self {
+		Self::Secp256k1(k)
 	}
 }
