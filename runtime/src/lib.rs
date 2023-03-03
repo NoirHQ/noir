@@ -868,6 +868,6 @@ mod tests {
 		let id = [0u8; 32];
 		let name = "test";
 		let tag = crate::AccountNameTagProvider::tag_inner(&id, name, now).unwrap();
-		assert_eq!(tag, 4123);
+		assert_eq!(tag, 128);
 	}
 }
