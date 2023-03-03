@@ -217,7 +217,7 @@ pub struct OnNewAccount;
 impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		// TODO: check who is secp256k1 id. if who is secp256k1, alias ethereum address for id.
-		let _ = pallet_account_alias_registry::Pallet::<Runtime>::claim_k1_address_from_id(who);
+		let _ = pallet_account_alias_registry::Pallet::<Runtime>::assign_secp256k1_aliases(who);
 	}
 }
 impl frame_system::Config for Runtime {
@@ -271,44 +271,31 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-pub struct TagProvider;
-impl pallet_account_alias_registry::TagProvider<Runtime> for TagProvider {
+pub struct AccountNameTagProvider;
+impl pallet_account_alias_registry::AccountNameTagProvider<Runtime> for AccountNameTagProvider {
 	fn tag(id: &AccountId, name: &str) -> Result<u16, ()> {
-		let salt = pallet_timestamp::Pallet::<Runtime>::get() / 86400000u64;
+		let salt = pallet_timestamp::Pallet::<Runtime>::get() >> 26u64;
 		Self::tag_inner(id.as_slice(), name, salt)
 	}
 }
-impl TagProvider {
+impl AccountNameTagProvider {
 	fn tag_inner(id: &[u8], name: &str, salt: u64) -> Result<u16, ()> {
-		let hash = (name, id, salt).using_encoded(sp_io::hashing::blake2_256);
-		let mut rand = [0u8; 2];
-		let mut index = 0;
+		let hash = (id, name, salt).using_encoded(sp_io::hashing::blake2_256);
 
-		loop {
-			if index == hash.len() {
-				return Err(())
-			}
-			rand.copy_from_slice(&hash[index..index + 2]);
-			let num = u16::from_be_bytes(rand) % 10000u16;
+		for index in (0..=(hash.len() - 2)).step_by(2) {
+			let num = u16::from_be_bytes(hash[index..index + 2].try_into().unwrap()) % 10000u16;
 			if num >= 10 {
 				return Ok(num)
-			} else {
-				index += 2;
 			}
 		}
-	}
-}
-pub struct EthAddressGenerator;
-impl pallet_account_alias_registry::EthAddressGenerator<Runtime> for EthAddressGenerator {
-	fn generate(id: &AccountId) -> Result<[u8; 20], ()> {
-		Self::generate_inner(id.as_slice())
+		Err(())
 	}
 }
 
-impl EthAddressGenerator {
-	fn generate_inner(id: &[u8]) -> Result<[u8; 20], ()> {
-		let public = sp_core::ecdsa::Public::try_from(id)?;
-		public.to_eth_address()
+pub struct AccountIdToEthAddress;
+impl pallet_account_alias_registry::AccountIdToEthAddress<Runtime> for AccountIdToEthAddress {
+	fn convert(id: &AccountId) -> Result<[u8; 20], ()> {
+		sp_core::ecdsa::Public::try_from(id.as_slice())?.to_eth_address()
 	}
 }
 
@@ -318,9 +305,9 @@ impl pallet_account_alias_registry::Config for Runtime {
 	/// Weight information for extrinsics in this pallet.
 	type WeightInfo = pallet_account_alias_registry::weights::SubstrateWeight<Runtime>;
 	/// The provider for tag number that discriminates the same name accounts.
-	type TagProvider = TagProvider;
+	type AccountNameTagProvider = AccountNameTagProvider;
 	/// The generator for ethereum address.
-	type EthAddressGenerator = EthAddressGenerator;
+	type AccountIdToEthAddress = AccountIdToEthAddress;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -875,27 +862,12 @@ impl_runtime_apis! {
 
 #[cfg(test)]
 mod tests {
-	use sp_runtime::app_crypto::Ss58Codec;
-
 	#[test]
 	fn tag_inner_test() {
 		let now: u64 = 1_676_679_312_000;
 		let id = [0u8; 32];
 		let name = "test";
-		let tag = crate::TagProvider::tag_inner(&id, name, now).unwrap();
+		let tag = crate::AccountNameTagProvider::tag_inner(&id, name, now).unwrap();
 		assert_eq!(tag, 4123);
-	}
-
-	#[test]
-	fn eth_address_generate_inner_test() {
-		let id = sp_core::ecdsa::Public::from_string(
-			"0x0284a1451704b8902fbac6a1e75487ab10bb387f6bd82fd3bb9959d29666f3a404",
-		)
-		.unwrap();
-		let eth_address = crate::EthAddressGenerator::generate_inner(id.0.as_slice()).unwrap();
-		assert_eq!(
-			"[2a, 2b, 37, 90, c3, c3, 07, 89, fa, 02, 42, 9f, 70, 09, d2, 25, 5f, a1, 6d, fe]",
-			format!("{:02x?}", eth_address)
-		);
 	}
 }
