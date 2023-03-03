@@ -33,7 +33,7 @@ pub type Hash = sp_core::H256;
 /// Balance of an account.
 pub type Balance = u128;
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = np_runtime::UniversalSignature;
+pub type Signature = sp_runtime::MultiSignature;
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
