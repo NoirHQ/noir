@@ -1,0 +1,19 @@
+[package]
+name = "np-io"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/noir-protocol/noir/"
+
+[dependencies]
+np-crypto = { version = "0.1.0", default-features = false, path = "../crypto" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"np-crypto/std",
+	"sp-io/std",
+	"sp-runtime-interface/std",
+]

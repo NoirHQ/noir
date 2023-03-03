@@ -5,6 +5,7 @@ members = [
 	"core-primitives",
 	"node",
 	"primitives/crypto",
+	"primitives/io",
 	"primitives/runtime",
 	"runtime",
 ]
