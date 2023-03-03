@@ -102,7 +102,7 @@ impl sp_std::fmt::Debug for AccountName {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
 		Ok(())
 	}
 }
