@@ -32,11 +32,7 @@ pub trait Crypto {
 	}
 
 	/// Verify WebAuthn ES256 signature.
-	fn webauthn_verify(
-		sig: &webauthn::Signature,
-		msg: &[u8],
-		pubkey: &webauthn::Public,
-	) -> bool {
+	fn webauthn_verify(sig: &webauthn::Signature, msg: &[u8], pubkey: &webauthn::Public) -> bool {
 		sig.verify(msg, pubkey)
 	}
 }
