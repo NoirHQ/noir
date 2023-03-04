@@ -136,10 +136,10 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::assign_all_available_aliases())]
-		pub fn assign_all_available_aliases(origin: OriginFor<T>) -> DispatchResult {
+		#[pallet::weight(T::WeightInfo::update_all_available_aliases())]
+		pub fn update_all_available_aliases(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			Self::assign_secp256k1_aliases(&who)?;
+			Self::update_secp256k1_aliases(&who)?;
 			Ok(())
 		}
 
@@ -222,21 +222,12 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	// PUBLIC IMMUTABLES
 
-	/// Lookup an AccountName to get an Id, if exists.
-	pub fn lookup_name(name: AccountName) -> Option<T::AccountId> {
-		AccountAliases::<T>::get(AccountAlias::AccountName(name)).map(|x| x)
+	/// Lookup an AccountAlias to get an Id, if exists.
+	pub fn lookup(alias: &AccountAlias) -> Option<T::AccountId> {
+		AccountAliases::<T>::get(alias).map(|x| x)
 	}
 
-	/// Lookup an address to get an Id, if exists.
-	pub fn lookup_address(a: MultiAddress<T::AccountId, AccountName>) -> Option<T::AccountId> {
-		match a {
-			MultiAddress::Id(i) => Some(i),
-			MultiAddress::Index(i) => Self::lookup_name(i),
-			_ => None,
-		}
-	}
-
-	pub fn assign_secp256k1_aliases(who: &T::AccountId) -> Result<(), DispatchError> {
+	pub fn update_secp256k1_aliases(who: &T::AccountId) -> Result<(), DispatchError> {
 		let ethereum_address = T::AccountIdToEthAddress::convert(who)
 			.map_err(|_| Error::<T>::EthAddressConversionFailed)?;
 		AccountAliases::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
@@ -253,7 +244,12 @@ impl<T: Config> StaticLookup for Pallet<T> {
 	type Target = T::AccountId;
 
 	fn lookup(a: Self::Source) -> Result<Self::Target, LookupError> {
-		Self::lookup_address(a).ok_or(LookupError)
+		match a {
+			MultiAddress::Id(id) => Ok(id),
+			MultiAddress::Index(name) =>
+				Self::lookup(&AccountAlias::AccountName(name)).ok_or(LookupError),
+			_ => Err(LookupError),
+		}
 	}
 
 	fn unlookup(a: Self::Target) -> Self::Source {

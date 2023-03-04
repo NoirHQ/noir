@@ -20,7 +20,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use np_crypto::{p256, webauthn};
 use scale_info::TypeInfo;
-use sp_core::ecdsa;
+use sp_core::{ecdsa, sr25519, H256};
 use sp_runtime::{
 	traits::{IdentifyAccount, Lazy, Verify},
 	RuntimeDebug,
@@ -41,6 +41,8 @@ pub mod multicodec {
 	pub const SR25519_PUB: [u8; 2] = [0xef, 0x01];
 	/// Multicodec code for P-256 public key. (0x1200)
 	pub const P256_PUB: [u8; 2] = [0x80, 0x24];
+	/// Multicodec code for Blake2b-256 hash. (0xb220 + length(32))
+	pub const BLAKE2B_256: [u8; 4] = [0xa0, 0xe4, 0x02, 0x20];
 }
 
 /// A universal representation of a public key encoded with multicodec.
@@ -92,6 +94,47 @@ impl From<ecdsa::Public> for UniversalAddress {
 	}
 }
 
+impl From<H256> for UniversalAddress {
+	fn from(hash: H256) -> Self {
+		let mut v: Vec<u8> = Vec::new();
+		v.extend_from_slice(&multicodec::BLAKE2B_256[..]);
+		v.extend_from_slice(hash.as_ref());
+		Self(v)
+	}
+}
+
+impl From<sr25519::Public> for UniversalAddress {
+	fn from(k: sr25519::Public) -> Self {
+		let mut v: Vec<u8> = Vec::new();
+		v.extend_from_slice(&multicodec::SR25519_PUB[..]);
+		v.extend_from_slice(k.as_ref());
+		Self(v)
+	}
+}
+
+impl TryInto<p256::Public> for UniversalAddress {
+	type Error = ();
+
+	fn try_into(self) -> Result<p256::Public, Self::Error> {
+		match &self.0[0..2].try_into().unwrap() {
+			&multicodec::P256_PUB => Ok(p256::Public::try_from(&self.0[2..]).map_err(|_| ())?),
+			_ => Err(()),
+		}
+	}
+}
+
+impl TryInto<ecdsa::Public> for UniversalAddress {
+	type Error = ();
+
+	fn try_into(self) -> Result<ecdsa::Public, Self::Error> {
+		match &self.0[0..2].try_into().unwrap() {
+			&multicodec::SECP256K1_PUB =>
+				Ok(ecdsa::Public::try_from(&self.0[2..]).map_err(|_| ())?),
+			_ => Err(()),
+		}
+	}
+}
+
 #[cfg(feature = "std")]
 impl std::fmt::Display for UniversalAddress {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -121,6 +164,8 @@ pub enum UniversalSignature {
 	WebAuthn(webauthn::Signature),
 	/// A Secp256k1 signature.
 	Secp256k1(ecdsa::Signature),
+	/// A Sr25519 signature.
+	Sr25519(sr25519::Signature),
 }
 
 impl Verify for UniversalSignature {
@@ -146,6 +191,10 @@ impl Verify for UniversalSignature {
 				},
 				Err(_) => false,
 			},
+			(Self::Sr25519(ref sig), who) => match sr25519::Public::try_from(who.as_ref()) {
+				Ok(signer) => sig.verify(msg, &signer),
+				Err(()) => false,
+			},
 		}
 	}
 }
@@ -158,6 +207,8 @@ pub enum UniversalSigner {
 	P256(p256::Public),
 	/// A secp256k1 identity.
 	Secp256k1(ecdsa::Public),
+	/// A sr25519 identity.
+	Sr25519(sr25519::Public),
 }
 
 impl IdentifyAccount for UniversalSigner {
@@ -167,6 +218,7 @@ impl IdentifyAccount for UniversalSigner {
 		match self {
 			Self::P256(k) => k.into(),
 			Self::Secp256k1(k) => k.into(),
+			Self::Sr25519(k) => k.into(),
 		}
 	}
 }
@@ -180,5 +232,11 @@ impl From<p256::Public> for UniversalSigner {
 impl From<ecdsa::Public> for UniversalSigner {
 	fn from(k: ecdsa::Public) -> Self {
 		Self::Secp256k1(k)
+	}
+}
+
+impl From<sr25519::Public> for UniversalSigner {
+	fn from(k: sr25519::Public) -> Self {
+		Self::Sr25519(k)
 	}
 }
