@@ -240,7 +240,10 @@ impl<T: Config> Pallet<T> {
 		let ethereum_address = T::AccountIdToEthAddress::convert(who)
 			.map_err(|_| Error::<T>::EthAddressConversionFailed)?;
 		AccountAliases::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
-		Self::deposit_event(Event::<T>::EthAddressAssigned { who: who.clone(), address: ethereum_address });
+		Self::deposit_event(Event::<T>::EthAddressAssigned {
+			who: who.clone(),
+			address: ethereum_address,
+		});
 		Ok(())
 	}
 }
