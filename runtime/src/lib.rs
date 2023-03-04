@@ -271,14 +271,14 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-pub struct AccountNameTagProvider;
-impl pallet_account_alias_registry::AccountNameTagProvider<Runtime> for AccountNameTagProvider {
+pub struct AccountNameTagGenerator;
+impl pallet_account_alias_registry::AccountNameTagGenerator<Runtime> for AccountNameTagGenerator {
 	fn tag(id: &AccountId, name: &str) -> Result<u16, ()> {
 		let salt = pallet_timestamp::Pallet::<Runtime>::get() >> 26u64;
-		Self::tag_inner(id.as_slice(), name, salt)
+		Self::tag_inner(id.as_ref(), name, salt)
 	}
 }
-impl AccountNameTagProvider {
+impl AccountNameTagGenerator {
 	fn tag_inner(id: &[u8], name: &str, salt: u64) -> Result<u16, ()> {
 		let hash = (id, name, salt).using_encoded(sp_io::hashing::blake2_256);
 
@@ -295,7 +295,7 @@ impl AccountNameTagProvider {
 pub struct AccountIdToEthAddress;
 impl pallet_account_alias_registry::AccountIdToEthAddress<Runtime> for AccountIdToEthAddress {
 	fn convert(id: &AccountId) -> Result<[u8; 20], ()> {
-		sp_core::ecdsa::Public::try_from(id.as_slice())?.to_eth_address()
+		sp_core::ecdsa::Public::try_from(id.as_ref())?.to_eth_address()
 	}
 }
 
@@ -304,8 +304,8 @@ impl pallet_account_alias_registry::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	/// Weight information for extrinsics in this pallet.
 	type WeightInfo = pallet_account_alias_registry::weights::SubstrateWeight<Runtime>;
-	/// The provider for tag number that discriminates the same name accounts.
-	type AccountNameTagProvider = AccountNameTagProvider;
+	/// The generator for tag number that discriminates the same name accounts.
+	type AccountNameTagGenerator = AccountNameTagGenerator;
 	/// The generator for ethereum address.
 	type AccountIdToEthAddress = AccountIdToEthAddress;
 }
@@ -867,7 +867,7 @@ mod tests {
 		let now: u64 = 1_676_679_312_000;
 		let id = [0u8; 32];
 		let name = "test";
-		let tag = crate::AccountNameTagProvider::tag_inner(&id, name, now).unwrap();
+		let tag = crate::AccountNameTagGenerator::tag_inner(&id, name, now).unwrap();
 		assert_eq!(tag, 128);
 	}
 }
