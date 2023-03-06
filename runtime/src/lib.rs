@@ -26,6 +26,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod evm_compat;
 mod precompiles;
 
 use codec::{Decode, Encode};
@@ -43,9 +44,7 @@ use frame_support::{
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
 use np_runtime::AccountName;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
-use pallet_evm::{
-	Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
-};
+use pallet_evm::{Account as EVMAccount, FeeCalculator, Runner};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -217,7 +216,7 @@ pub struct OnNewAccount;
 impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		// TODO: check who is secp256k1 id. if who is secp256k1, alias ethereum address for id.
-		let _ = pallet_account_alias_registry::Pallet::<Runtime>::assign_secp256k1_aliases(who);
+		let _ = pallet_account_alias_registry::Pallet::<Runtime>::update_secp256k1_aliases(who);
 	}
 }
 impl frame_system::Config for Runtime {
@@ -408,9 +407,9 @@ impl pallet_evm::Config for Runtime {
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressTruncated;
-	type WithdrawOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+	type CallOrigin = evm_compat::EnsureAddressHashed<AccountId>;
+	type WithdrawOrigin = evm_compat::EnsureAddressHashed<AccountId>;
+	type AddressMapping = evm_compat::HashedAddressMapping<Self, BlakeTwo256>;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	/// Precompiles associated with this EVM engine.
