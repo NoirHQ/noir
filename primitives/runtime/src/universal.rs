@@ -272,7 +272,10 @@ mod tests {
 
 	#[test]
 	fn universal_address_kind() {
-		let k = array_bytes::hex2bytes("023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df").unwrap();
+		let k = array_bytes::hex2bytes(
+			"023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df",
+		)
+		.unwrap();
 		let k = ecdsa::Public::try_from(&k[..]).unwrap();
 		let ua = UniversalAddress::from(k);
 		assert_eq!(ua.kind(), UniversalAddressKind::Secp256k1);
