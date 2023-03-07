@@ -30,6 +30,7 @@ mod compat;
 mod precompiles;
 
 use codec::{Decode, Encode};
+use fp_ethereum::TransactionValidationError;
 use fp_rpc::TransactionStatus;
 use frame_support::{
 	construct_runtime,
@@ -62,7 +63,9 @@ use sp_runtime::{
 		BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable, Get, NumberFor, One,
 		PostDispatchInfoOf, UniqueSaturatedInto,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+	},
 	ApplyExtrinsicResult, ConsensusEngineId, Perbill, Permill,
 };
 use sp_std::{marker::PhantomData, prelude::*};
@@ -110,7 +113,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 }
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
-	type SignedInfo = H160;
+	type SignedInfo = AccountId;
 
 	fn is_self_contained(&self) -> bool {
 		match self {
@@ -121,7 +124,22 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 
 	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
 		match self {
-			RuntimeCall::Ethereum(call) => call.check_self_contained(),
+			RuntimeCall::Ethereum(call) =>
+				if let transact { transaction } = call {
+					let check = || {
+						let origin = compat::ethereum::recover_key(transaction)
+							.map(|k| Self::SignedInfo::from(k))
+							.ok_or(InvalidTransaction::Custom(
+								TransactionValidationError::InvalidSignature as u8,
+							))?;
+
+						Ok(origin)
+					};
+
+					Some(check())
+				} else {
+					None
+				},
 			_ => None,
 		}
 	}
@@ -133,7 +151,8 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		len: usize,
 	) -> Option<TransactionValidity> {
 		match self {
-			RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+			RuntimeCall::Ethereum(call) =>
+				call.validate_self_contained(&info.to_eth_address().unwrap(), dispatch_info, len),
 			_ => None,
 		}
 	}
@@ -145,8 +164,11 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
 		match self {
-			RuntimeCall::Ethereum(call) =>
-				call.pre_dispatch_self_contained(info, dispatch_info, len),
+			RuntimeCall::Ethereum(call) => call.pre_dispatch_self_contained(
+				&info.to_eth_address().unwrap(),
+				dispatch_info,
+				len,
+			),
 			_ => None,
 		}
 	}
@@ -158,7 +180,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		match self {
 			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) =>
 				Some(call.dispatch(RuntimeOrigin::from(
-					pallet_ethereum::RawOrigin::EthereumTransaction(info),
+					pallet_ethereum::RawOrigin::EthereumTransaction(info.to_eth_address().unwrap()),
 				))),
 			_ => None,
 		}

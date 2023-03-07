@@ -18,4 +18,5 @@
 
 //! Noir runtime compatibility adapters.
 
+pub mod ethereum;
 pub mod evm;
