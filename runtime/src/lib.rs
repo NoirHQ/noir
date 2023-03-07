@@ -42,7 +42,7 @@ use frame_support::{
 	},
 };
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
-use np_runtime::AccountName;
+use np_runtime::{AccountName, UniversalAddressKind};
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, FeeCalculator, Runner};
 use pallet_grandpa::{
@@ -215,8 +215,9 @@ parameter_types! {
 pub struct OnNewAccount;
 impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
-		// TODO: check who is secp256k1 id. if who is secp256k1, alias ethereum address for id.
-		let _ = pallet_account_alias_registry::Pallet::<Runtime>::update_secp256k1_aliases(who);
+		if who.kind() == UniversalAddressKind::Secp256k1 {
+			let _ = pallet_account_alias_registry::Pallet::<Runtime>::update_secp256k1_aliases(who);
+		}
 	}
 }
 impl frame_system::Config for Runtime {
@@ -294,7 +295,7 @@ impl AccountNameTagGenerator {
 pub struct AccountIdToEthAddress;
 impl pallet_account_alias_registry::AccountIdToEthAddress<Runtime> for AccountIdToEthAddress {
 	fn convert(id: &AccountId) -> Result<[u8; 20], ()> {
-		sp_core::ecdsa::Public::try_from(id.as_ref())?.to_eth_address()
+		sp_core::ecdsa::Public::try_from(&id.0[2..])?.to_eth_address()
 	}
 }
 

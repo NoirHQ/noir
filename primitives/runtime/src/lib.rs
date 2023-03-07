@@ -24,4 +24,4 @@ mod account_name;
 pub use account_name::AccountName;
 
 mod universal;
-pub use universal::{UniversalAddress, UniversalSignature, UniversalSigner};
+pub use universal::{UniversalAddress, UniversalAddressKind, UniversalSignature, UniversalSigner};
