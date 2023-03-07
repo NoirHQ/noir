@@ -20,7 +20,7 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use np_crypto::{p256, webauthn};
 use scale_info::TypeInfo;
-use sp_core::{ecdsa, sr25519, H256};
+use sp_core::{ecdsa, sr25519, H160, H256};
 use sp_runtime::{
 	traits::{IdentifyAccount, Lazy, Verify},
 	RuntimeDebug,
@@ -45,14 +45,19 @@ pub mod multicodec {
 	pub const BLAKE2B_256: [u8; 4] = [0xa0, 0xe4, 0x02, 0x20];
 }
 
-/// The type of public key that universal address contains
+/// The type of public key that universal address contains.
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Clone, PartialEq, Eq)]
 pub enum UniversalAddressKind {
+	/// Unknown public key type. (Invalid)
 	Unknown,
+	/// P256 public key type.
 	P256,
+	/// Secp256k1 public key type.
 	Secp256k1,
+	/// Sr25519 public key type.
 	Sr25519,
+	/// BLAKE2b-256 hash value address for non-verifiable address.
 	Blake2b256,
 }
 
@@ -62,7 +67,7 @@ pub enum UniversalAddressKind {
 pub struct UniversalAddress(pub Vec<u8>);
 
 impl UniversalAddress {
-	/// Get the type of public key that contains
+	/// Get the type of public key that contains.
 	pub fn kind(&self) -> UniversalAddressKind {
 		match &self.0[0..4] {
 			[0xe7, 0x01, ..] => UniversalAddressKind::Secp256k1,
@@ -71,6 +76,18 @@ impl UniversalAddress {
 			[0x80, 0x24, ..] => UniversalAddressKind::P256,
 			[0xa0, 0xe4, 0x02, 0x20] => UniversalAddressKind::Blake2b256,
 			_ => UniversalAddressKind::Unknown,
+		}
+	}
+
+	/// Convert to ethereum address, if available.
+	pub fn to_eth_address(&self) -> Option<H160> {
+		match self.kind() {
+			UniversalAddressKind::Secp256k1 => {
+				let pubkey =
+					np_io::crypto::secp256k1_pubkey_serialize(&self.0[2..].try_into().unwrap())?;
+				Some(H160::from_slice(&sp_io::hashing::keccak_256(&pubkey)[12..]))
+			},
+			_ => None,
 		}
 	}
 }
