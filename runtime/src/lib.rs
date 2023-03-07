@@ -26,7 +26,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-mod evm_compat;
+mod compat;
 mod precompiles;
 
 use codec::{Decode, Encode};
@@ -408,9 +408,9 @@ impl pallet_evm::Config for Runtime {
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
-	type CallOrigin = evm_compat::EnsureAddressHashed<AccountId>;
-	type WithdrawOrigin = evm_compat::EnsureAddressHashed<AccountId>;
-	type AddressMapping = evm_compat::HashedAddressMapping<Self, BlakeTwo256>;
+	type CallOrigin = compat::evm::EnsureAddressHashed<AccountId>;
+	type WithdrawOrigin = compat::evm::EnsureAddressHashed<AccountId>;
+	type AddressMapping = compat::evm::HashedAddressMapping<Self, BlakeTwo256>;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	/// Precompiles associated with this EVM engine.
