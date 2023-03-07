@@ -36,6 +36,7 @@ fp-storage = { git = "https://github.com/paritytech/frontier", branch = "polkado
 # noir
 noir-core-primitives = { version = "0.1.0", default-features = false, path = "../core-primitives" }
 noir-runtime = { version = "0.1.0", default-features = false, path = "../runtime" }
+np-io = { version = "0.1.0", default-features = false, path = "../primitives/io" }
 
 # substrate
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }

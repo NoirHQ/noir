@@ -32,7 +32,7 @@ pub type FullClient<RuntimeApi, Executor> =
 
 pub struct TemplateRuntimeExecutor;
 impl NativeExecutionDispatch for TemplateRuntimeExecutor {
-	type ExtendHostFunctions = ();
+	type ExtendHostFunctions = np_io::crypto::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		noir_runtime::api::dispatch(method, data)
