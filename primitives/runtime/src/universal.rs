@@ -45,10 +45,35 @@ pub mod multicodec {
 	pub const BLAKE2B_256: [u8; 4] = [0xa0, 0xe4, 0x02, 0x20];
 }
 
+/// The type of public key that universal address contains
+#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Clone, PartialEq, Eq)]
+pub enum UniversalAddressKind {
+	Unknown,
+	P256,
+	Secp256k1,
+	Sr25519,
+	Blake2b256,
+}
+
 /// A universal representation of a public key encoded with multicodec.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Serialize, Deserialize))]
 pub struct UniversalAddress(pub Vec<u8>);
+
+impl UniversalAddress {
+	/// Get the type of public key that contains
+	pub fn kind(&self) -> UniversalAddressKind {
+		match &self.0[0..4] {
+			[0xe7, 0x01, ..] => UniversalAddressKind::Secp256k1,
+			// [0xed, 0x01, ..] => UniversalAddressKind::Ed25519,
+			[0xef, 0x01, ..] => UniversalAddressKind::Sr25519,
+			[0x80, 0x24, ..] => UniversalAddressKind::P256,
+			[0xa0, 0xe4, 0x02, 0x20] => UniversalAddressKind::Blake2b256,
+			_ => UniversalAddressKind::Unknown,
+		}
+	}
+}
 
 impl AsRef<[u8]> for UniversalAddress {
 	fn as_ref(&self) -> &[u8] {
@@ -238,5 +263,21 @@ impl From<ecdsa::Public> for UniversalSigner {
 impl From<sr25519::Public> for UniversalSigner {
 	fn from(k: sr25519::Public) -> Self {
 		Self::Sr25519(k)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn universal_address_kind() {
+		let k = array_bytes::hex2bytes(
+			"023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df",
+		)
+		.unwrap();
+		let k = ecdsa::Public::try_from(&k[..]).unwrap();
+		let ua = UniversalAddress::from(k);
+		assert_eq!(ua.kind(), UniversalAddressKind::Secp256k1);
 	}
 }
