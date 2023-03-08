@@ -27,6 +27,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 mod compat;
+use compat::ethereum::TransactionExt;
 mod precompiles;
 
 use codec::{Decode, Encode};
@@ -127,11 +128,12 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 			RuntimeCall::Ethereum(call) =>
 				if let transact { transaction } = call {
 					let check = || {
-						let origin = compat::ethereum::recover_key(transaction)
+						let origin = transaction
+							.recover_key()
 							.map(|k| Self::SignedInfo::from(k))
 							.ok_or(InvalidTransaction::Custom(
-								TransactionValidationError::InvalidSignature as u8,
-							))?;
+							TransactionValidationError::InvalidSignature as u8,
+						))?;
 
 						Ok(origin)
 					};

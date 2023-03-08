@@ -76,3 +76,14 @@ where
 		hash.into()
 	}
 }
+
+/*
+pub fn migrate_account(address: H160, to: AccountId) -> Result<(), ()> {
+	let mut data = [0u8; 24];
+	data[0..4].copy_from_slice(b"evm:");
+	data[4..24].copy_from_slice(&address[..]);
+	let hash = H::hash(&data);
+
+	Ok(())
+}
+*/

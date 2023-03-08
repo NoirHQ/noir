@@ -21,30 +21,51 @@
 use pallet_ethereum::Transaction;
 use sp_core::ecdsa;
 
-pub fn recover_key(transaction: &Transaction) -> Option<ecdsa::Public> {
-	let mut sig = [0u8; 65];
-	let mut msg = [0u8; 32];
-	match transaction {
-		Transaction::Legacy(t) => {
-			sig[0..32].copy_from_slice(&t.signature.r()[..]);
-			sig[32..64].copy_from_slice(&t.signature.s()[..]);
-			sig[64] = t.signature.standard_v();
-			msg.copy_from_slice(&ethereum::LegacyTransactionMessage::from(t.clone()).hash()[..]);
-		},
-		Transaction::EIP2930(t) => {
-			sig[0..32].copy_from_slice(&t.r[..]);
-			sig[32..64].copy_from_slice(&t.s[..]);
-			sig[64] = t.odd_y_parity as u8;
-			msg.copy_from_slice(&ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..]);
-		},
-		Transaction::EIP1559(t) => {
-			sig[0..32].copy_from_slice(&t.r[..]);
-			sig[32..64].copy_from_slice(&t.s[..]);
-			sig[64] = t.odd_y_parity as u8;
-			msg.copy_from_slice(&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..]);
-		},
+pub trait TransactionExt {
+	fn recover_key(&self) -> Option<ecdsa::Public>;
+	fn nonce(&self) -> u64;
+}
+
+impl TransactionExt for Transaction {
+	fn recover_key(&self) -> Option<ecdsa::Public> {
+		let mut sig = [0u8; 65];
+		let mut msg = [0u8; 32];
+		match self {
+			Transaction::Legacy(t) => {
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
+				sig[64] = t.signature.standard_v();
+				msg.copy_from_slice(
+					&ethereum::LegacyTransactionMessage::from(t.clone()).hash()[..],
+				);
+			},
+			Transaction::EIP2930(t) => {
+				sig[0..32].copy_from_slice(&t.r[..]);
+				sig[32..64].copy_from_slice(&t.s[..]);
+				sig[64] = t.odd_y_parity as u8;
+				msg.copy_from_slice(
+					&ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..],
+				);
+			},
+			Transaction::EIP1559(t) => {
+				sig[0..32].copy_from_slice(&t.r[..]);
+				sig[32..64].copy_from_slice(&t.s[..]);
+				sig[64] = t.odd_y_parity as u8;
+				msg.copy_from_slice(
+					&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..],
+				);
+			},
+		}
+		sp_io::crypto::secp256k1_ecdsa_recover_compressed(&sig, &msg)
+			.map(|k| ecdsa::Public(k))
+			.ok()
 	}
-	sp_io::crypto::secp256k1_ecdsa_recover_compressed(&sig, &msg)
-		.map(|k| ecdsa::Public(k))
-		.ok()
+
+	fn nonce(&self) -> u64 {
+		match self {
+			Transaction::Legacy(t) => t.nonce.as_u64(),
+			Transaction::EIP2930(t) => t.nonce.as_u64(),
+			Transaction::EIP1559(t) => t.nonce.as_u64(),
+		}
+	}
 }
