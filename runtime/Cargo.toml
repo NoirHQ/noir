@@ -68,6 +68,7 @@ std = [
   "codec/std",
   "scale-info/std",
   "ethereum/std",
+  "fp-ethereum/std",
   "fp-rpc/std",
   "fp-self-contained/std",
   "pallet-base-fee/std",
