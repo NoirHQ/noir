@@ -26,16 +26,21 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-mod evm_compat;
+mod compat;
+use compat::ethereum::TransactionExt;
 mod precompiles;
 
 use codec::{Decode, Encode};
+use fp_ethereum::TransactionValidationError;
 use fp_rpc::TransactionStatus;
 use frame_support::{
 	construct_runtime,
 	crypto::ecdsa::ECDSAExt,
 	parameter_types,
-	traits::{ConstU128, ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, OnTimestampSet},
+	traits::{
+		tokens::fungible, ConstU128, ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem,
+		OnTimestampSet,
+	},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
 		IdentityFee, Weight,
@@ -44,7 +49,7 @@ use frame_support::{
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
 use np_runtime::{AccountName, UniversalAddressKind};
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
-use pallet_evm::{Account as EVMAccount, FeeCalculator, Runner};
+use pallet_evm::{Account as EVMAccount, AddressMapping, FeeCalculator, Runner};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -62,7 +67,10 @@ use sp_runtime::{
 		BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable, Get, NumberFor, One,
 		PostDispatchInfoOf, UniqueSaturatedInto,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+		UnknownTransaction,
+	},
 	ApplyExtrinsicResult, ConsensusEngineId, Perbill, Permill,
 };
 use sp_std::{marker::PhantomData, prelude::*};
@@ -110,7 +118,7 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 }
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
-	type SignedInfo = H160;
+	type SignedInfo = AccountId;
 
 	fn is_self_contained(&self) -> bool {
 		match self {
@@ -121,7 +129,23 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 
 	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
 		match self {
-			RuntimeCall::Ethereum(call) => call.check_self_contained(),
+			RuntimeCall::Ethereum(call) =>
+				if let transact { transaction } = call {
+					let check = || {
+						let origin = transaction
+							.recover_key()
+							.map(|k| Self::SignedInfo::from(k))
+							.ok_or(InvalidTransaction::Custom(
+							TransactionValidationError::InvalidSignature as u8,
+						))?;
+
+						Ok(origin)
+					};
+
+					Some(check())
+				} else {
+					None
+				},
 			_ => None,
 		}
 	}
@@ -133,7 +157,19 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		len: usize,
 	) -> Option<TransactionValidity> {
 		match self {
-			RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+			RuntimeCall::Ethereum(call) => {
+				let address = info.to_eth_address().unwrap();
+				if let pallet_ethereum::Call::transact { transaction } = &call {
+					if transaction.nonce() == 0 {
+						if Runtime::migrate_interim_evm_account(&address, info).is_err() {
+							return Some(Err(TransactionValidityError::Unknown(
+								UnknownTransaction::CannotLookup,
+							)))
+						}
+					}
+				}
+				call.validate_self_contained(&info.to_eth_address().unwrap(), dispatch_info, len)
+			},
 			_ => None,
 		}
 	}
@@ -145,8 +181,23 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
 		match self {
-			RuntimeCall::Ethereum(call) =>
-				call.pre_dispatch_self_contained(info, dispatch_info, len),
+			RuntimeCall::Ethereum(call) => {
+				let address = info.to_eth_address().unwrap();
+				if let pallet_ethereum::Call::transact { transaction } = &call {
+					if transaction.nonce() == 0 {
+						if Runtime::migrate_interim_evm_account(&address, info).is_err() {
+							return Some(Err(TransactionValidityError::Unknown(
+								UnknownTransaction::CannotLookup,
+							)))
+						}
+					}
+				}
+				call.pre_dispatch_self_contained(
+					&info.to_eth_address().unwrap(),
+					dispatch_info,
+					len,
+				)
+			},
 			_ => None,
 		}
 	}
@@ -158,7 +209,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		match self {
 			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) =>
 				Some(call.dispatch(RuntimeOrigin::from(
-					pallet_ethereum::RawOrigin::EthereumTransaction(info),
+					pallet_ethereum::RawOrigin::EthereumTransaction(info.to_eth_address().unwrap()),
 				))),
 			_ => None,
 		}
@@ -216,6 +267,7 @@ pub struct OnNewAccount;
 impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		if who.kind() == UniversalAddressKind::Secp256k1 {
+			let _ = Runtime::migrate_interim_evm_account(&who.to_eth_address().unwrap(), who);
 			let _ = pallet_account_alias_registry::Pallet::<Runtime>::update_secp256k1_aliases(who);
 		}
 	}
@@ -408,9 +460,9 @@ impl pallet_evm::Config for Runtime {
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
-	type CallOrigin = evm_compat::EnsureAddressHashed<AccountId>;
-	type WithdrawOrigin = evm_compat::EnsureAddressHashed<AccountId>;
-	type AddressMapping = evm_compat::HashedAddressMapping<Self, BlakeTwo256>;
+	type CallOrigin = compat::evm::EnsureAddressHashed<AccountId>;
+	type WithdrawOrigin = compat::evm::EnsureAddressHashed<AccountId>;
+	type AddressMapping = compat::evm::HashedAddressMapping<Self, BlakeTwo256>;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	/// Precompiles associated with this EVM engine.
@@ -557,6 +609,24 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
 		let encoded = extrinsic.encode();
 		sp_runtime::OpaqueExtrinsic::decode(&mut &encoded[..])
 			.expect("Encoded extrinsic is always valid")
+	}
+}
+
+impl Runtime {
+	fn migrate_interim_evm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
+		use fungible::{Inspect, Transfer};
+		let interim_account =
+			<Runtime as pallet_evm::Config>::AddressMapping::into_account_id(*address);
+		let balance =
+			pallet_balances::Pallet::<Runtime>::reducible_balance(&interim_account, false);
+		<pallet_balances::Pallet<Runtime> as Transfer<AccountId>>::transfer(
+			&interim_account,
+			who,
+			balance,
+			false,
+		)
+		.map_err(|_| ())
+		.map(|_| balance)
 	}
 }
 
