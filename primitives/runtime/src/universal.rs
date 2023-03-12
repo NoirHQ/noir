@@ -28,6 +28,8 @@ use sp_runtime::{
 use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
+use base64ct::{Base64UrlUnpadded as Base64, Encoding};
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 /// Multicodec codes encoded with unsigned varint.
@@ -210,16 +212,32 @@ impl TryInto<p256::Public> for UniversalAddress {
 }
 
 #[cfg(feature = "std")]
+impl sp_std::str::FromStr for UniversalAddress {
+	type Err = ();
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		if !s.starts_with('u') {
+			return Err(())
+		}
+		let addr = UniversalAddress(Base64::decode_vec(&s[1..]).map_err(|_| ())?);
+		match addr.kind() {
+			UniversalAddressKind::Unknown => Err(()),
+			_ => Ok(addr),
+		}
+	}
+}
+
+#[cfg(feature = "std")]
 impl std::fmt::Display for UniversalAddress {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		write!(f, "{}", array_bytes::bytes2hex("", self.as_ref()))
+		write!(f, "u{}", Base64::encode_string(self.as_ref()))
 	}
 }
 
 impl sp_std::fmt::Debug for UniversalAddress {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "{}", array_bytes::bytes2hex("", self.as_ref()))
+		write!(f, "u{}", Base64::encode_string(self.as_ref()))
 	}
 
 	#[cfg(not(feature = "std"))]
@@ -333,6 +351,22 @@ impl From<p256::Public> for UniversalSigner {
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	#[test]
+	fn universal_address_from_or_to_string() {
+		use sp_std::str::FromStr;
+
+		let k = array_bytes::hex2bytes(
+			"023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df",
+		)
+		.unwrap();
+
+		let ua = UniversalAddress::from_str("u5wECOvHh76TR4a1cueOWfpjpAdr803xEzwv7bCFpl_XuUd8");
+		assert!(ua.is_ok());
+		let ua = ua.unwrap();
+		assert_eq!(&ua.0[2..], k);
+		assert_eq!(ua.to_string(), "u5wECOvHh76TR4a1cueOWfpjpAdr803xEzwv7bCFpl_XuUd8");
+	}
 
 	#[test]
 	fn universal_address_kind() {
