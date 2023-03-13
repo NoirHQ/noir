@@ -267,15 +267,15 @@ impl Verify for UniversalSignature {
 
 	fn verify<L: Lazy<[u8]>>(&self, mut msg: L, signer: &UniversalAddress) -> bool {
 		match (self, signer) {
-			(Self::Ed25519(ref sig), who) => match ed25519::Public::try_from(who.as_ref()) {
+			(Self::Ed25519(ref sig), who) => match ed25519::Public::try_from(&who.0[2..]) {
 				Ok(signer) => sig.verify(msg, &signer),
 				Err(()) => false,
 			},
-			(Self::Sr25519(ref sig), who) => match sr25519::Public::try_from(who.as_ref()) {
+			(Self::Sr25519(ref sig), who) => match sr25519::Public::try_from(&who.0[2..]) {
 				Ok(signer) => sig.verify(msg, &signer),
 				Err(()) => false,
 			},
-			(Self::Secp256k1(ref sig), who) => match ecdsa::Public::try_from(who.as_ref()) {
+			(Self::Secp256k1(ref sig), who) => match ecdsa::Public::try_from(&who.0[2..]) {
 				Ok(signer) => {
 					let m = sp_io::hashing::blake2_256(msg.get());
 					match sp_io::crypto::secp256k1_ecdsa_recover_compressed(sig.as_ref(), &m) {
@@ -285,11 +285,11 @@ impl Verify for UniversalSignature {
 				},
 				Err(_) => false,
 			},
-			(Self::P256(ref sig), who) => match p256::Public::try_from(who.as_ref()) {
+			(Self::P256(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {
 				Ok(signer) => np_io::crypto::p256_verify(sig, msg.get(), &signer),
 				Err(_) => false,
 			},
-			(Self::WebAuthn(ref sig), who) => match p256::Public::try_from(who.as_ref()) {
+			(Self::WebAuthn(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {
 				Ok(signer) => np_io::crypto::webauthn_verify(sig, msg.get(), &signer),
 				Err(_) => false,
 			},
