@@ -228,11 +228,13 @@ where
 			.to_eth_address()
 			.map(|x| x.into())
 			.ok_or(Error::<T>::EthereumAddressConversionFailed)?;
-		AccountAliases::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
-		Self::deposit_event(Event::<T>::EthereumAddressPublished {
-			who: who.clone(),
-			address: ethereum_address,
-		});
+		if AccountAliases::<T>::get(AccountAlias::EthereumAddress(ethereum_address)).is_none() {
+			AccountAliases::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
+			Self::deposit_event(Event::<T>::EthereumAddressPublished {
+				who: who.clone(),
+				address: ethereum_address,
+			});
+		}
 		Ok(())
 	}
 }
