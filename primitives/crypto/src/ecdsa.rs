@@ -15,12 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Cryptography extensions for Noir.
+//! Simple ECDSA secp256k1 API.
 
-#![warn(missing_docs)]
-#![cfg_attr(not(feature = "std"), no_std)]
+use sp_core::H160;
 
-pub mod bip32;
-pub mod ecdsa;
-pub mod p256;
-pub mod webauthn;
+/// Extension trait to sp_core::ecdsa (alternative to frame_support::crypto::ECDSAExt)
+pub trait EcdsaExt {
+	/// Convert to ethereum address, if available.
+	fn to_eth_address(&self) -> Option<H160>;
+}

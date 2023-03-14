@@ -31,6 +31,7 @@ pallet-evm-precompile-simple = { git = "https://github.com/paritytech/frontier",
 
 # noir
 noir-core-primitives = { version = "0.1.0", default-features = false, path = "../core-primitives" }
+np-crypto = { version = "0.1.0", default-features = false, path = "../primitives/crypto" }
 np-runtime = { version = "0.1.0", default-features = false, path = "../primitives/runtime" }
 
 # substrate

@@ -34,9 +34,7 @@ use codec::{Decode, Encode};
 use fp_ethereum::TransactionValidationError;
 use fp_rpc::TransactionStatus;
 use frame_support::{
-	construct_runtime,
-	crypto::ecdsa::ECDSAExt,
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{
 		tokens::fungible, ConstU128, ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem,
 		OnTimestampSet,
@@ -47,6 +45,7 @@ use frame_support::{
 	},
 };
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
+use np_crypto::ecdsa::EcdsaExt;
 use np_runtime::{AccountName, UniversalAddressKind};
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, AddressMapping, FeeCalculator, Runner};
@@ -344,13 +343,6 @@ impl AccountNameTagGenerator {
 	}
 }
 
-pub struct AccountIdToEthAddress;
-impl pallet_account_alias_registry::AccountIdToEthAddress<Runtime> for AccountIdToEthAddress {
-	fn convert(id: &AccountId) -> Result<[u8; 20], ()> {
-		id.to_eth_address().ok_or(()).map(|x| x.into())
-	}
-}
-
 impl pallet_account_alias_registry::Config for Runtime {
 	/// The overarching event type.
 	type RuntimeEvent = RuntimeEvent;
@@ -358,8 +350,6 @@ impl pallet_account_alias_registry::Config for Runtime {
 	type WeightInfo = pallet_account_alias_registry::weights::SubstrateWeight<Runtime>;
 	/// The generator for tag number that discriminates the same name accounts.
 	type AccountNameTagGenerator = AccountNameTagGenerator;
-	/// The generator for ethereum address.
-	type AccountIdToEthAddress = AccountIdToEthAddress;
 }
 
 impl pallet_aura::Config for Runtime {

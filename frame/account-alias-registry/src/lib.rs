@@ -24,6 +24,7 @@ pub mod weights;
 
 use crate::weights::WeightInfo;
 use codec::{Decode, Encode, MaxEncodedLen};
+use np_crypto::ecdsa::EcdsaExt;
 use np_runtime::AccountName;
 pub use pallet::*;
 use scale_info::TypeInfo;
@@ -38,11 +39,6 @@ type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup
 /// A generator for tag number that discriminates the same name accounts.
 pub trait AccountNameTagGenerator<T: Config> {
 	fn tag(id: &T::AccountId, name: &str) -> Result<u16, ()>;
-}
-
-/// A converter for ethereum address.
-pub trait AccountIdToEthAddress<T: Config> {
-	fn convert(id: &T::AccountId) -> Result<[u8; 20], ()>;
 }
 
 #[cfg_attr(feature = "std", derive(Hash))]
@@ -68,8 +64,6 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 		/// The generator for tag number that discriminates the same name accounts.
 		type AccountNameTagGenerator: AccountNameTagGenerator<Self>;
-		/// The generator for ethereum address.
-		type AccountIdToEthAddress: AccountIdToEthAddress<Self>;
 	}
 
 	#[pallet::pallet]
@@ -77,7 +71,10 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		T::AccountId: EcdsaExt,
+	{
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::create_account_name())]
 		pub fn create_account_name(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
@@ -219,7 +216,10 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, T::AccountId, AccountName>;
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config> Pallet<T>
+where
+	T::AccountId: EcdsaExt,
+{
 	// PUBLIC IMMUTABLES
 
 	/// Lookup an AccountAlias to get an Id, if exists.
@@ -228,8 +228,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn update_secp256k1_aliases(who: &T::AccountId) -> Result<(), DispatchError> {
-		let ethereum_address = T::AccountIdToEthAddress::convert(who)
-			.map_err(|_| Error::<T>::EthAddressConversionFailed)?;
+		let ethereum_address = who
+			.to_eth_address()
+			.map(|x| x.into())
+			.ok_or(Error::<T>::EthAddressConversionFailed)?;
 		AccountAliases::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
 		Self::deposit_event(Event::<T>::EthAddressAssigned {
 			who: who.clone(),
@@ -239,7 +241,10 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> StaticLookup for Pallet<T> {
+impl<T: Config> StaticLookup for Pallet<T>
+where
+	T::AccountId: EcdsaExt,
+{
 	type Source = MultiAddress<T::AccountId, AccountName>;
 	type Target = T::AccountId;
 
