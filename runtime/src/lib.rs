@@ -347,7 +347,7 @@ impl AccountNameTagGenerator {
 pub struct AccountIdToEthAddress;
 impl pallet_account_alias_registry::AccountIdToEthAddress<Runtime> for AccountIdToEthAddress {
 	fn convert(id: &AccountId) -> Result<[u8; 20], ()> {
-		sp_core::ecdsa::Public::try_from(&id.0[2..])?.to_eth_address()
+		id.to_eth_address().ok_or(()).map(|x| x.into())
 	}
 }
 
