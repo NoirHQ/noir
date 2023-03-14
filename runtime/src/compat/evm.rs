@@ -64,7 +64,7 @@ where
 	H: Hasher<Out = H256>,
 {
 	fn into_account_id(address: H160) -> T::AccountId {
-		let alias = AccountAlias::from(AccountAlias::EthereumAddress(address.into()));
+		let alias = AccountAlias::EthereumAddress(address.into());
 		if let Some(x) = pallet_account_alias_registry::Pallet::<T>::lookup(&alias) {
 			return x
 		}
