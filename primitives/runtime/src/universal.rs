@@ -18,7 +18,7 @@
 //! Universal account infrastructure.
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use np_crypto::{p256, webauthn};
+use np_crypto::{ecdsa::EcdsaExt, p256, webauthn};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
 use sp_runtime::{
@@ -82,9 +82,10 @@ impl UniversalAddress {
 			_ => UniversalAddressKind::Unknown,
 		}
 	}
+}
 
-	/// Convert to ethereum address, if available.
-	pub fn to_eth_address(&self) -> Option<H160> {
+impl EcdsaExt for UniversalAddress {
+	fn to_eth_address(&self) -> Option<H160> {
 		match self.kind() {
 			UniversalAddressKind::Secp256k1 => {
 				let pubkey =

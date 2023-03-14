@@ -19,6 +19,7 @@
 //! Adapter types for EVM pallet compatibility.
 
 use frame_support::{crypto::ecdsa::ECDSAExt, dispatch::RawOrigin};
+use np_crypto::ecdsa::EcdsaExt;
 use pallet_account_alias_registry::AccountAlias;
 use pallet_evm::{AddressMapping, EnsureAddressOrigin};
 use sp_core::{ecdsa, Hasher, H160, H256};
@@ -60,11 +61,11 @@ pub struct HashedAddressMapping<T, H>(PhantomData<T>, PhantomData<H>);
 impl<T, H> AddressMapping<T::AccountId> for HashedAddressMapping<T, H>
 where
 	T: pallet_account_alias_registry::Config,
-	T::AccountId: From<H256>,
+	T::AccountId: From<H256> + EcdsaExt,
 	H: Hasher<Out = H256>,
 {
 	fn into_account_id(address: H160) -> T::AccountId {
-		let alias = AccountAlias::from(AccountAlias::EthereumAddress(address.into()));
+		let alias = AccountAlias::EthereumAddress(address.into());
 		if let Some(x) = pallet_account_alias_registry::Pallet::<T>::lookup(&alias) {
 			return x
 		}

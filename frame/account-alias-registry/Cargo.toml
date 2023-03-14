@@ -14,6 +14,7 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+np-crypto = { version = "0.1.0", path = "../../primitives/crypto", default-features = false }
 np-runtime = { version = "0.1.0", path = "../../primitives/runtime", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
@@ -25,6 +26,7 @@ std = [
 	"scale-info/std",
 	"frame-support/std",
 	"frame-system/std",
+	"np-crypto/std",
 	"np-runtime/std",
 	"sp-runtime/std",
 	"sp-std/std",

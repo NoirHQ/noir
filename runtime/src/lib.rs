@@ -34,9 +34,7 @@ use codec::{Decode, Encode};
 use fp_ethereum::TransactionValidationError;
 use fp_rpc::TransactionStatus;
 use frame_support::{
-	construct_runtime,
-	crypto::ecdsa::ECDSAExt,
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{
 		tokens::fungible, ConstU128, ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem,
 		OnTimestampSet,
@@ -47,6 +45,7 @@ use frame_support::{
 	},
 };
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
+use np_crypto::ecdsa::EcdsaExt;
 use np_runtime::{AccountName, UniversalAddressKind};
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, AddressMapping, FeeCalculator, Runner};
@@ -161,7 +160,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				let address = info.to_eth_address().unwrap();
 				if let pallet_ethereum::Call::transact { transaction } = &call {
 					if transaction.nonce() == 0 {
-						if Runtime::migrate_interim_evm_account(&address, info).is_err() {
+						if Runtime::migrate_evm_account(&address, info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
 							)))
@@ -185,7 +184,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				let address = info.to_eth_address().unwrap();
 				if let pallet_ethereum::Call::transact { transaction } = &call {
 					if transaction.nonce() == 0 {
-						if Runtime::migrate_interim_evm_account(&address, info).is_err() {
+						if Runtime::migrate_evm_account(&address, info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
 							)))
@@ -267,8 +266,9 @@ pub struct OnNewAccount;
 impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		if who.kind() == UniversalAddressKind::Secp256k1 {
-			let _ = Runtime::migrate_interim_evm_account(&who.to_eth_address().unwrap(), who);
-			let _ = pallet_account_alias_registry::Pallet::<Runtime>::update_secp256k1_aliases(who);
+			let _ = Runtime::migrate_evm_account(&who.to_eth_address().unwrap(), who);
+			let _ =
+				pallet_account_alias_registry::Pallet::<Runtime>::connect_aliases_secp256k1(who);
 		}
 	}
 }
@@ -323,14 +323,14 @@ impl frame_system::Config for Runtime {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-pub struct AccountNameTagGenerator;
-impl pallet_account_alias_registry::AccountNameTagGenerator<Runtime> for AccountNameTagGenerator {
+pub struct TagGenerator;
+impl pallet_account_alias_registry::TagGenerator<Runtime> for TagGenerator {
 	fn tag(id: &AccountId, name: &str) -> Result<u16, ()> {
 		let salt = pallet_timestamp::Pallet::<Runtime>::get() >> 26u64;
 		Self::tag_inner(id.as_ref(), name, salt)
 	}
 }
-impl AccountNameTagGenerator {
+impl TagGenerator {
 	fn tag_inner(id: &[u8], name: &str, salt: u64) -> Result<u16, ()> {
 		let hash = (id, name, salt).using_encoded(sp_io::hashing::blake2_256);
 
@@ -344,22 +344,13 @@ impl AccountNameTagGenerator {
 	}
 }
 
-pub struct AccountIdToEthAddress;
-impl pallet_account_alias_registry::AccountIdToEthAddress<Runtime> for AccountIdToEthAddress {
-	fn convert(id: &AccountId) -> Result<[u8; 20], ()> {
-		sp_core::ecdsa::Public::try_from(&id.0[2..])?.to_eth_address()
-	}
-}
-
 impl pallet_account_alias_registry::Config for Runtime {
 	/// The overarching event type.
 	type RuntimeEvent = RuntimeEvent;
 	/// Weight information for extrinsics in this pallet.
 	type WeightInfo = pallet_account_alias_registry::weights::SubstrateWeight<Runtime>;
 	/// The generator for tag number that discriminates the same name accounts.
-	type AccountNameTagGenerator = AccountNameTagGenerator;
-	/// The generator for ethereum address.
-	type AccountIdToEthAddress = AccountIdToEthAddress;
+	type TagGenerator = TagGenerator;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -613,7 +604,7 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
 }
 
 impl Runtime {
-	fn migrate_interim_evm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
+	fn migrate_evm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
 		use fungible::{Inspect, Transfer};
 		let interim_account =
 			<Runtime as pallet_evm::Config>::AddressMapping::into_account_id(*address);
@@ -937,7 +928,7 @@ mod tests {
 		let now: u64 = 1_676_679_312_000;
 		let id = [0u8; 32];
 		let name = "test";
-		let tag = crate::AccountNameTagGenerator::tag_inner(&id, name, now).unwrap();
+		let tag = crate::TagGenerator::tag_inner(&id, name, now).unwrap();
 		assert_eq!(tag, 128);
 	}
 }
