@@ -27,8 +27,8 @@ use frame_support::{traits::Get, weights::Weight};
 pub trait WeightInfo {
 	fn create_account_name() -> Weight;
 	fn update_account_name() -> Weight;
-	fn update_all_available_aliases() -> Weight;
-	fn force_assign_account_name() -> Weight;
+	fn connect_aliases() -> Weight;
+	fn force_set_account_name() -> Weight;
 }
 
 /// Weights for pallet_account_alias_registy using the Substrate node and recommended hardware.
@@ -49,14 +49,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: AccountNames (r:1 w:1), AccountNameIndex (r:1 w:1)
-	fn update_all_available_aliases() -> Weight {
+	fn connect_aliases() -> Weight {
 		// Base fee
 		Weight::from_ref_time(50_000_000)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}	
 	// Storage: AccountNames (r:1 w:2), AccountNameIndex (r:1 w:1)
-	fn force_assign_account_name() -> Weight {
+	fn force_set_account_name() -> Weight {
 		// Base fee
 		Weight::from_ref_time(50_000_000)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
