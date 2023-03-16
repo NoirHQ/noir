@@ -6,31 +6,26 @@ license = "Apache-2.0"
 repository = "https://github.com/noir-protocol/noir/"
 
 [dependencies]
-array-bytes = { version = "4.1", optional = true }
-codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
-	"derive",
-	"max-encoded-len",
-] }
-hmac = { version = "0.12.1", default-features = false, optional = true }
-lazy_static = { version = "1.4.0", default-features = false, optional = true }
-p256 = { version = "0.12.0", default-features = false, features = ["ecdsa", "alloc"], optional = true }
-regex = { version = "1.6.0", optional = true }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-secp256k1 = { version = "0.24.3", default-features = false, features = ["alloc"], optional = true }
-serde = { version = "1.0.136", features = ["derive"], optional = true }
-sha2 = { version = "0.10.6", default-features = false, optional = true }
-substrate-bip39 = { version = "0.4.4", optional = true }
-tiny-bip39 = { version = "1.0.0", optional = true }
-zeroize = { version = "1.4.3", default-features = false, optional = true }
+array-bytes = { workspace = true, optional = true }
+base64ct = { workspace = true, optional = true }
+codec = { workspace = true, package = "parity-scale-codec", features = ["derive", "max-encoded-len"] }
+hmac = { workspace = true, optional = true }
+lazy_static = { workspace = true, optional = true }
+p256 = { workspace = true, optional = true }
+regex = { workspace = true, optional = true }
+scale-info = { workspace = true }
+secp256k1 = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+substrate-bip39 = { workspace = true, optional = true }
+tiny-bip39 = { workspace = true, optional = true }
+zeroize = { workspace = true, optional = true }
 
 # substrate
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
-sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
-
-# webauthn
-base64ct = { version = "1.5.3", default-features = false, optional = true }
-serde_json = { version = "1.0", default-features = false, optional = true }
+sp-core = { workspace = true }
+sp-runtime-interface = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
 default = ["std"]

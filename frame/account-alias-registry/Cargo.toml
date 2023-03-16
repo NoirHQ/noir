@@ -9,15 +9,15 @@ repository = "https://github.com/noir-protocol/noir/"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = ["derive"] }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+codec = { workspace = true, package = "parity-scale-codec" }
+scale-info = { workspace = true }
 
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
-np-crypto = { version = "0.1.0", path = "../../primitives/crypto", default-features = false }
-np-runtime = { version = "0.1.0", path = "../../primitives/runtime", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+np-crypto = { workspace = true }
+np-runtime = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
 default = ["std"]
