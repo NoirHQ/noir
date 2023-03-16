@@ -27,7 +27,7 @@ use crate::p256;
 #[cfg(feature = "full_crypto")]
 use base64ct::{Base64UrlUnpadded as Base64, Encoding};
 #[cfg(feature = "full_crypto")]
-use sp_core::hashing::sha2_256;
+use sp_core::hashing::{blake2_256, sha2_256};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -117,7 +117,7 @@ pub struct Signature {
 impl Signature {
 	/// Verify a signature on a message. Returns true if the signature is good.
 	pub fn verify<M: AsRef<[u8]>>(&self, message: M, pubkey: &Public) -> bool {
-		self.verify_prehashed(&sha2_256(message.as_ref()), pubkey)
+		self.verify_prehashed(&blake2_256(message.as_ref()), pubkey)
 	}
 
 	/// Verify a signature on a pre-hashed message. Return `true` if the signature is valid
