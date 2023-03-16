@@ -409,7 +409,7 @@ impl TraitPair for Pair {
 	/// You should never need to use this; generate(), generate_with_phrase
 	fn from_seed_slice(seed_slice: &[u8]) -> Result<Pair, SecretStringError> {
 		let secret =
-			SigningKey::from_bytes(seed_slice).map_err(|_| SecretStringError::InvalidSeed)?;
+			SigningKey::from_slice(seed_slice).map_err(|_| SecretStringError::InvalidSeed)?;
 		let public = PublicKey::from(secret.verifying_key());
 		let public = Public::from_slice(public.to_encoded_point(true).as_bytes()).unwrap();
 		Ok(Pair { public, secret })
