@@ -28,10 +28,10 @@ fc-db = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
+fc-storage = { workspace = true }
 fp-dynamic-fee = { workspace = true }
 fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
-fp-storage = { workspace = true }
 
 # noir
 noir-core-primitives = { workspace = true }
