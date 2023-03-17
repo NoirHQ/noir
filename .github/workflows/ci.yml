@@ -16,11 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: actions-rs/toolchain@v1
+    - uses: dtolnay/rust-toolchain@nightly
       with:
-        toolchain: nightly
-        target: wasm32-unknown-unknown
-        override: true
+        targets: wasm32-unknown-unknown
         components: rustfmt
     - name: Install build dependencies
       run: sudo apt-get install protobuf-compiler
