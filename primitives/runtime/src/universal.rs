@@ -17,7 +17,7 @@
 
 //! Universal account infrastructure.
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode, Input, MaxEncodedLen};
 use np_crypto::{ecdsa::EcdsaExt, p256, webauthn};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
@@ -66,7 +66,7 @@ pub enum UniversalAddressKind {
 }
 
 /// A universal representation of a public key encoded with multicodec.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Hash, Serialize, Deserialize))]
 pub struct UniversalAddress(pub Vec<u8>);
 
@@ -120,6 +120,26 @@ impl TryFrom<&[u8]> for UniversalAddress {
 impl MaxEncodedLen for UniversalAddress {
 	fn max_encoded_len() -> usize {
 		37
+	}
+}
+
+impl Decode for UniversalAddress {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+		let res = <Vec<u8> as Decode>::decode(input);
+		match res {
+			Err(e) => Err(e.chain("Could not decode UniversalAddress")),
+			Ok(res) => {
+				let res = UniversalAddress(res);
+				match (res.kind(), res.0.len()) {
+					(UniversalAddressKind::Ed25519, 34) => Ok(res),
+					(UniversalAddressKind::Sr25519, 34) => Ok(res),
+					(UniversalAddressKind::Secp256k1, 35) => Ok(res),
+					(UniversalAddressKind::P256, 35) => Ok(res),
+					(UniversalAddressKind::Blake2b256, 36) => Ok(res),
+					_ => Err("Could not decode UniversalAddress".into()),
+				}
+			},
+		}
 	}
 }
 
