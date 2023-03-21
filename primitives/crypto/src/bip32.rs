@@ -267,7 +267,7 @@ pub mod secp256k1 {
 #[cfg(feature = "full_crypto")]
 pub mod secp256r1 {
 	use p256::{
-		elliptic_curve::{ops::Add, sec1::ToEncodedPoint, ScalarCore},
+		elliptic_curve::{ops::Add, sec1::ToEncodedPoint, ScalarPrimitive},
 		NistP256, SecretKey,
 	};
 
@@ -278,12 +278,12 @@ pub mod secp256r1 {
 
 	impl super::Curve for Curve {
 		fn secret(secret: &[u8]) -> Result<[u8; 32], ()> {
-			SecretKey::from_be_bytes(secret).map_err(|_| ())?;
+			SecretKey::from_slice(secret).map_err(|_| ())?;
 			<[u8; 32]>::try_from(secret).map_err(|_| ())
 		}
 
 		fn public(secret: &[u8]) -> Result<[u8; 33], ()> {
-			let s = SecretKey::from_be_bytes(secret).map_err(|_| ())?;
+			let s = SecretKey::from_slice(secret).map_err(|_| ())?;
 			let p = s.public_key().to_encoded_point(true);
 			let mut x = [0u8; 33];
 			x.copy_from_slice(p.as_bytes());
@@ -291,10 +291,10 @@ pub mod secp256r1 {
 		}
 
 		fn scalar_add(v: &[u8], w: &[u8]) -> Result<[u8; 32], ()> {
-			let v = ScalarCore::<NistP256>::from_be_slice(v).unwrap();
-			let w = ScalarCore::<NistP256>::from_be_slice(w).unwrap();
+			let v = ScalarPrimitive::<NistP256>::from_slice(v).unwrap();
+			let w = ScalarPrimitive::<NistP256>::from_slice(w).unwrap();
 			let mut x = [0u8; 32];
-			x.copy_from_slice(&v.add(&w).to_be_bytes()[..]);
+			x.copy_from_slice(&v.add(&w).to_bytes()[..]);
 			Ok(x)
 		}
 	}

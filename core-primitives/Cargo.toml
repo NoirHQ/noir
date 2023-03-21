@@ -6,9 +6,9 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/noir-protocol/noir/"
 
 [dependencies]
-np-runtime = { version = "0.1.0", path = "../primitives/runtime", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36", default-features = false }
+np-runtime = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
