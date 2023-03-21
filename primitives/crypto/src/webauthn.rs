@@ -156,7 +156,7 @@ impl sp_std::fmt::Debug for Signature {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		write!(f, "WebAuthnSignature {{ ")?;
-		write!(f, "clientDataJson: \"{}\", ", Base64::encode_string(&self.client_data_json))?;
+		write!(f, "clientDataJSON: \"{}\", ", Base64::encode_string(&self.client_data_json))?;
 		write!(f, "authenticatorData: \"{}\", ", Base64::encode_string(&self.authenticator_data))?;
 		write!(f, "signature: \"{}\" }}", Base64::encode_string(&self.signature))
 	}
