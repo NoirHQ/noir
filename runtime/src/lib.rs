@@ -326,7 +326,7 @@ impl frame_system::Config for Runtime {
 pub struct TagGenerator;
 impl pallet_account_alias_registry::TagGenerator<Runtime> for TagGenerator {
 	fn tag(id: &AccountId, name: &str) -> Result<u16, ()> {
-		let salt = pallet_timestamp::Pallet::<Runtime>::get() >> 26u64;
+		let salt = pallet_timestamp::Pallet::<Runtime>::get() / 86_400_000u64;
 		Self::tag_inner(id.as_ref(), name, salt)
 	}
 }
