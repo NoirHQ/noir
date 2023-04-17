@@ -22,7 +22,7 @@ use scale_info::TypeInfo;
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::vec::Vec;
 
-use crate::p256;
+use crate::{p256, DEBUG};
 
 #[cfg(feature = "full_crypto")]
 use base64ct::{Base64UrlUnpadded as Base64, Encoding};
@@ -56,7 +56,13 @@ impl ClientDataJson {
 
 	// origin should be same to the rpId or its subdomain.
 	fn check_rpid(&self, rpid_hash: &[u8]) -> bool {
-		let mut rpid = &self.origin["https://".len()..];
+		let mut scheme = "https://";
+		if !DEBUG && !self.origin.starts_with(scheme) {
+			return false
+		} else if DEBUG && self.origin.starts_with("http://") {
+			scheme = "http://";
+		}
+		let mut rpid = &self.origin[scheme.len()..];
 		rpid = match rpid.rfind(':') {
 			Some(pos) => &rpid[..pos],
 			None => rpid,
@@ -93,7 +99,7 @@ impl TryFrom<&[u8]> for ClientDataJson {
 		if client_data.type_ != "webauthn.get" {
 			return Err(())
 		}
-		if !client_data.origin.starts_with("https://") {
+		if !DEBUG && !client_data.origin.starts_with("https://") {
 			return Err(())
 		}
 		Ok(client_data)
