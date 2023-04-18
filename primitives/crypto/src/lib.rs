@@ -27,6 +27,5 @@ pub mod webauthn;
 
 #[cfg(debug_assertions)]
 const DEBUG: bool = true;
-
 #[cfg(not(debug_assertions))]
 const DEBUG: bool = false;

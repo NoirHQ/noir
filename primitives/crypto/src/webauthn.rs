@@ -57,11 +57,19 @@ impl ClientDataJson {
 	// origin should be same to the rpId or its subdomain.
 	fn check_rpid(&self, rpid_hash: &[u8]) -> bool {
 		let mut scheme = "https://";
-		if !DEBUG && !self.origin.starts_with(scheme) {
-			return false
-		} else if DEBUG && self.origin.starts_with("http://") {
-			scheme = "http://";
+
+		if !DEBUG {
+			if !self.origin.starts_with("https://") {
+				return false
+			}
+		} else {
+			if self.origin.starts_with("http://") {
+				scheme = "http://";
+			} else if !self.origin.starts_with("https://") {
+				return false
+			}
 		}
+
 		let mut rpid = &self.origin[scheme.len()..];
 		rpid = match rpid.rfind(':') {
 			Some(pos) => &rpid[..pos],
@@ -99,8 +107,10 @@ impl TryFrom<&[u8]> for ClientDataJson {
 		if client_data.type_ != "webauthn.get" {
 			return Err(())
 		}
-		if !DEBUG && !client_data.origin.starts_with("https://") {
-			return Err(())
+		if !DEBUG {
+			if !client_data.origin.starts_with("https://") {
+				return Err(())
+			}
 		}
 		Ok(client_data)
 	}
