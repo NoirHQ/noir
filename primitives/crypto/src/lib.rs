@@ -24,8 +24,3 @@ pub mod bip32;
 pub mod ecdsa;
 pub mod p256;
 pub mod webauthn;
-
-#[cfg(debug_assertions)]
-const DEBUG: bool = true;
-#[cfg(not(debug_assertions))]
-const DEBUG: bool = false;

@@ -56,33 +56,27 @@ impl ClientDataJson {
 
 	// origin should be same to the rpId or its subdomain.
 	fn check_rpid(&self, rpid_hash: &[u8]) -> bool {
-		let mut scheme = "https://";
-
-		if !DEBUG {
-			if !self.origin.starts_with("https://") {
-				return false
-			}
-		} else {
-			if self.origin.starts_with("http://") {
-				scheme = "http://";
-			} else if !self.origin.starts_with("https://") {
-				return false
-			}
+		#[cfg(not(debug_assertions))]
+		if !self.origin.starts_with("https://") {
+			return false
 		}
 
-		let mut rpid = &self.origin[scheme.len()..];
-		rpid = match rpid.rfind(':') {
-			Some(pos) => &rpid[..pos],
-			None => rpid,
-		};
-		while sha2_256(rpid.as_ref()) != rpid_hash {
-			// registrable domain suffix
-			match rpid.split_once('.') {
-				Some((_, rds)) => rpid = rds,
-				None => return false,
-			};
+		match self.origin.split_once("//") {
+			Some((_, mut rpid)) => {
+				rpid = match rpid.rfind(':') {
+					Some(pos) => &rpid[..pos],
+					None => rpid,
+				};
+				while sha2_256(rpid.as_ref()) != rpid_hash {
+					match rpid.split_once('.') {
+						Some((_, rds /* registrable domain suffix */)) => rpid = rds,
+						None => return false,
+					};
+				}
+				true
+			},
+			None => false,
 		}
-		true
 	}
 }
 
@@ -107,10 +101,9 @@ impl TryFrom<&[u8]> for ClientDataJson {
 		if client_data.type_ != "webauthn.get" {
 			return Err(())
 		}
-		if !DEBUG {
-			if !client_data.origin.starts_with("https://") {
-				return Err(())
-			}
+		#[cfg(not(debug_assertions))]
+		if !client_data.origin.starts_with("https://") {
+			return Err(())
 		}
 		Ok(client_data)
 	}
