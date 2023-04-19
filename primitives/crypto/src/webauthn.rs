@@ -22,7 +22,7 @@ use scale_info::TypeInfo;
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::vec::Vec;
 
-use crate::{p256, DEBUG};
+use crate::p256;
 
 #[cfg(feature = "full_crypto")]
 use base64ct::{Base64UrlUnpadded as Base64, Encoding};
