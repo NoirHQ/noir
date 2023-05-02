@@ -6,7 +6,7 @@ license = "Apache-2.0"
 repository = "https://github.com/noir-protocol/noir/"
 
 [dependencies]
-np-crypto = { workspace = true, optiona = true }
+np-crypto = { workspace = true }
 secp256k1 = { workspace = true, features = ["alloc", "recovery"], optional = true }
 sp-io = { workspace = true }
 sp-runtime-interface = { workspace = true }
