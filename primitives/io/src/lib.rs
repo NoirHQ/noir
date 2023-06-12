@@ -21,6 +21,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use np_crypto::{p256, webauthn};
+use ripemd::{Digest, Ripemd160};
 use sp_runtime_interface::runtime_interface;
 
 #[cfg(feature = "std")]
@@ -45,5 +46,12 @@ pub trait Crypto {
 		let mut res = [0u8; 64];
 		res.copy_from_slice(&pubkey.serialize_uncompressed()[1..]);
 		Some(res)
+	}
+
+	/// Hash with ripemd160.
+	fn ripemd160(msg: &[u8]) -> [u8; 20] {
+		let mut h = Ripemd160::new();
+		h.update(msg);
+		h.finalize().into()
 	}
 }

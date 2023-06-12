@@ -23,4 +23,6 @@ use sp_core::H160;
 pub trait EcdsaExt {
 	/// Convert to ethereum address, if available.
 	fn to_eth_address(&self) -> Option<H160>;
+	/// Convert to cosmos address, if available.
+	fn to_cosm_address(&self) -> Option<H160>;
 }
