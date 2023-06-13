@@ -46,6 +46,7 @@ pub trait TagGenerator<T: Config> {
 pub enum AccountAlias {
 	AccountName(AccountName),
 	EthereumAddress([u8; 20]),
+	CosmosAddress([u8; 20]),
 }
 
 #[frame_support::pallet]
@@ -186,6 +187,8 @@ pub mod pallet {
 		AccountNameUpdated { who: T::AccountId, name: AccountName, deleted: Option<AccountName> },
 		/// An ethereum address was published.
 		EthereumAddressPublished { who: T::AccountId, address: [u8; 20] },
+		/// An cosmos address was published.
+		CosmosAddressPublished { who: T::AccountId, address: [u8; 20] },
 	}
 
 	#[pallet::error]
@@ -202,6 +205,8 @@ pub mod pallet {
 		TagGenerationFailed,
 		/// Ethereum address conversion failed.
 		EthereumAddressConversionFailed,
+		/// Cosmos address conversion failed.
+		CosmosAddressConversionFailed,
 	}
 
 	#[pallet::storage]
@@ -233,6 +238,17 @@ where
 			Self::deposit_event(Event::<T>::EthereumAddressPublished {
 				who: who.clone(),
 				address: ethereum_address,
+			});
+		}
+		let cosmos_address = who
+			.to_cosm_address()
+			.map(|x| x.into())
+			.ok_or(Error::<T>::CosmosAddressConversionFailed)?;
+		if AccountAliases::<T>::get(AccountAlias::CosmosAddress(cosmos_address)).is_none() {
+			AccountAliases::<T>::insert(AccountAlias::CosmosAddress(cosmos_address), who);
+			Self::deposit_event(Event::<T>::CosmosAddressPublished {
+				who: who.clone(),
+				address: cosmos_address,
 			});
 		}
 		Ok(())
