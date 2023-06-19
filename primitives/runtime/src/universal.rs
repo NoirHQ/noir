@@ -17,7 +17,7 @@
 
 //! Universal account infrastructure.
 
-use codec::{Decode, Encode, Input, MaxEncodedLen};
+use codec::{Decode, Encode, EncodeLike, Input, MaxEncodedLen};
 use np_crypto::{ecdsa::EcdsaExt, p256, webauthn};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
@@ -30,7 +30,7 @@ use sp_std::vec::Vec;
 #[cfg(feature = "std")]
 use base64ct::{Base64UrlUnpadded as Base64, Encoding};
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+use serde::{de, ser, Deserialize, Serialize};
 
 /// Multicodec codes encoded with unsigned varint.
 #[allow(dead_code)]
@@ -66,9 +66,50 @@ pub enum UniversalAddressKind {
 }
 
 /// A universal representation of a public key encoded with multicodec.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Hash, Serialize, Deserialize))]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Hash))]
 pub struct UniversalAddress(pub Vec<u8>);
+
+#[cfg(feature = "std")]
+impl ser::Serialize for UniversalAddress {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: ser::Serializer,
+	{
+		let encoded = String::from("u") + &Base64::encode_string(&self.0);
+		serializer.serialize_str(&encoded)
+	}
+}
+
+#[cfg(feature = "std")]
+impl<'de> de::Deserialize<'de> for UniversalAddress {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: de::Deserializer<'de>,
+	{
+		struct UniversalAddressVisitor;
+
+		impl<'de> de::Visitor<'de> for UniversalAddressVisitor {
+			type Value = UniversalAddress;
+
+			fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+				formatter.write_str("a multibase (base64url) encoded string")
+			}
+
+			fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+			where
+				E: de::Error,
+			{
+				use sp_std::str::FromStr;
+
+				UniversalAddress::from_str(value)
+					.map_err(|_| E::custom("invalid universal address"))
+			}
+		}
+
+		deserializer.deserialize_str(UniversalAddressVisitor)
+	}
+}
 
 impl UniversalAddress {
 	/// Get the type of public key that contains.
@@ -119,26 +160,51 @@ impl TryFrom<&[u8]> for UniversalAddress {
 
 impl MaxEncodedLen for UniversalAddress {
 	fn max_encoded_len() -> usize {
-		37
+		36
 	}
 }
 
+impl Encode for UniversalAddress {
+	fn size_hint(&self) -> usize {
+		match self.kind() {
+			UniversalAddressKind::Ed25519 => 34,
+			UniversalAddressKind::Sr25519 => 34,
+			UniversalAddressKind::Secp256k1 => 35,
+			UniversalAddressKind::P256 => 35,
+			UniversalAddressKind::Blake2b256 => 36,
+			_ => 0,
+		}
+	}
+
+	fn encode(&self) -> Vec<u8> {
+		self.0.clone()
+	}
+
+	fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
+		f(&self.0)
+	}
+}
+
+impl EncodeLike for UniversalAddress {}
+
 impl Decode for UniversalAddress {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-		let res = <Vec<u8> as Decode>::decode(input);
-		match res {
-			Err(e) => Err(e.chain("Could not decode UniversalAddress")),
-			Ok(res) => {
-				let res = UniversalAddress(res);
-				match (res.kind(), res.0.len()) {
-					(UniversalAddressKind::Ed25519, 34) => Ok(res),
-					(UniversalAddressKind::Sr25519, 34) => Ok(res),
-					(UniversalAddressKind::Secp256k1, 35) => Ok(res),
-					(UniversalAddressKind::P256, 35) => Ok(res),
-					(UniversalAddressKind::Blake2b256, 36) => Ok(res),
-					_ => Err("Could not decode UniversalAddress".into()),
-				}
-			},
+		let byte = input.read_byte()?;
+		let expected_len = match byte {
+			0xed | 0xef => 34,
+			0xe7 | 0x80 => 35,
+			0xa0 => 36,
+			_ => return Err("unexpected first byte decoding UniversalAddress".into()),
+		};
+		let mut res = Vec::new();
+		res.resize(expected_len, 0);
+		res[0] = byte;
+		input.read(&mut res[1..])?;
+
+		let res = UniversalAddress(res);
+		match res.kind() {
+			UniversalAddressKind::Unknown => Err("Could not decode UniversalAddress".into()),
+			_ => Ok(res),
 		}
 	}
 }
@@ -237,10 +303,14 @@ impl sp_std::str::FromStr for UniversalAddress {
 	type Err = ();
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		if !s.starts_with('u') {
+		let addr = if s.starts_with('u') {
+			UniversalAddress(Base64::decode_vec(&s[1..]).map_err(|_| ())?)
+		} else if s.starts_with("0x") {
+			UniversalAddress(array_bytes::hex2bytes(&s[2..]).map_err(|_| ())?)
+		} else {
 			return Err(())
-		}
-		let addr = UniversalAddress(Base64::decode_vec(&s[1..]).map_err(|_| ())?);
+		};
+
 		match addr.kind() {
 			UniversalAddressKind::Unknown => Err(()),
 			_ => Ok(addr),
