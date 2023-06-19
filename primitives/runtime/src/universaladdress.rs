@@ -18,19 +18,18 @@
 //! Universal account infrastructure.
 
 use codec::{Decode, Encode, EncodeLike, Input, MaxEncodedLen};
-use np_crypto::{ecdsa::EcdsaExt, p256, webauthn};
+use np_crypto::{ecdsa::EcdsaExt, p256};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
-use sp_runtime::{
-	traits::{IdentifyAccount, Lazy, Verify},
-	RuntimeDebug,
-};
 use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
 use base64ct::{Base64UrlUnpadded as Base64, Encoding};
 #[cfg(feature = "std")]
-use serde::{de, ser, Deserialize, Serialize};
+use serde::{
+	de::{Deserialize, Deserializer, Error as DeError, Visitor},
+	ser::{Serialize, Serializer},
+};
 
 /// Multicodec codes encoded with unsigned varint.
 #[allow(dead_code)]
@@ -71,10 +70,10 @@ pub enum UniversalAddressKind {
 pub struct UniversalAddress(pub Vec<u8>);
 
 #[cfg(feature = "std")]
-impl ser::Serialize for UniversalAddress {
+impl Serialize for UniversalAddress {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
-		S: ser::Serializer,
+		S: Serializer,
 	{
 		let encoded = String::from("u") + &Base64::encode_string(&self.0);
 		serializer.serialize_str(&encoded)
@@ -82,14 +81,14 @@ impl ser::Serialize for UniversalAddress {
 }
 
 #[cfg(feature = "std")]
-impl<'de> de::Deserialize<'de> for UniversalAddress {
+impl<'de> Deserialize<'de> for UniversalAddress {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
-		D: de::Deserializer<'de>,
+		D: Deserializer<'de>,
 	{
 		struct UniversalAddressVisitor;
 
-		impl<'de> de::Visitor<'de> for UniversalAddressVisitor {
+		impl<'de> Visitor<'de> for UniversalAddressVisitor {
 			type Value = UniversalAddress;
 
 			fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -98,7 +97,7 @@ impl<'de> de::Deserialize<'de> for UniversalAddress {
 
 			fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
 			where
-				E: de::Error,
+				E: DeError,
 			{
 				use sp_std::str::FromStr;
 
@@ -334,108 +333,6 @@ impl sp_std::fmt::Debug for UniversalAddress {
 	#[cfg(not(feature = "std"))]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		Ok(())
-	}
-}
-
-/// Signature verify that can work with any known signature types.
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Eq, PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum UniversalSignature {
-	/// A Ed25519 signature.
-	Ed25519(ed25519::Signature),
-	/// A Sr25519 signature.
-	Sr25519(sr25519::Signature),
-	/// A Secp256k1 signature.
-	Secp256k1(ecdsa::Signature),
-	/// A P-256 signature.
-	P256(p256::Signature),
-	/// A WebAuthn ES256 signature.
-	WebAuthn(webauthn::Signature),
-}
-
-impl Verify for UniversalSignature {
-	type Signer = UniversalSigner;
-
-	fn verify<L: Lazy<[u8]>>(&self, mut msg: L, signer: &UniversalAddress) -> bool {
-		match (self, signer) {
-			(Self::Ed25519(ref sig), who) => match ed25519::Public::try_from(&who.0[2..]) {
-				Ok(signer) => sig.verify(msg, &signer),
-				Err(()) => false,
-			},
-			(Self::Sr25519(ref sig), who) => match sr25519::Public::try_from(&who.0[2..]) {
-				Ok(signer) => sig.verify(msg, &signer),
-				Err(()) => false,
-			},
-			(Self::Secp256k1(ref sig), who) => match ecdsa::Public::try_from(&who.0[2..]) {
-				Ok(signer) => {
-					let m = sp_io::hashing::blake2_256(msg.get());
-					match sp_io::crypto::secp256k1_ecdsa_recover_compressed(sig.as_ref(), &m) {
-						Ok(pubkey) => pubkey == signer.0,
-						_ => false,
-					}
-				},
-				Err(_) => false,
-			},
-			(Self::P256(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {
-				Ok(signer) => np_io::crypto::p256_verify(sig, msg.get(), &signer),
-				Err(_) => false,
-			},
-			(Self::WebAuthn(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {
-				Ok(signer) => np_io::crypto::webauthn_verify(sig, msg.get(), &signer),
-				Err(_) => false,
-			},
-		}
-	}
-}
-
-/// Public key for any known crypto algorithm.
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum UniversalSigner {
-	/// A Ed25519 identity.
-	Ed25519(ed25519::Public),
-	/// A Sr25519 identity.
-	Sr25519(sr25519::Public),
-	/// A Secp256k1 identity.
-	Secp256k1(ecdsa::Public),
-	/// A P-256 identity.
-	P256(p256::Public),
-}
-
-impl IdentifyAccount for UniversalSigner {
-	type AccountId = UniversalAddress;
-
-	fn into_account(self) -> Self::AccountId {
-		match self {
-			Self::Ed25519(k) => k.into(),
-			Self::Sr25519(k) => k.into(),
-			Self::Secp256k1(k) => k.into(),
-			Self::P256(k) => k.into(),
-		}
-	}
-}
-
-impl From<ed25519::Public> for UniversalSigner {
-	fn from(k: ed25519::Public) -> Self {
-		Self::Ed25519(k)
-	}
-}
-
-impl From<sr25519::Public> for UniversalSigner {
-	fn from(k: sr25519::Public) -> Self {
-		Self::Sr25519(k)
-	}
-}
-
-impl From<ecdsa::Public> for UniversalSigner {
-	fn from(k: ecdsa::Public) -> Self {
-		Self::Secp256k1(k)
-	}
-}
-
-impl From<p256::Public> for UniversalSigner {
-	fn from(k: p256::Public) -> Self {
-		Self::P256(k)
 	}
 }
 
