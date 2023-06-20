@@ -339,31 +339,50 @@ impl sp_std::fmt::Debug for UniversalAddress {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use codec::{Decode, Encode, IoReader};
+	use sp_std::str::FromStr;
 
 	#[test]
-	fn universal_address_from_or_to_string() {
-		use sp_std::str::FromStr;
-
-		let k = array_bytes::hex2bytes(
-			"023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df",
+	fn string_serialization_works() {
+		let raw = array_bytes::hex2bytes(
+			"e701023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df",
 		)
 		.unwrap();
 
-		let ua = UniversalAddress::from_str("u5wECOvHh76TR4a1cueOWfpjpAdr803xEzwv7bCFpl_XuUd8");
-		assert!(ua.is_ok());
-		let ua = ua.unwrap();
-		assert_eq!(&ua.0[2..], k);
-		assert_eq!(ua.to_string(), "u5wECOvHh76TR4a1cueOWfpjpAdr803xEzwv7bCFpl_XuUd8");
+		let addr = UniversalAddress::from_str("u5wECOvHh76TR4a1cueOWfpjpAdr803xEzwv7bCFpl_XuUd8");
+		assert!(addr.is_ok());
+
+		let addr = addr.unwrap();
+		assert_eq!(&addr.0[..], raw);
+		assert_eq!(addr.to_string(), "u5wECOvHh76TR4a1cueOWfpjpAdr803xEzwv7bCFpl_XuUd8");
 	}
 
 	#[test]
-	fn universal_address_kind() {
-		let k = array_bytes::hex2bytes(
+	fn kind_corresponds_to_contained_public_key() {
+		let pubkey = array_bytes::hex2bytes(
 			"023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df",
 		)
 		.unwrap();
-		let k = ecdsa::Public::try_from(&k[..]).unwrap();
-		let ua = UniversalAddress::from(k);
-		assert_eq!(ua.kind(), UniversalAddressKind::Secp256k1);
+		let pubkey = ecdsa::Public::try_from(&pubkey[..]).unwrap();
+		let addr = UniversalAddress::from(pubkey);
+		assert_eq!(addr.kind(), UniversalAddressKind::Secp256k1);
+	}
+
+	#[test]
+	fn scale_serialization_works() {
+		let raw = array_bytes::hex2bytes(
+			"e701023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df",
+		)
+		.unwrap();
+		let addr = UniversalAddress(raw.clone());
+		assert_eq!(addr.kind(), UniversalAddressKind::Secp256k1);
+
+		let encoded = addr.encode();
+		assert_eq!(encoded, raw);
+
+		let mut io = IoReader(&encoded[..]);
+		let decoded = UniversalAddress::decode(&mut io);
+		assert!(decoded.is_ok());
+		assert_eq!(decoded.unwrap(), addr);
 	}
 }
