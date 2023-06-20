@@ -21,7 +21,6 @@ use crate::{
 	cli::{Cli, Subcommand},
 	service::{self, db_config_dir},
 };
-use clap::Parser;
 use fc_db::frontier_database_dir;
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 use sc_service::DatabaseSource;
@@ -70,7 +69,7 @@ impl SubstrateCli for Cli {
 
 /// Parse and run command line arguments
 pub fn run() -> sc_cli::Result<()> {
-	let cli = Cli::parse();
+	let cli = Cli::from_args();
 
 	match &cli.subcommand {
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
