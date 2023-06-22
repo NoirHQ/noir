@@ -20,3 +20,4 @@
 
 pub mod ethereum;
 pub mod evm;
+pub mod cosm;

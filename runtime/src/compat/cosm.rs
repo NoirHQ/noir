@@ -24,36 +24,6 @@ use pallet_cosmos::{AddressMapping, EnsureAddressOrigin};
 use sp_core::{ecdsa, Hasher, H160, H256};
 use sp_std::marker::PhantomData;
 
-/// Ensure that the address is truncated hash of the origin.
-pub struct EnsureAddressHashed<AccountId>(PhantomData<AccountId>);
-
-impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressHashed<AccountId>
-where
-	OuterOrigin: Into<Result<RawOrigin<AccountId>, OuterOrigin>> + From<RawOrigin<AccountId>>,
-	AccountId: TryInto<ecdsa::Public> + Clone,
-{
-	type Success = AccountId;
-
-	fn try_address_origin(
-		address: &H160,
-		origin: OuterOrigin,
-	) -> Result<Self::Success, OuterOrigin> {
-		origin.into().and_then(|o| match o {
-			RawOrigin::Signed(who) => {
-				if let Ok(pubkey) = who.clone().try_into() {
-					if let Ok(hashed) = pubkey.to_cosm_address() {
-						if &hashed == &address.0 {
-							return Ok(who)
-						}
-					};
-				};
-				Err(OuterOrigin::from(RawOrigin::Signed(who)))
-			},
-			r => Err(OuterOrigin::from(r)),
-		})
-	}
-}
-
 /// Hashed address mapping.
 pub struct HashedAddressMapping<T, H>(PhantomData<T>, PhantomData<H>);
 

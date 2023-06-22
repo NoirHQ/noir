@@ -71,8 +71,8 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
-	// C::Api: hp_rpc::ConvertTransactionRuntimeApi<Block>,
-	// C::Api: hp_rpc::CosmosRuntimeRPCApi<Block>,
+	C::Api: hp_rpc::ConvertTransactionRuntimeApi<Block>,
+	C::Api: hp_rpc::CosmosRuntimeRPCApi<Block>,
 	P: TransactionPool<Block = Block> + 'static,
 	A: ChainApi<Block = Block> + 'static,
 	CT: fp_rpc::ConvertTransaction<<Block as BlockT>::Extrinsic> + Send + Sync + 'static,
@@ -97,7 +97,7 @@ where
 	}
 
 	// Cosmos compatibility RPCs
-	// io.merge(Cosm::new(pool, client.clone()).into_rpc())?;
+	io.merge(Cosm::new(pool, client.clone()).into_rpc())?;
 
 	// Ethereum compatibility RPCs
 	let io = create_eth::<_, _, _, _, _, _>(io, eth, subscription_task_executor)?;
