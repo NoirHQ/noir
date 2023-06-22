@@ -60,6 +60,8 @@ sp-std = { workspace = true }
 sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 
+pallet-cosmos = { workspace = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -109,4 +111,5 @@ std = [
   "sp-transaction-pool/std",
   "sp-version/std",
   "substrate-wasm-builder",
+  "pallet-cosmos/std",
 ]

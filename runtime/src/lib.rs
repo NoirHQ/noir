@@ -561,6 +561,15 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
 }
 
+impl pallet_cosmos::Config for Runtime {
+	/// Mapping from address to account id.
+	type AddressMapping = compat::evm::HashedAddressMapping<Self, BlakeTwo256>;
+	/// Currency type for withdraw and balance storage.
+	type  = Balances;
+	/// Cosmos execution runner.
+	type Runner = pallet_cosmos::Runner<Self>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
