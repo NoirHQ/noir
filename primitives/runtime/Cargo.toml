@@ -1,9 +1,11 @@
 [package]
 name = "np-runtime"
 version = "0.2.0"
-edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/noir-protocol/noir/"
+
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
 array-bytes = { workspace = true, optional = true }
