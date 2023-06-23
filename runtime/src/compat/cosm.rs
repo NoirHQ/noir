@@ -38,9 +38,9 @@ where
 		if let Some(x) = pallet_account_alias_registry::Pallet::<T>::lookup(&alias) {
 			return x
 		}
-		let mut data = [0u8; 24];
-		data[0..4].copy_from_slice(b"cosm:");
-		data[4..24].copy_from_slice(&address[..]);
+		let mut data = [0u8; 25];
+		data[0..5].copy_from_slice(b"cosm:");
+		data[4..25].copy_from_slice(&address[..]);
 		let hash = H::hash(&data);
 
 		hash.into()
