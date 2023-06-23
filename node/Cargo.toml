@@ -77,7 +77,7 @@ sp-trie = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
 
 hc-rpc = { workspace = true }
-hp-rpc = { workspace = true }
+hp-rpc = { workspace = true, features = ["default"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

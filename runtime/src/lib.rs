@@ -122,6 +122,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	fn is_self_contained(&self) -> bool {
 		match self {
 			RuntimeCall::Ethereum(call) => call.is_self_contained(),
+			RuntimeCall::Cosmos(call) => call.is_self_contained(),
 			_ => false,
 		}
 	}
@@ -169,6 +170,19 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				}
 				call.validate_self_contained(&info.to_eth_address().unwrap(), dispatch_info, len)
 			},
+			RuntimeCall::Cosmos(call) => {
+				let address = info.to_cosm_address().unwrap();
+				if let pallet_cosmos::Call::broadcast_tx { tx } = &call {
+					if tx.auth_info.signer_infos[0].sequence == 0 {
+						if Runtime::migrate_cosm_account(&address, info).is_err() {
+							return Some(Err(TransactionValidityError::Unknown(
+								UnknownTransaction::CannotLookup,
+							)))
+						}
+					}
+				}
+				call.validate_self_contained(&info.to_cosm_address().unwrap(), dispatch_info, len)
+			},
 			_ => None,
 		}
 	}
@@ -197,6 +211,23 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 					len,
 				)
 			},
+			RuntimeCall::Cosmos(call) => {
+				let address = info.to_cosm_address().unwrap();
+				if let pallet_cosmos::Call::broadcast_tx { tx } = &call {
+					if tx.auth_info.signer_infos[0].sequence == 0 {
+						if Runtime::migrate_cosm_account(&address, info).is_err() {
+							return Some(Err(TransactionValidityError::Unknown(
+								UnknownTransaction::CannotLookup,
+							)))
+						}
+					}
+				}
+				call.pre_dispatch_self_contained(
+					&info.to_cosm_address().unwrap(),
+					dispatch_info,
+					len,
+				)
+			},
 			_ => None,
 		}
 	}
@@ -209,6 +240,10 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) =>
 				Some(call.dispatch(RuntimeOrigin::from(
 					pallet_ethereum::RawOrigin::EthereumTransaction(info.to_eth_address().unwrap()),
+				))),
+			call @ RuntimeCall::Cosmos(pallet_cosmos::Call::broadcast_tx { .. }) =>
+				Some(call.dispatch(RuntimeOrigin::from(
+					pallet_cosmos::RawOrigin::CosmosTransaction(info.to_cosm_address().unwrap()),
 				))),
 			_ => None,
 		}
@@ -267,6 +302,7 @@ impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		if who.kind() == UniversalAddressKind::Secp256k1 {
 			let _ = Runtime::migrate_evm_account(&who.to_eth_address().unwrap(), who);
+			let _ = Runtime::migrate_cosm_account(&who.to_cosm_address().unwrap(), who);
 			let _ =
 				pallet_account_alias_registry::Pallet::<Runtime>::connect_aliases_secp256k1(who);
 		}
@@ -582,6 +618,7 @@ construct_runtime!(
 		Aura: pallet_aura,
 		Balances: pallet_balances,
 		BaseFee: pallet_base_fee,
+		Cosmos: pallet_cosmos,
 		DynamicFee: pallet_dynamic_fee,
 		Ethereum: pallet_ethereum,
 		EVM: pallet_evm,
@@ -635,9 +672,52 @@ impl Runtime {
 		.map_err(|_| ())
 		.map(|_| balance)
 	}
+
+	fn migrate_cosm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
+		use fungible::{Inspect, Transfer};
+		use pallet_cosmos::AddressMapping;
+
+		let interim_account =
+			<Runtime as pallet_cosmos::Config>::AddressMapping::into_account_id(*address);
+		let balance =
+			pallet_balances::Pallet::<Runtime>::reducible_balance(&interim_account, false);
+		<pallet_balances::Pallet<Runtime> as Transfer<AccountId>>::transfer(
+			&interim_account,
+			who,
+			balance,
+			false,
+		)
+		.map_err(|_| ())
+		.map(|_| balance)
+	}
 }
 
 impl_runtime_apis! {
+	impl hp_rpc::ConvertTxRuntimeApi<Block> for Runtime {
+		fn convert_tx(tx: hp_cosmos::Tx) -> <Block as BlockT>::Extrinsic {
+			UncheckedExtrinsic::new_unsigned(
+				pallet_cosmos::Call::<Runtime>::broadcast_tx { tx }.into(),
+			)
+		}
+	}
+
+	// impl hp_rpc::CosmosRuntimeRPCApi<Block> for Runtime {
+	// 	fn broadcast_tx(tx: hp_cosmos::Tx) -> H256 {
+	// 		use pallet_cosmos::runner::Runner;
+
+	// 		match tx.body.messages[0] {
+	// 			hp_cosmos::Message::MsgSend {from_address, to_address, amount } => {
+	// 				<Runtime as pallet_cosmos::Config>::Runner::msg_send(
+	// 					from_address,
+	// 					to_address,
+	// 					amount,
+	// 				).map_err(|err| err.error.into())
+	// 			}
+	// 		};
+	// 		tx.hash.into()
+	// 	}
+	// }
+
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
 		fn grandpa_authorities() -> GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()

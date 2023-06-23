@@ -20,8 +20,8 @@
 
 use np_crypto::ecdsa::EcdsaExt;
 use pallet_account_alias_registry::AccountAlias;
-use pallet_cosmos::{AddressMapping, EnsureAddressOrigin};
-use sp_core::{ecdsa, Hasher, H160, H256};
+use pallet_cosmos::AddressMapping;
+use sp_core::{Hasher, H160, H256};
 use sp_std::marker::PhantomData;
 
 /// Hashed address mapping.

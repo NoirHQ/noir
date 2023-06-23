@@ -18,6 +18,6 @@
 
 //! Noir runtime compatibility adapters.
 
+pub mod cosm;
 pub mod ethereum;
 pub mod evm;
-pub mod cosm;
