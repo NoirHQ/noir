@@ -166,8 +166,9 @@ pub mod pallet {
 
 			let past_name = AccountNameIndex::<T>::get(&dest);
 			match past_name {
-				Some(past_name) =>
-					AccountAliases::<T>::remove(AccountAlias::AccountName(past_name)),
+				Some(past_name) => {
+					AccountAliases::<T>::remove(AccountAlias::AccountName(past_name))
+				},
 				None => (),
 			};
 			AccountNameIndex::<T>::insert(&dest, new_account_name);
@@ -265,8 +266,9 @@ where
 	fn lookup(a: Self::Source) -> Result<Self::Target, LookupError> {
 		match a {
 			MultiAddress::Id(id) => Ok(id),
-			MultiAddress::Index(name) =>
-				Self::lookup(&AccountAlias::AccountName(name)).ok_or(LookupError),
+			MultiAddress::Index(name) => {
+				Self::lookup(&AccountAlias::AccountName(name)).ok_or(LookupError)
+			},
 			_ => Err(LookupError),
 		}
 	}

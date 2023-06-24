@@ -62,6 +62,7 @@ sp-version = { workspace = true }
 
 pallet-cosmos = { workspace = true }
 hp-cosmos = { workspace = true }
+hp-io = { workspace = true }
 hp-rpc = { workspace = true }
 
 [build-dependencies]
@@ -115,5 +116,6 @@ std = [
   "substrate-wasm-builder",
   "pallet-cosmos/std",
   "hp-cosmos/std",
+  "hp-io/std",
   "hp-rpc/std",
 ]

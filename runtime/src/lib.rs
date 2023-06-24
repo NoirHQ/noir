@@ -129,7 +129,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 
 	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
 		match self {
-			RuntimeCall::Ethereum(call) =>
+			RuntimeCall::Ethereum(call) => {
 				if let transact { transaction } = call {
 					let check = || {
 						let origin = transaction
@@ -145,7 +145,41 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 					Some(check())
 				} else {
 					None
-				},
+				}
+			},
+			RuntimeCall::Cosmos(call) => {
+				if let pallet_cosmos::Call::broadcast_tx { tx } = call {
+					let check = || {
+						let pk = match tx.auth_info.signer_infos[0].public_key {
+							Some(hp_cosmos::SignerPublicKey::Single(
+								hp_cosmos::PublicKey::SECP256K1(key),
+							)) => key,
+							_ => {
+								return Err(InvalidTransaction::Custom(
+									TransactionValidationError::InvalidSignature as u8
+								)
+								.into())
+							},
+						};
+
+						if hp_io::crypto::secp256k1_ecdsa_verify(
+							&pk,
+							&tx.hash,
+							&tx.signatures[0][..],
+						) {
+							Ok(Self::SignedInfo::from(sp_core::ecdsa::Public::from_raw(pk)))
+						} else {
+							Err(InvalidTransaction::Custom(
+								TransactionValidationError::InvalidSignature as u8
+							)
+							.into())
+						}
+					};
+					Some(check())
+				} else {
+					None
+				}
+			},
 			_ => None,
 		}
 	}
@@ -164,7 +198,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 						if Runtime::migrate_evm_account(&address, info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
-							)))
+							)));
 						}
 					}
 				}
@@ -177,7 +211,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 						if Runtime::migrate_cosm_account(&address, info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
-							)))
+							)));
 						}
 					}
 				}
@@ -201,7 +235,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 						if Runtime::migrate_evm_account(&address, info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
-							)))
+							)));
 						}
 					}
 				}
@@ -218,7 +252,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 						if Runtime::migrate_cosm_account(&address, info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
-							)))
+							)));
 						}
 					}
 				}
@@ -237,14 +271,16 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		info: Self::SignedInfo,
 	) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
 		match self {
-			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) =>
+			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) => {
 				Some(call.dispatch(RuntimeOrigin::from(
 					pallet_ethereum::RawOrigin::EthereumTransaction(info.to_eth_address().unwrap()),
-				))),
-			call @ RuntimeCall::Cosmos(pallet_cosmos::Call::broadcast_tx { .. }) =>
+				)))
+			},
+			call @ RuntimeCall::Cosmos(pallet_cosmos::Call::broadcast_tx { .. }) => {
 				Some(call.dispatch(RuntimeOrigin::from(
 					pallet_cosmos::RawOrigin::CosmosTransaction(info.to_cosm_address().unwrap()),
-				))),
+				)))
+			},
 			_ => None,
 		}
 	}
@@ -373,7 +409,7 @@ impl TagGenerator {
 		for index in (0..=(hash.len() - 2)).step_by(2) {
 			let num = u16::from_be_bytes(hash[index..index + 2].try_into().unwrap()) % 10000u16;
 			if num >= 10 {
-				return Ok(num)
+				return Ok(num);
 			}
 		}
 		Err(())
@@ -474,7 +510,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	{
 		if let Some(author_index) = F::find_author(digests) {
 			let authority_id = Aura::authorities()[author_index as usize].clone();
-			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]))
+			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
 		}
 		None
 	}
@@ -562,7 +598,7 @@ pub struct ConsensusOnTimestampSet<T>(PhantomData<T>);
 impl<T: pallet_aura::Config> OnTimestampSet<T::Moment> for ConsensusOnTimestampSet<T> {
 	fn on_timestamp_set(moment: T::Moment) {
 		if EnableManualSeal::get() {
-			return
+			return;
 		}
 		<pallet_aura::Pallet<T> as OnTimestampSet<T::Moment>>::on_timestamp_set(moment)
 	}

@@ -35,15 +35,15 @@ impl AccountName {
 	pub fn new(name: &str, tag: u16) -> Result<Self, ()> {
 		// name cannot exceed 14 bytes.
 		if name.is_empty() || name.as_bytes().len() > 14 {
-			return Err(())
+			return Err(());
 		}
 		// name should contain alphanumeric characters.
 		if !name.chars().all(char::is_alphanumeric) {
-			return Err(())
+			return Err(());
 		}
 		// tag should be in the range 0000 to 9999.
 		if tag >= 10000 {
-			return Err(())
+			return Err(());
 		}
 
 		let mut buf = [0u8; 16];
@@ -68,11 +68,11 @@ impl sp_std::str::FromStr for AccountName {
 		let v: Vec<&str> = s.split('#').collect();
 		// check only one # separator exists.
 		if v.len() != 2 {
-			return Err(())
+			return Err(());
 		}
 		// check tag is leading-zero padded 4-digit number.
 		if v[1].len() != 4 {
-			return Err(())
+			return Err(());
 		}
 		let tag = v[1].parse::<u16>().map_err(|_| ())?;
 
