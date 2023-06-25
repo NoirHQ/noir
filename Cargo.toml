@@ -25,7 +25,6 @@ lazy_static = { version = "1.4.0", default-features = false }
 log = "0.4.17"
 p256 = { version = "0.13.0", default-features = false, features = ["ecdsa", "alloc"] }
 regex = "1.7.1"
-ripemd = { version = "0.1.3", default-features = false }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 secp256k1 = { version = "0.26.0", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.152", features = ["derive"] }
@@ -124,12 +123,12 @@ pallet-evm-precompile-sha3fips = { git = "https://github.com/paritytech/frontier
 pallet-evm-precompile-simple = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.39", default-features = false }
 
 # horizon
-hc-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3" }
-hp-crypto = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
-hp-io = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
-hp-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
-hp-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
-pallet-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
+hc-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "6c46516" }
+hp-crypto = { git = "https://github.com/noir-protocol/horizon", rev = "6c46516", default-features = false }
+hp-io = { git = "https://github.com/noir-protocol/horizon", rev = "6c46516", default-features = false }
+hp-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "6c46516", default-features = false }
+hp-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "6c46516", default-features = false }
+pallet-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "6c46516", default-features = false }
 
 [profile.release]
 panic = "unwind"

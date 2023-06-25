@@ -21,7 +21,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use np_crypto::{p256, webauthn};
-use ripemd::{Digest, Ripemd160};
 use sp_runtime_interface::runtime_interface;
 
 #[cfg(feature = "std")]
