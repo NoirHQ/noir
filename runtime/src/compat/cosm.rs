@@ -40,7 +40,7 @@ where
 		}
 		let mut data = [0u8; 25];
 		data[0..5].copy_from_slice(b"cosm:");
-		data[4..25].copy_from_slice(&address[..]);
+		data[5..25].copy_from_slice(&address[..]);
 		let hash = H::hash(&data);
 
 		hash.into()
