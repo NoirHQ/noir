@@ -11,6 +11,7 @@ ripemd = { workspace = true }
 secp256k1 = { workspace = true, features = ["alloc", "recovery"], optional = true }
 sp-io = { workspace = true }
 sp-runtime-interface = { workspace = true }
+hp-crypto = { workspace = true }
 
 [features]
 default = ["std"]
@@ -20,4 +21,5 @@ std = [
 	"secp256k1/std",
 	"sp-io/std",
 	"sp-runtime-interface/std",
+	"hp-crypto/std",
 ]

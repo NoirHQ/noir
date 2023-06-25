@@ -32,6 +32,7 @@ pallet-evm-precompile-simple = { workspace = true }
 # noir
 noir-core-primitives = { workspace = true }
 np-crypto = { workspace = true }
+np-io = { workspace = true }
 np-runtime = { workspace = true }
 
 # substrate
@@ -62,7 +63,6 @@ sp-version = { workspace = true }
 
 pallet-cosmos = { workspace = true }
 hp-cosmos = { workspace = true }
-hp-io = { workspace = true }
 hp-rpc = { workspace = true }
 
 [build-dependencies]
@@ -88,6 +88,7 @@ std = [
   "pallet-evm-precompile-sha3fips/std",
   "pallet-evm-precompile-simple/std",
   "noir-core-primitives/std",
+  "np-io/std",
   "np-runtime/std",
   "frame-executive/std",
   "frame-support/std",
@@ -116,6 +117,5 @@ std = [
   "substrate-wasm-builder",
   "pallet-cosmos/std",
   "hp-cosmos/std",
-  "hp-io/std",
   "hp-rpc/std",
 ]

@@ -125,6 +125,7 @@ pallet-evm-precompile-simple = { git = "https://github.com/paritytech/frontier",
 
 # horizon
 hc-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3" }
+hp-crypto = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
 hp-io = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
 hp-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
 hp-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }

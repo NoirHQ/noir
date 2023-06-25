@@ -156,21 +156,17 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 							)) => key,
 							_ => {
 								return Err(InvalidTransaction::Custom(
-									TransactionValidationError::InvalidSignature as u8
+									TransactionValidationError::InvalidSignature as u8,
 								)
 								.into())
 							},
 						};
 
-						if hp_io::crypto::secp256k1_ecdsa_verify(
-							&pk,
-							&tx.hash,
-							&tx.signatures[0][..],
-						) {
+						if np_io::crypto::secp256k1_ecdsa_verify(&pk, &tx.hash, &tx.signatures[0][..]) {
 							Ok(Self::SignedInfo::from(sp_core::ecdsa::Public::from_raw(pk)))
 						} else {
 							Err(InvalidTransaction::Custom(
-								TransactionValidationError::InvalidSignature as u8
+								TransactionValidationError::InvalidSignature as u8,
 							)
 							.into())
 						}

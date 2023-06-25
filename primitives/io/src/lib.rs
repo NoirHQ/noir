@@ -50,8 +50,11 @@ pub trait Crypto {
 
 	/// Hash with ripemd160.
 	fn ripemd160(msg: &[u8]) -> [u8; 20] {
-		let mut h = Ripemd160::new();
-		h.update(msg);
-		h.finalize().into()
+		hp_crypto::ripemd160(msg)
+	}
+
+	/// Verify with secp256k1.
+	fn secp256k1_ecdsa_verify(pk: &[u8; 33], msg: &[u8], sig: &[u8]) -> bool {
+		hp_crypto::secp256k1_ecdsa_verify(pk, msg, sig)
 	}
 }
