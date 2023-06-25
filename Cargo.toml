@@ -124,11 +124,11 @@ pallet-evm-precompile-sha3fips = { git = "https://github.com/paritytech/frontier
 pallet-evm-precompile-simple = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v0.9.39", default-features = false }
 
 # horizon
-hc-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "fba8df0" }
-hp-io = { git = "https://github.com/noir-protocol/horizon", rev = "fba8df0", default-features = false }
-hp-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "fba8df0", default-features = false }
-hp-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "fba8df0", default-features = false }
-pallet-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "fba8df0", default-features = false }
+hc-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3" }
+hp-io = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
+hp-rpc = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
+hp-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
+pallet-cosmos = { git = "https://github.com/noir-protocol/horizon", rev = "bbbb4d3", default-features = false }
 
 [profile.release]
 panic = "unwind"
