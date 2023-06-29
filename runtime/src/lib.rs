@@ -637,6 +637,8 @@ impl pallet_cosmos::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	/// Cosmos execution runner.
 	type Runner = pallet_cosmos::Runner<Self>;
+	/// Weight information for extrinsics in this pallet.
+	type WeightInfo = pallet_cosmos::weights::HorizonWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -744,23 +746,6 @@ impl_runtime_apis! {
 			)
 		}
 	}
-
-	// impl hp_rpc::CosmosRuntimeRPCApi<Block> for Runtime {
-	// 	fn broadcast_tx(tx: hp_cosmos::Tx) -> H256 {
-	// 		use pallet_cosmos::runner::Runner;
-
-	// 		match tx.body.messages[0] {
-	// 			hp_cosmos::Message::MsgSend {from_address, to_address, amount } => {
-	// 				<Runtime as pallet_cosmos::Config>::Runner::msg_send(
-	// 					from_address,
-	// 					to_address,
-	// 					amount,
-	// 				).map_err(|err| err.error.into())
-	// 			}
-	// 		};
-	// 		tx.hash.into()
-	// 	}
-	// }
 
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
 		fn grandpa_authorities() -> GrandpaAuthorityList {
