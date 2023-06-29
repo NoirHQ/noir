@@ -148,7 +148,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				}
 			},
 			RuntimeCall::Cosmos(call) => {
-				if let pallet_cosmos::Call::broadcast_tx { tx } = call {
+				if let pallet_cosmos::Call::transact { tx } = call {
 					let check = || {
 						let pk = match tx.auth_info.signer_infos[0].public_key {
 							Some(hp_cosmos::SignerPublicKey::Single(
@@ -156,7 +156,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 							)) => key,
 							_ => {
 								return Err(InvalidTransaction::Custom(
-									TransactionValidationError::InvalidSignature as u8,
+									hp_cosmos::error::TransactionValidationError::UnsupportedSignerType as u8,
 								)
 								.into())
 							},
@@ -164,8 +164,8 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 
 						if np_io::crypto::secp256k1_ecdsa_verify(
 							&pk,
-							&tx.hash,
-							&tx.signatures[0][..],
+							&tx.hash.as_bytes(),
+							&tx.signatures[0],
 						) {
 							Ok(Self::SignedInfo::from(sp_core::ecdsa::Public::from_raw(pk)))
 						} else {
@@ -192,10 +192,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	) -> Option<TransactionValidity> {
 		match self {
 			RuntimeCall::Ethereum(call) => {
-				let address = info.to_eth_address().unwrap();
 				if let pallet_ethereum::Call::transact { transaction } = &call {
 					if transaction.nonce() == 0 {
-						if Runtime::migrate_evm_account(&address, info).is_err() {
+						if Runtime::migrate_ecdsa_account(info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
 							)));
@@ -205,10 +204,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				call.validate_self_contained(&info.to_eth_address().unwrap(), dispatch_info, len)
 			},
 			RuntimeCall::Cosmos(call) => {
-				let address = info.to_cosm_address().unwrap();
-				if let pallet_cosmos::Call::broadcast_tx { tx } = &call {
+				if let pallet_cosmos::Call::transact { tx } = &call {
 					if tx.auth_info.signer_infos[0].sequence == 0 {
-						if Runtime::migrate_cosm_account(&address, info).is_err() {
+						if Runtime::migrate_ecdsa_account(info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
 							)));
@@ -229,10 +227,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	) -> Option<Result<(), TransactionValidityError>> {
 		match self {
 			RuntimeCall::Ethereum(call) => {
-				let address = info.to_eth_address().unwrap();
 				if let pallet_ethereum::Call::transact { transaction } = &call {
 					if transaction.nonce() == 0 {
-						if Runtime::migrate_evm_account(&address, info).is_err() {
+						if Runtime::migrate_ecdsa_account(info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
 							)));
@@ -246,10 +243,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				)
 			},
 			RuntimeCall::Cosmos(call) => {
-				let address = info.to_cosm_address().unwrap();
-				if let pallet_cosmos::Call::broadcast_tx { tx } = &call {
+				if let pallet_cosmos::Call::transact { tx } = &call {
 					if tx.auth_info.signer_infos[0].sequence == 0 {
-						if Runtime::migrate_cosm_account(&address, info).is_err() {
+						if Runtime::migrate_ecdsa_account(info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
 							)));
@@ -276,7 +272,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 					pallet_ethereum::RawOrigin::EthereumTransaction(info.to_eth_address().unwrap()),
 				)))
 			},
-			call @ RuntimeCall::Cosmos(pallet_cosmos::Call::broadcast_tx { .. }) => {
+			call @ RuntimeCall::Cosmos(pallet_cosmos::Call::transact { .. }) => {
 				Some(call.dispatch(RuntimeOrigin::from(
 					pallet_cosmos::RawOrigin::CosmosTransaction(info.to_cosm_address().unwrap()),
 				)))
@@ -337,8 +333,7 @@ pub struct OnNewAccount;
 impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		if who.kind() == UniversalAddressKind::Secp256k1 {
-			let _ = Runtime::migrate_evm_account(&who.to_eth_address().unwrap(), who);
-			let _ = Runtime::migrate_cosm_account(&who.to_cosm_address().unwrap(), who);
+			let _ = Runtime::migrate_ecdsa_account(who);
 			let _ =
 				pallet_account_alias_registry::Pallet::<Runtime>::connect_aliases_secp256k1(who);
 		}
@@ -638,6 +633,8 @@ impl pallet_cosmos::Config for Runtime {
 	type AddressMapping = compat::cosm::HashedAddressMapping<Self, BlakeTwo256>;
 	/// Currency type for withdraw and balance storage.
 	type Currency = Balances;
+	/// The overarching event type.
+	type RuntimeEvent = RuntimeEvent;
 	/// Cosmos execution runner.
 	type Runner = pallet_cosmos::Runner<Self>;
 }
@@ -693,6 +690,17 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
 }
 
 impl Runtime {
+	fn migrate_ecdsa_account(who: &AccountId) -> Result<Balance, ()> {
+		let mut balance = 0u128;
+		if let Some(address) = who.to_eth_address() {
+			balance += Self::migrate_evm_account(&address, who)?;
+		};
+		if let Some(address) = who.to_cosm_address() {
+			balance += Self::migrate_cosm_account(&address, who)?;
+		};
+		Ok(balance)
+	}
+
 	fn migrate_evm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
 		use fungible::{Inspect, Transfer};
 		let interim_account =
@@ -732,7 +740,7 @@ impl_runtime_apis! {
 	impl hp_rpc::ConvertTxRuntimeApi<Block> for Runtime {
 		fn convert_tx(tx: hp_cosmos::Tx) -> <Block as BlockT>::Extrinsic {
 			UncheckedExtrinsic::new_unsigned(
-				pallet_cosmos::Call::<Runtime>::broadcast_tx { tx }.into(),
+				pallet_cosmos::Call::<Runtime>::transact { tx }.into(),
 			)
 		}
 	}
