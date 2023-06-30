@@ -52,6 +52,8 @@ pub struct FullDeps<C, P, A: ChainApi, CT> {
 	pub command_sink: Option<mpsc::Sender<EngineCommand<Hash>>>,
 	/// Ethereum-compatibility specific dependencies.
 	pub eth: EthDeps<C, P, A, CT, Block>,
+	/// A copy of the chain spec.
+	pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -72,7 +74,6 @@ where
 	C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	C::Api: hp_rpc::ConvertTxRuntimeApi<Block>,
-	// C::Api: hp_rpc::CosmosRuntimeRPCApi<Block>,
 	P: TransactionPool<Block = Block> + 'static,
 	A: ChainApi<Block = Block> + 'static,
 	CT: fp_rpc::ConvertTransaction<<Block as BlockT>::Extrinsic> + Send + Sync + 'static,
@@ -83,7 +84,7 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	let mut io = RpcModule::new(());
-	let FullDeps { client, pool, deny_unsafe, command_sink, eth } = deps;
+	let FullDeps { client, pool, deny_unsafe, command_sink, eth, chain_spec } = deps;
 
 	io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
 	io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
@@ -97,7 +98,7 @@ where
 	}
 
 	// Cosmos compatibility RPCs
-	io.merge(Cosm::new(pool, client).into_rpc())?;
+	io.merge(Cosm::new(chain_spec, pool, client).into_rpc())?;
 
 	// Ethereum compatibility RPCs
 	let io = create_eth::<_, _, _, _, _, _>(io, eth, subscription_task_executor)?;

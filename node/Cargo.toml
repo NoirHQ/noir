@@ -44,6 +44,7 @@ pallet-transaction-payment-rpc = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 prometheus-endpoint = { workspace = true }
 sc-basic-authorship = { workspace = true }
+sc-chain-spec = { workspace = true }
 sc-consensus-manual-seal = { workspace = true }
 sc-cli = { workspace = true }
 sc-client-api = { workspace = true }

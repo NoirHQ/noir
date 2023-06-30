@@ -468,6 +468,7 @@ where
 	let rpc_builder = {
 		let client = client.clone();
 		let pool = transaction_pool.clone();
+		let chain_spec = config.chain_spec.cloned_box();
 
 		Box::new(move |deny_unsafe, subscription_task_executor| {
 			let deps = rpc::FullDeps {
@@ -476,6 +477,7 @@ where
 				deny_unsafe,
 				command_sink: if sealing.is_some() { Some(command_sink.clone()) } else { None },
 				eth: eth_rpc_params.clone(),
+				chain_spec: chain_spec.cloned_box(),
 			};
 
 			rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
