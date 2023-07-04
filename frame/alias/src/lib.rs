@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Account Alias Registry Pallet
+//! # Alias Pallet
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -79,14 +79,14 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::create_account_name())]
 		pub fn create_account_name(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			ensure!(AccountNameIndex::<T>::get(&who).is_none(), Error::<T>::AlreadyExists);
+			ensure!(AccountNameOf::<T>::get(&who).is_none(), Error::<T>::AlreadyExists);
 			let name =
 				sp_std::str::from_utf8(&name[..]).map_err(|_| Error::<T>::InvalidNameFormat)?;
 			let tag =
 				T::TagGenerator::tag(&who, name).map_err(|_| Error::<T>::TagGenerationFailed)?;
 			let account_name =
 				AccountName::new(&name, tag).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			AccountAliases::<T>::try_mutate(
+			AccountIdOf::<T>::try_mutate(
 				AccountAlias::AccountName(account_name),
 				|maybe_value| -> DispatchResult {
 					ensure!(maybe_value.is_none(), Error::<T>::InUse);
@@ -94,7 +94,7 @@ pub mod pallet {
 					Ok(())
 				},
 			)?;
-			AccountNameIndex::<T>::insert(&who, account_name);
+			AccountNameOf::<T>::insert(&who, account_name);
 			Self::deposit_event(Event::<T>::AccountNameUpdated {
 				who,
 				name: account_name,
@@ -107,14 +107,14 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::update_account_name())]
 		pub fn update_account_name(origin: OriginFor<T>, new_name: Vec<u8>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			let account_name = AccountNameIndex::<T>::get(&who).ok_or(Error::<T>::NotExists)?;
+			let account_name = AccountNameOf::<T>::get(&who).ok_or(Error::<T>::NotExists)?;
 			let new_name =
 				sp_std::str::from_utf8(&new_name[..]).map_err(|_| Error::<T>::InvalidNameFormat)?;
 			let tag = T::TagGenerator::tag(&who, new_name)
 				.map_err(|_| Error::<T>::TagGenerationFailed)?;
 			let new_account_name =
 				AccountName::new(&new_name, tag).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			AccountAliases::<T>::try_mutate(
+			AccountIdOf::<T>::try_mutate(
 				AccountAlias::AccountName(new_account_name),
 				|maybe_value| -> DispatchResult {
 					ensure!(maybe_value.is_none(), Error::<T>::InUse);
@@ -122,8 +122,8 @@ pub mod pallet {
 					Ok(())
 				},
 			)?;
-			AccountAliases::<T>::remove(AccountAlias::AccountName(account_name));
-			AccountNameIndex::<T>::insert(&who, new_account_name);
+			AccountIdOf::<T>::remove(AccountAlias::AccountName(account_name));
+			AccountNameOf::<T>::insert(&who, new_account_name);
 			Self::deposit_event(Event::<T>::AccountNameUpdated {
 				who,
 				name: new_account_name,
@@ -154,7 +154,7 @@ pub mod pallet {
 				sp_std::str::from_utf8(&name[..]).map_err(|_| Error::<T>::InvalidNameFormat)?;
 			let new_account_name =
 				AccountName::new(&name, tag).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			AccountAliases::<T>::try_mutate(
+			AccountIdOf::<T>::try_mutate(
 				AccountAlias::AccountName(new_account_name),
 				|maybe_value| -> DispatchResult {
 					ensure!(maybe_value.is_none(), Error::<T>::InUse);
@@ -163,13 +163,12 @@ pub mod pallet {
 				},
 			)?;
 
-			let past_name = AccountNameIndex::<T>::get(&dest);
+			let past_name = AccountNameOf::<T>::get(&dest);
 			match past_name {
-				Some(past_name) =>
-					AccountAliases::<T>::remove(AccountAlias::AccountName(past_name)),
+				Some(past_name) => AccountIdOf::<T>::remove(AccountAlias::AccountName(past_name)),
 				None => (),
 			};
-			AccountNameIndex::<T>::insert(&dest, new_account_name);
+			AccountNameOf::<T>::insert(&dest, new_account_name);
 			Self::deposit_event(Event::<T>::AccountNameUpdated {
 				who: dest,
 				name: new_account_name,
@@ -205,11 +204,9 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	pub type AccountAliases<T: Config> =
-		StorageMap<_, Blake2_128Concat, AccountAlias, T::AccountId>;
+	pub type AccountIdOf<T: Config> = StorageMap<_, Blake2_128Concat, AccountAlias, T::AccountId>;
 	#[pallet::storage]
-	pub type AccountNameIndex<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AccountId, AccountName>;
+	pub type AccountNameOf<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AccountName>;
 }
 
 impl<T: Config> Pallet<T>
@@ -220,7 +217,7 @@ where
 
 	/// Lookup an AccountAlias to get an Id, if exists.
 	pub fn lookup(alias: &AccountAlias) -> Option<T::AccountId> {
-		AccountAliases::<T>::get(alias).map(|x| x)
+		AccountIdOf::<T>::get(alias).map(|x| x)
 	}
 
 	pub fn connect_aliases_secp256k1(who: &T::AccountId) -> Result<(), DispatchError> {
@@ -228,8 +225,8 @@ where
 			.to_eth_address()
 			.map(|x| x.into())
 			.ok_or(Error::<T>::EthereumAddressConversionFailed)?;
-		if AccountAliases::<T>::get(AccountAlias::EthereumAddress(ethereum_address)).is_none() {
-			AccountAliases::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
+		if AccountIdOf::<T>::get(AccountAlias::EthereumAddress(ethereum_address)).is_none() {
+			AccountIdOf::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
 			Self::deposit_event(Event::<T>::EthereumAddressPublished {
 				who: who.clone(),
 				address: ethereum_address,

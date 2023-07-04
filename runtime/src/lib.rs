@@ -267,8 +267,7 @@ impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		if who.kind() == UniversalAddressKind::Secp256k1 {
 			let _ = Runtime::migrate_evm_account(&who.to_eth_address().unwrap(), who);
-			let _ =
-				pallet_account_alias_registry::Pallet::<Runtime>::connect_aliases_secp256k1(who);
+			let _ = pallet_alias::Pallet::<Runtime>::connect_aliases_secp256k1(who);
 		}
 	}
 }
@@ -284,7 +283,7 @@ impl frame_system::Config for Runtime {
 	/// The aggregated dispatch type that is available for extrinsics.
 	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-	type Lookup = AccountAliasRegistry;
+	type Lookup = Alias;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Index = Index;
 	/// The index type for blocks.
@@ -324,7 +323,7 @@ impl frame_system::Config for Runtime {
 }
 
 pub struct TagGenerator;
-impl pallet_account_alias_registry::TagGenerator<Runtime> for TagGenerator {
+impl pallet_alias::TagGenerator<Runtime> for TagGenerator {
 	fn tag(id: &AccountId, name: &str) -> Result<u16, ()> {
 		let salt = pallet_timestamp::Pallet::<Runtime>::get() / 86_400_000u64;
 		Self::tag_inner(id.as_ref(), name, salt)
@@ -344,11 +343,11 @@ impl TagGenerator {
 	}
 }
 
-impl pallet_account_alias_registry::Config for Runtime {
+impl pallet_alias::Config for Runtime {
 	/// The overarching event type.
 	type RuntimeEvent = RuntimeEvent;
 	/// Weight information for extrinsics in this pallet.
-	type WeightInfo = pallet_account_alias_registry::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_alias::weights::SubstrateWeight<Runtime>;
 	/// The generator for tag number that discriminates the same name accounts.
 	type TagGenerator = TagGenerator;
 }
@@ -569,7 +568,7 @@ construct_runtime!(
 		NodeBlock = noir_core_primitives::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		AccountAliasRegistry: pallet_account_alias_registry,
+		Alias: pallet_alias,
 		Aura: pallet_aura,
 		Balances: pallet_balances,
 		BaseFee: pallet_base_fee,
