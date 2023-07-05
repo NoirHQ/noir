@@ -11,6 +11,11 @@ members = [
 	"runtime",
 ]
 
+[workspace.package]
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+repository = "https://github.com/noir-protocol/noir/"
+
 [workspace.dependencies]
 array-bytes = "6.0"
 async-trait = "0.1.66"
