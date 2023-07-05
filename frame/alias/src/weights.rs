@@ -23,7 +23,7 @@
 use core::marker::PhantomData;
 use frame_support::{traits::Get, weights::Weight};
 
-/// Weight functions needed for pallet_account_alias_registy.
+/// Weight functions needed for pallet_alias.
 pub trait WeightInfo {
 	fn create_account_name() -> Weight;
 	fn update_account_name() -> Weight;
@@ -31,35 +31,35 @@ pub trait WeightInfo {
 	fn force_set_account_name() -> Weight;
 }
 
-/// Weights for pallet_account_alias_registy using the Substrate node and recommended hardware.
+/// Weights for pallet_alias using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: AccountNames (r:1 w:1), AccountNameIndex (r:1 w:1)
+	// Storage: AccountIdOf (r:1 w:1), AccountNameOf (r:1 w:1)
 	fn create_account_name() -> Weight {
     // Base fee
 		Weight::from_ref_time(50_000_000)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
-	}	
-  // Storage: AccountNames (r:1 w:2), AccountNameIndex (r:1 w:1)
+	}
+  // Storage: AccountIdOf (r:1 w:2), AccountNameOf (r:1 w:1)
 	fn update_account_name() -> Weight {
     // Base fee
 		Weight::from_ref_time(100_000_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
-	// Storage: AccountNames (r:1 w:1), AccountNameIndex (r:1 w:1)
+	// Storage: AccountIdOf (r:1 w:1), AccountNameOf (r:1 w:1)
 	fn connect_aliases() -> Weight {
 		// Base fee
 		Weight::from_ref_time(50_000_000)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
-	}	
-	// Storage: AccountNames (r:1 w:2), AccountNameIndex (r:1 w:1)
+	}
+	// Storage: AccountIdOf (r:1 w:2), AccountNameOf (r:1 w:1)
 	fn force_set_account_name() -> Weight {
 		// Base fee
 		Weight::from_ref_time(50_000_000)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
-	}	
+	}
 }

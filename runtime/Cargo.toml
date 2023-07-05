@@ -41,7 +41,7 @@ frame-executive = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-rpc-runtime-api = { workspace = true }
-pallet-account-alias-registry = { workspace = true }
+pallet-alias = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-grandpa = { workspace = true }
@@ -90,7 +90,7 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "frame-system-rpc-runtime-api/std",
-  "pallet-account-alias-registry/std",
+  "pallet-alias/std",
   "pallet-aura/std",
   "pallet-balances/std",
   "pallet-grandpa/std",
