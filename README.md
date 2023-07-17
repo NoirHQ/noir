@@ -1,6 +1,6 @@
 # Noir
 
-[![GitHub License](https://img.shields.io/badge/license-GPL3%2FApache2-blue)](#LICENSE) [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/noir-protocol/noir/ci.yml?event=push)](https://github.com/noir-protocol/noir)
+[![GitHub License](https://img.shields.io/badge/license-GPL3%2FApache2-blue)](#LICENSE) [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/NoirHQ/noir/ci.yml?event=push)](https://github.com/NoirHQ/noir)
 
 Implementation of Noir, a metaprotocol for connecting heterogeneous distributed
 systems.
