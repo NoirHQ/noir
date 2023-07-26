@@ -44,7 +44,7 @@ where
 				if let Ok(pubkey) = who.clone().try_into() {
 					if let Ok(hashed) = pubkey.to_eth_address() {
 						if &hashed == &address.0 {
-							return Ok(who);
+							return Ok(who)
 						}
 					};
 				};
@@ -67,7 +67,7 @@ where
 	fn into_account_id(address: H160) -> T::AccountId {
 		let alias = AccountAlias::EthereumAddress(address.into());
 		if let Some(x) = pallet_account_alias_registry::Pallet::<T>::lookup(&alias) {
-			return x;
+			return x
 		}
 		let mut data = [0u8; 24];
 		data[0..4].copy_from_slice(b"evm:");

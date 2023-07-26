@@ -527,7 +527,7 @@ where
 
 			network_starter.start_network();
 			log::info!("Manual Seal Ready");
-			return Ok(task_manager);
+			return Ok(task_manager)
 		}
 
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(

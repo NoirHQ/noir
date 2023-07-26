@@ -120,7 +120,7 @@ impl TryFrom<&str> for DeriveJunction {
 			if index < Self::HARDENED_MODIFIER {
 				index += Self::HARDENED_MODIFIER;
 			} else {
-				return Err(());
+				return Err(())
 			}
 		}
 		Ok(Self::from(index))

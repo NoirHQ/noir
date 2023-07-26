@@ -58,7 +58,7 @@ impl ClientDataJson {
 	fn check_rpid(&self, rpid_hash: &[u8]) -> bool {
 		#[cfg(not(debug_assertions))]
 		if !self.origin.starts_with("https://") {
-			return false;
+			return false
 		}
 
 		match self.origin.split_once("//") {
@@ -99,11 +99,11 @@ impl TryFrom<&[u8]> for ClientDataJson {
 			Err(_) => return Err(()),
 		};
 		if client_data.type_ != "webauthn.get" {
-			return Err(());
+			return Err(())
 		}
 		#[cfg(not(debug_assertions))]
 		if !client_data.origin.starts_with("https://") {
-			return Err(());
+			return Err(())
 		}
 		Ok(client_data)
 	}
@@ -137,21 +137,20 @@ impl Signature {
 			Err(_) => return false,
 		};
 		if !client_data.check_message(message_hash) {
-			return false;
+			return false
 		}
 		if self.authenticator_data.len() < 37 {
-			return false;
+			return false
 		}
 		if !client_data.check_rpid(self.rpid_hash()) {
-			return false;
+			return false
 		}
 		let mut signed_message: Vec<u8> = Vec::new();
 		signed_message.extend(&self.authenticator_data);
 		signed_message.extend(sha2_256(&self.client_data_json));
 		match p256::Signature::from_der(&self.signature[..]) {
-			Some(sig) => {
-				p256::Pair::verify_prehashed(&sig, &sha2_256(&signed_message[..]), &pubkey)
-			},
+			Some(sig) =>
+				p256::Pair::verify_prehashed(&sig, &sha2_256(&signed_message[..]), &pubkey),
 			None => false,
 		}
 	}

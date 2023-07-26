@@ -58,9 +58,8 @@ impl SubstrateCli for Cli {
 				Box::new(chain_spec::development_config(enable_manual_seal))
 			},
 			"" | "local" => Box::new(chain_spec::local_testnet_config()),
-			path => {
-				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?)
-			},
+			path =>
+				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 		})
 	}
 
@@ -124,9 +123,8 @@ pub fn run() -> sc_cli::Result<()> {
 					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
 						path: frontier_database_dir(&db_config_dir, "paritydb"),
 					},
-					_ => {
-						return Err(format!("Cannot purge `{:?}` database", config.database).into())
-					},
+					_ =>
+						return Err(format!("Cannot purge `{:?}` database", config.database).into()),
 				};
 				cmd.run(frontier_database_config)?;
 				cmd.run(config.database)

@@ -36,7 +36,7 @@ where
 	fn into_account_id(address: H160) -> T::AccountId {
 		let alias = AccountAlias::CosmosAddress(address.into());
 		if let Some(x) = pallet_account_alias_registry::Pallet::<T>::lookup(&alias) {
-			return x;
+			return x
 		}
 		let mut data = [0u8; 25];
 		data[0..5].copy_from_slice(b"cosm:");

@@ -248,7 +248,7 @@ impl sp_std::str::FromStr for UniversalAddress {
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		if !s.starts_with('u') {
-			return Err(());
+			return Err(())
 		}
 		let addr = UniversalAddress(Base64::decode_vec(&s[1..]).map_err(|_| ())?);
 		match addr.kind() {
