@@ -149,28 +149,27 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 			RuntimeCall::Cosmos(call) =>
 				if let pallet_cosmos::Call::transact { tx } = call {
 					let check = || {
-						let pk = match tx.auth_info.signer_infos[0].public_key {
-							Some(hp_cosmos::SignerPublicKey::Single(
-								hp_cosmos::PublicKey::Secp256k1(key),
-							)) => key,
-							_ => return Err(InvalidTransaction::Custom(
-								hp_cosmos::error::TransactionValidationError::UnsupportedSignerType
-									as u8,
-							)
-							.into()),
-						};
-
-						if np_io::crypto::secp256k1_ecdsa_verify(
-							&tx.signatures[0],
-							&tx.hash.as_bytes(),
-							&pk[..],
-						) {
-							Ok(Self::SignedInfo::from(sp_core::ecdsa::Public::from_raw(pk)))
+						if let Some(hp_cosmos::SignerPublicKey::Single(
+							hp_cosmos::PublicKey::Secp256k1(pk),
+						)) = tx.auth_info.signer_infos[0].public_key
+						{
+							if np_io::crypto::secp256k1_ecdsa_verify(
+								&tx.signatures[0],
+								tx.hash.as_bytes(),
+								&pk,
+							) {
+								Ok(Self::SignedInfo::from(sp_core::ecdsa::Public::from_raw(pk)).into())
+							} else {
+								Err(InvalidTransaction::Custom(
+									hp_cosmos::error::TransactionValidationError::InvalidSignature
+										as u8,
+								))?
+							}
 						} else {
 							Err(InvalidTransaction::Custom(
-								TransactionValidationError::InvalidSignature as u8,
-							)
-							.into())
+								hp_cosmos::error::TransactionValidationError::UnsupportedSignerType
+									as u8,
+							))?
 						}
 					};
 					Some(check())
