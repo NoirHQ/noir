@@ -14,7 +14,7 @@ members = [
 [workspace.package]
 authors = ["Haderech Pte. Ltd."]
 edition = "2021"
-repository = "https://github.com/noir-protocol/noir/"
+repository = "https://github.com/NoirHQ/noir/"
 
 [workspace.dependencies]
 array-bytes = "6.0"
