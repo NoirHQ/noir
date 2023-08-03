@@ -158,7 +158,8 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 								tx.hash.as_bytes(),
 								&pk,
 							) {
-								Ok(Self::SignedInfo::from(sp_core::ecdsa::Public::from_raw(pk)).into())
+								Ok(Self::SignedInfo::from(sp_core::ecdsa::Public::from_raw(pk))
+									.into())
 							} else {
 								Err(InvalidTransaction::Custom(
 									hp_cosmos::error::TransactionValidationError::InvalidSignature
