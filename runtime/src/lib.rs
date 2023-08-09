@@ -47,6 +47,7 @@ use frame_support::{
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
 use np_crypto::ecdsa::EcdsaExt;
 use np_runtime::{AccountName, UniversalAddressKind};
+use pallet_cosmos::handler::cosm::MsgHandler;
 use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, AddressMapping, FeeCalculator, Runner};
 use pallet_grandpa::{
@@ -630,6 +631,8 @@ impl pallet_cosmos::Config for Runtime {
 	type Currency = Balances;
 	/// Convert a length value into a deductible fee based on the currency type.
 	type LengthToFee = IdentityFee<Balance>;
+	/// Handle cosmos messages.
+	type MsgHandler = MsgHandler<Self>;
 	/// The overarching event type.
 	type RuntimeEvent = RuntimeEvent;
 	/// Weight information for extrinsics in this pallet.
