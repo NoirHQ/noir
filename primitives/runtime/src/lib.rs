@@ -26,8 +26,8 @@ mod universaladdress;
 pub use accountname::AccountName;
 pub use universaladdress::{UniversalAddress, UniversalAddressKind};
 
-use codec::{Decode, Encode};
 use np_crypto::{p256, webauthn};
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519};
 use sp_runtime::{

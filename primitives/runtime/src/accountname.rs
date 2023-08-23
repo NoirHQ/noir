@@ -18,7 +18,7 @@
 
 //! An account alias.
 
-use codec::{Compact, CompactAs, Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Compact, CompactAs, Decode, Encode, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 
@@ -114,7 +114,7 @@ impl CompactAs for AccountName {
 		&self.0
 	}
 
-	fn decode_from(x: Self::As) -> Result<Self, codec::Error> {
+	fn decode_from(x: Self::As) -> Result<Self, Error> {
 		Ok(Self(x))
 	}
 }

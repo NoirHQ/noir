@@ -10,7 +10,7 @@ repository = { workspace = true }
 [dependencies]
 array-bytes = { workspace = true, optional = true }
 base64ct = { workspace = true, optional = true }
-codec = { workspace = true, package = "parity-scale-codec", features = ["derive", "max-encoded-len"] }
+parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 
@@ -30,7 +30,7 @@ default = ["std"]
 std = [
 	"array-bytes",
 	"base64ct/std",
-	"codec/std",
+	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde",
 	"np-crypto/std",

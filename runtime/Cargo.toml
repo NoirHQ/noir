@@ -12,7 +12,7 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { workspace = true, package = "parity-scale-codec" }
+parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # frontier
@@ -73,7 +73,7 @@ substrate-wasm-builder = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
-  "codec/std",
+  "parity-scale-codec/std",
   "scale-info/std",
   "ethereum/std",
   "fp-ethereum/std",

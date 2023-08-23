@@ -23,10 +23,10 @@
 pub mod weights;
 
 use crate::weights::WeightInfo;
-use codec::{Decode, Encode, MaxEncodedLen};
 use np_crypto::ecdsa::EcdsaExt;
 use np_runtime::AccountName;
 pub use pallet::*;
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{LookupError, StaticLookup},
