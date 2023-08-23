@@ -30,7 +30,6 @@ mod compat;
 use compat::ethereum::TransactionExt;
 mod precompiles;
 
-use codec::{Decode, Encode};
 use fp_ethereum::TransactionValidationError;
 use fp_rpc::TransactionStatus;
 use frame_support::{
@@ -54,6 +53,7 @@ use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
 use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier};
+use parity_scale_codec::{Decode, Encode};
 use precompiles::FrontierPrecompiles;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;

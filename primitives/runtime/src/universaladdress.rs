@@ -17,8 +17,8 @@
 
 //! Universal account infrastructure.
 
-use codec::{Decode, Encode, EncodeLike, Input, MaxEncodedLen};
 use np_crypto::{ecdsa::EcdsaExt, p256};
+use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
 use sp_std::vec::Vec;
@@ -197,7 +197,7 @@ impl Encode for UniversalAddress {
 impl EncodeLike for UniversalAddress {}
 
 impl Decode for UniversalAddress {
-	fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
 		let byte = input.read_byte()?;
 		let expected_len = match byte {
 			0xed | 0xef => 34,
@@ -349,7 +349,7 @@ impl sp_std::fmt::Debug for UniversalAddress {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use codec::{Decode, Encode, IoReader};
+	use parity_scale_codec::{Decode, Encode, IoReader};
 	use sp_std::str::FromStr;
 
 	#[test]

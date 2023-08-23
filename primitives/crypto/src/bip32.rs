@@ -21,9 +21,9 @@
 #![doc(hidden)]
 
 #[cfg(feature = "full_crypto")]
-use codec::{Decode, Encode};
-#[cfg(feature = "full_crypto")]
 use hmac::{Hmac, Mac};
+#[cfg(feature = "full_crypto")]
+use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "full_crypto")]
 use sha2::Sha512;
 #[cfg(feature = "full_crypto")]
