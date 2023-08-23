@@ -73,7 +73,6 @@ pub trait RuntimeApiCollection:
 	BaseRuntimeApiCollection
 	+ EthCompatRuntimeApiCollection
 	+ hp_rpc::ConvertTxRuntimeApi<Block>
-	// + hp_rpc::CosmosRuntimeRPCApi<Block>
 	+ sp_consensus_aura::AuraApi<Block, AuraId>
 	+ sp_finality_grandpa::GrandpaApi<Block>
 	+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index>
@@ -88,7 +87,6 @@ where
 	Api: BaseRuntimeApiCollection
 		+ EthCompatRuntimeApiCollection
 		+ hp_rpc::ConvertTxRuntimeApi<Block>
-		// + hp_rpc::CosmosRuntimeRPCApi<Block>
 		+ sp_consensus_aura::AuraApi<Block, AuraId>
 		+ sp_finality_grandpa::GrandpaApi<Block>
 		+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index>

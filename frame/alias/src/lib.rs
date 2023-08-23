@@ -241,8 +241,8 @@ where
 			.to_cosm_address()
 			.map(|x| x.into())
 			.ok_or(Error::<T>::CosmosAddressConversionFailed)?;
-		if AccountAliases::<T>::get(AccountAlias::CosmosAddress(cosmos_address)).is_none() {
-			AccountAliases::<T>::insert(AccountAlias::CosmosAddress(cosmos_address), who);
+		if AccountIdOf::<T>::get(AccountAlias::CosmosAddress(cosmos_address)).is_none() {
+			AccountIdOf::<T>::insert(AccountAlias::CosmosAddress(cosmos_address), who);
 			Self::deposit_event(Event::<T>::CosmosAddressPublished {
 				who: who.clone(),
 				address: cosmos_address,

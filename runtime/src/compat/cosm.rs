@@ -19,7 +19,7 @@
 //! Adapter types for Cosmos pallet compatibility.
 
 use np_crypto::ecdsa::EcdsaExt;
-use pallet_account_alias_registry::AccountAlias;
+use pallet_alias::AccountAlias;
 use pallet_cosmos::AddressMapping;
 use sp_core::{Hasher, H160, H256};
 use sp_std::marker::PhantomData;
@@ -29,13 +29,13 @@ pub struct HashedAddressMapping<T, H>(PhantomData<T>, PhantomData<H>);
 
 impl<T, H> AddressMapping<T::AccountId> for HashedAddressMapping<T, H>
 where
-	T: pallet_account_alias_registry::Config,
+	T: pallet_alias::Config,
 	T::AccountId: From<H256> + EcdsaExt,
 	H: Hasher<Out = H256>,
 {
 	fn into_account_id(address: H160) -> T::AccountId {
 		let alias = AccountAlias::CosmosAddress(address.into());
-		if let Some(x) = pallet_account_alias_registry::Pallet::<T>::lookup(&alias) {
+		if let Some(x) = pallet_alias::Pallet::<T>::lookup(&alias) {
 			return x
 		}
 		let mut data = [0u8; 25];
