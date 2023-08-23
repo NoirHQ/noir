@@ -1,10 +1,13 @@
 [package]
 name = "noir-node"
-version = "0.1.0"
-edition = "2021"
+version = "0.2.0"
+description = "Noir Node"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/noir-protocol/noir/"
 build = "build.rs"
+
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]

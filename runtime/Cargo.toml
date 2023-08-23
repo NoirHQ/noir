@@ -1,10 +1,12 @@
 [package]
 name = "noir-runtime"
 version = "0.1.0"
-edition = "2021"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/noir-protocol/noir/"
 build = "build.rs"
+
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -40,7 +42,7 @@ frame-executive = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 frame-system-rpc-runtime-api = { workspace = true }
-pallet-account-alias-registry = { workspace = true }
+pallet-alias = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-grandpa = { workspace = true }
@@ -94,7 +96,7 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "frame-system-rpc-runtime-api/std",
-  "pallet-account-alias-registry/std",
+  "pallet-alias/std",
   "pallet-aura/std",
   "pallet-balances/std",
   "pallet-grandpa/std",

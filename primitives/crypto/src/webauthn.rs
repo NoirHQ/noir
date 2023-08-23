@@ -46,6 +46,16 @@ struct ClientDataJson {
 
 #[cfg(feature = "full_crypto")]
 impl ClientDataJson {
+	fn check_origin(&self) -> bool {
+		if self.origin.starts_with("https://") {
+			true
+		} else if self.origin.starts_with("http://localhost") {
+			true
+		} else {
+			false
+		}
+	}
+
 	// challenge should be same to the hash value of the message.
 	fn check_message(&self, message_hash: &[u8]) -> bool {
 		match Base64::decode_vec(&self.challenge) {
@@ -56,8 +66,7 @@ impl ClientDataJson {
 
 	// origin should be same to the rpId or its subdomain.
 	fn check_rpid(&self, rpid_hash: &[u8]) -> bool {
-		#[cfg(not(debug_assertions))]
-		if !self.origin.starts_with("https://") {
+		if !self.check_origin() {
 			return false
 		}
 
@@ -101,8 +110,7 @@ impl TryFrom<&[u8]> for ClientDataJson {
 		if client_data.type_ != "webauthn.get" {
 			return Err(())
 		}
-		#[cfg(not(debug_assertions))]
-		if !client_data.origin.starts_with("https://") {
+		if !client_data.check_origin() {
 			return Err(())
 		}
 		Ok(client_data)

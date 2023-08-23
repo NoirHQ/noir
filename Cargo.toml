@@ -3,13 +3,18 @@ resolver = "2"
 
 members = [
 	"core-primitives",
-	"frame/account-alias-registry",
+	"frame/alias",
 	"node",
 	"primitives/crypto",
 	"primitives/io",
 	"primitives/runtime",
 	"runtime",
 ]
+
+[workspace.package]
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+repository = "https://github.com/NoirHQ/noir/"
 
 [workspace.dependencies]
 array-bytes = "6.0"
@@ -51,7 +56,7 @@ noir-runtime = { path = "runtime", default-features = false }
 np-crypto = { path = "primitives/crypto", default-features = false }
 np-io = { path = "primitives/io", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
-pallet-account-alias-registry = { path = "frame/account-alias-registry", default-features = false }
+pallet-alias = { path = "frame/alias", default-features = false }
 
 # substrate
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
