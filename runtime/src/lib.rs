@@ -329,7 +329,7 @@ pub struct OnNewAccount;
 impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		if who.kind() == UniversalAddressKind::Secp256k1 {
-			let _ = Runtime::migrate_evm_account(&who.to_eth_address().unwrap(), who);
+			let _ = Runtime::migrate_ecdsa_account(who);
 			let _ = pallet_alias::Pallet::<Runtime>::connect_aliases_secp256k1(who);
 		}
 	}
