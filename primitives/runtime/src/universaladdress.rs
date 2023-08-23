@@ -135,6 +135,16 @@ impl EcdsaExt for UniversalAddress {
 			_ => None,
 		}
 	}
+
+	fn to_cosm_address(&self) -> Option<H160> {
+		match self.kind() {
+			UniversalAddressKind::Secp256k1 => {
+				let hashed = sp_io::hashing::sha2_256(&self.0[2..]);
+				Some(np_io::crypto::ripemd160(&hashed).into())
+			},
+			_ => None,
+		}
+	}
 }
 
 impl AsRef<[u8]> for UniversalAddress {

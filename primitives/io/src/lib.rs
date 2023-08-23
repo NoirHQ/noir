@@ -46,4 +46,14 @@ pub trait Crypto {
 		res.copy_from_slice(&pubkey.serialize_uncompressed()[1..]);
 		Some(res)
 	}
+
+	/// Hash with ripemd160.
+	fn ripemd160(msg: &[u8]) -> [u8; 20] {
+		hp_crypto::ripemd160(msg)
+	}
+
+	/// Verify with secp256k1.
+	fn secp256k1_ecdsa_verify(sig: &[u8], msg: &[u8], pk: &[u8]) -> bool {
+		hp_crypto::secp256k1_ecdsa_verify(sig, msg, pk)
+	}
 }

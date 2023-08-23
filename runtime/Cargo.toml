@@ -34,6 +34,7 @@ pallet-evm-precompile-simple = { workspace = true }
 # noir
 noir-core-primitives = { workspace = true }
 np-crypto = { workspace = true }
+np-io = { workspace = true }
 np-runtime = { workspace = true }
 
 # substrate
@@ -62,6 +63,10 @@ sp-std = { workspace = true }
 sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 
+pallet-cosmos = { workspace = true }
+hp-cosmos = { workspace = true }
+hp-rpc = { workspace = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -85,6 +90,7 @@ std = [
   "pallet-evm-precompile-sha3fips/std",
   "pallet-evm-precompile-simple/std",
   "noir-core-primitives/std",
+  "np-io/std",
   "np-runtime/std",
   "frame-executive/std",
   "frame-support/std",
@@ -111,4 +117,7 @@ std = [
   "sp-transaction-pool/std",
   "sp-version/std",
   "substrate-wasm-builder",
+  "pallet-cosmos/std",
+  "hp-cosmos/std",
+  "hp-rpc/std",
 ]

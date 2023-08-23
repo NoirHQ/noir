@@ -17,6 +17,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use noir_runtime::{AccountId, EnableManualSeal, GenesisConfig, Signature, WASM_BINARY};
+use sc_chain_spec::Properties;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -78,6 +79,9 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
+	let mut properties = Properties::new();
+	properties.insert("tokenDecimals".to_string(), serde_json::Value::from(18));
+	properties.insert("tokenSymbol".to_string(), serde_json::Value::from("CDT"));
 
 	DevChainSpec::from_genesis(
 		// Name
@@ -113,7 +117,7 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 		None,
 		None,
 		// Properties
-		None,
+		Some(properties),
 		// Extensions
 		None,
 	)
@@ -121,6 +125,9 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 
 pub fn local_testnet_config() -> ChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
+	let mut properties = Properties::new();
+	properties.insert("tokenDecimals".to_string(), serde_json::Value::from(18));
+	properties.insert("tokenSymbol".to_string(), serde_json::Value::from("CDT"));
 
 	ChainSpec::from_genesis(
 		// Name
@@ -161,7 +168,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		None,
 		None,
 		// Properties
-		None,
+		Some(properties),
 		// Extensions
 		None,
 	)

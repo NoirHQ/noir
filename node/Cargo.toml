@@ -23,6 +23,7 @@ futures = { workspace = true }
 jsonrpsee = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 
 # frontier
 fc-cli = { workspace = true }
@@ -47,6 +48,7 @@ pallet-transaction-payment-rpc = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 prometheus-endpoint = { workspace = true }
 sc-basic-authorship = { workspace = true }
+sc-chain-spec = { workspace = true }
 sc-consensus-manual-seal = { workspace = true }
 sc-cli = { workspace = true }
 sc-client-api = { workspace = true }
@@ -78,6 +80,9 @@ sp-timestamp = { workspace = true }
 sp-transaction-pool = { workspace = true }
 sp-trie = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
+
+hc-rpc = { workspace = true }
+hp-rpc = { workspace = true, features = ["default"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

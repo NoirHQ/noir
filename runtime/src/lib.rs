@@ -47,6 +47,7 @@ use frame_support::{
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
 use np_crypto::ecdsa::EcdsaExt;
 use np_runtime::{AccountName, UniversalAddressKind};
+use pallet_cosmos::handler::cosm::MsgHandler;
 use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
 use pallet_evm::{Account as EVMAccount, AddressMapping, FeeCalculator, Runner};
 use pallet_grandpa::{
@@ -122,6 +123,7 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	fn is_self_contained(&self) -> bool {
 		match self {
 			RuntimeCall::Ethereum(call) => call.is_self_contained(),
+			RuntimeCall::Cosmos(call) => call.is_self_contained(),
 			_ => false,
 		}
 	}
@@ -145,6 +147,37 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				} else {
 					None
 				},
+			RuntimeCall::Cosmos(call) =>
+				if let pallet_cosmos::Call::transact { tx } = call {
+					let check = || {
+						if let Some(hp_cosmos::SignerPublicKey::Single(
+							hp_cosmos::PublicKey::Secp256k1(pk),
+						)) = tx.auth_info.signer_infos[0].public_key
+						{
+							if np_io::crypto::secp256k1_ecdsa_verify(
+								&tx.signatures[0],
+								tx.hash.as_bytes(),
+								&pk,
+							) {
+								Ok(Self::SignedInfo::from(sp_core::ecdsa::Public::from_raw(pk))
+									.into())
+							} else {
+								Err(InvalidTransaction::Custom(
+									hp_cosmos::error::TransactionValidationError::InvalidSignature
+										as u8,
+								))?
+							}
+						} else {
+							Err(InvalidTransaction::Custom(
+								hp_cosmos::error::TransactionValidationError::UnsupportedSignerType
+									as u8,
+							))?
+						}
+					};
+					Some(check())
+				} else {
+					None
+				},
 			_ => None,
 		}
 	}
@@ -157,10 +190,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	) -> Option<TransactionValidity> {
 		match self {
 			RuntimeCall::Ethereum(call) => {
-				let address = info.to_eth_address().unwrap();
 				if let pallet_ethereum::Call::transact { transaction } = &call {
 					if transaction.nonce() == 0 {
-						if Runtime::migrate_evm_account(&address, info).is_err() {
+						if Runtime::migrate_ecdsa_account(info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
 							)))
@@ -168,6 +200,18 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 					}
 				}
 				call.validate_self_contained(&info.to_eth_address().unwrap(), dispatch_info, len)
+			},
+			RuntimeCall::Cosmos(call) => {
+				if let pallet_cosmos::Call::transact { tx } = &call {
+					if tx.auth_info.signer_infos[0].sequence == 0 {
+						if Runtime::migrate_ecdsa_account(info).is_err() {
+							return Some(Err(TransactionValidityError::Unknown(
+								UnknownTransaction::CannotLookup,
+							)))
+						}
+					}
+				}
+				call.validate_self_contained(&info.to_cosm_address().unwrap(), dispatch_info, len)
 			},
 			_ => None,
 		}
@@ -181,10 +225,9 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	) -> Option<Result<(), TransactionValidityError>> {
 		match self {
 			RuntimeCall::Ethereum(call) => {
-				let address = info.to_eth_address().unwrap();
 				if let pallet_ethereum::Call::transact { transaction } = &call {
 					if transaction.nonce() == 0 {
-						if Runtime::migrate_evm_account(&address, info).is_err() {
+						if Runtime::migrate_ecdsa_account(info).is_err() {
 							return Some(Err(TransactionValidityError::Unknown(
 								UnknownTransaction::CannotLookup,
 							)))
@@ -193,6 +236,22 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 				}
 				call.pre_dispatch_self_contained(
 					&info.to_eth_address().unwrap(),
+					dispatch_info,
+					len,
+				)
+			},
+			RuntimeCall::Cosmos(call) => {
+				if let pallet_cosmos::Call::transact { tx } = &call {
+					if tx.auth_info.signer_infos[0].sequence == 0 {
+						if Runtime::migrate_ecdsa_account(info).is_err() {
+							return Some(Err(TransactionValidityError::Unknown(
+								UnknownTransaction::CannotLookup,
+							)))
+						}
+					}
+				}
+				call.pre_dispatch_self_contained(
+					&info.to_cosm_address().unwrap(),
 					dispatch_info,
 					len,
 				)
@@ -209,6 +268,10 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) =>
 				Some(call.dispatch(RuntimeOrigin::from(
 					pallet_ethereum::RawOrigin::EthereumTransaction(info.to_eth_address().unwrap()),
+				))),
+			call @ RuntimeCall::Cosmos(pallet_cosmos::Call::transact { .. }) =>
+				Some(call.dispatch(RuntimeOrigin::from(
+					pallet_cosmos::RawOrigin::CosmosTransaction(info.to_cosm_address().unwrap()),
 				))),
 			_ => None,
 		}
@@ -266,7 +329,7 @@ pub struct OnNewAccount;
 impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 	fn on_new_account(who: &AccountId) {
 		if who.kind() == UniversalAddressKind::Secp256k1 {
-			let _ = Runtime::migrate_evm_account(&who.to_eth_address().unwrap(), who);
+			let _ = Runtime::migrate_ecdsa_account(who);
 			let _ = pallet_alias::Pallet::<Runtime>::connect_aliases_secp256k1(who);
 		}
 	}
@@ -560,6 +623,25 @@ impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
 }
 
+impl pallet_cosmos::Config for Runtime {
+	/// Mapping from address to account id.
+	type AddressMapping = compat::cosm::HashedAddressMapping<Self, BlakeTwo256>;
+	/// Currency type for withdraw and balance storage.
+	type Currency = Balances;
+	/// Convert a length value into a deductible fee based on the currency type.
+	type LengthToFee = IdentityFee<Balance>;
+	/// Handle cosmos messages.
+	type MsgHandler = MsgHandler<Self>;
+	/// The overarching event type.
+	type RuntimeEvent = RuntimeEvent;
+	/// Weight information for extrinsics in this pallet.
+	type WeightInfo = pallet_cosmos::weights::HorizonWeight<Runtime>;
+	/// Used to calculate actual fee when executing cosmos transaction.
+	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+	/// Convert a weight value into a deductible fee based on the currency type.
+	type WeightToFee = IdentityFee<Balance>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -572,6 +654,7 @@ construct_runtime!(
 		Aura: pallet_aura,
 		Balances: pallet_balances,
 		BaseFee: pallet_base_fee,
+		Cosmos: pallet_cosmos,
 		DynamicFee: pallet_dynamic_fee,
 		Ethereum: pallet_ethereum,
 		EVM: pallet_evm,
@@ -610,6 +693,17 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
 }
 
 impl Runtime {
+	fn migrate_ecdsa_account(who: &AccountId) -> Result<Balance, ()> {
+		let mut balance = 0u128;
+		if let Some(address) = who.to_eth_address() {
+			balance += Self::migrate_evm_account(&address, who)?;
+		};
+		if let Some(address) = who.to_cosm_address() {
+			balance += Self::migrate_cosm_account(&address, who)?;
+		};
+		Ok(balance)
+	}
+
 	fn migrate_evm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
 		use fungible::{Inspect, Transfer};
 		let interim_account =
@@ -625,9 +719,35 @@ impl Runtime {
 		.map_err(|_| ())
 		.map(|_| balance)
 	}
+
+	fn migrate_cosm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
+		use fungible::{Inspect, Transfer};
+		use pallet_cosmos::AddressMapping;
+
+		let interim_account =
+			<Runtime as pallet_cosmos::Config>::AddressMapping::into_account_id(*address);
+		let balance =
+			pallet_balances::Pallet::<Runtime>::reducible_balance(&interim_account, false);
+		<pallet_balances::Pallet<Runtime> as Transfer<AccountId>>::transfer(
+			&interim_account,
+			who,
+			balance,
+			false,
+		)
+		.map_err(|_| ())
+		.map(|_| balance)
+	}
 }
 
 impl_runtime_apis! {
+	impl hp_rpc::ConvertTxRuntimeApi<Block> for Runtime {
+		fn convert_tx(tx: hp_cosmos::Tx) -> <Block as BlockT>::Extrinsic {
+			UncheckedExtrinsic::new_unsigned(
+				pallet_cosmos::Call::<Runtime>::transact { tx }.into(),
+			)
+		}
+	}
+
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
 		fn grandpa_authorities() -> GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()
