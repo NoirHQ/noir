@@ -21,13 +21,13 @@ array-bytes = "6.0"
 async-trait = "0.1.66"
 base64ct = { version = "1.6.0", default-features = false }
 clap = { version = "4.1.8", features = ["derive"] }
-parity-scale-codec = { version = "3.4.0", default-features = false, features = ["derive"] }
 ethereum = { version = "0.14.0", default-features = false, features = ["with-codec"] }
 futures = { version = "0.3.26", features = ["thread-pool"] }
 hmac = { version = "0.12.1", default-features = false }
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 lazy_static = { version = "1.4.0", default-features = false }
 log = "0.4.17"
+parity-scale-codec = { version = "3.4.0", default-features = false, features = ["derive"] }
 p256 = { version = "0.13.0", default-features = false, features = ["ecdsa", "alloc"] }
 regex = "1.7.1"
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
