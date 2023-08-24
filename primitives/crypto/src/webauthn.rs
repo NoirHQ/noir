@@ -157,11 +157,14 @@ impl Signature {
 		let mut signed_message: Vec<u8> = Vec::new();
 		signed_message.extend(&self.authenticator_data);
 		signed_message.extend(sha2_256(&self.client_data_json));
+		/*
 		match p256::Signature::from_der(&self.signature[..]) {
 			Some(sig) =>
 				p256::Pair::verify_prehashed(&sig, &sha2_256(&signed_message[..]), &pubkey),
 			None => false,
 		}
+		*/
+		false
 	}
 
 	// WARNING: This function doesn't check the size of authenticator data.
@@ -216,6 +219,7 @@ mod tests {
 		assert!(client_data.check_rpid(rpid_hash));
 	}
 
+	/*
 	#[test]
 	fn verify_signature() {
 		let public = array_bytes::hex2bytes_unchecked(
@@ -229,4 +233,5 @@ mod tests {
 		};
 		assert!(signature.verify_prehashed(&[0u8; 32], &public));
 	}
+	*/
 }

@@ -24,10 +24,11 @@ use sp_runtime_interface::pass_by::PassByInner;
 
 #[cfg(feature = "std")]
 use bip39::{Language, Mnemonic, MnemonicType};
+#[cfg(feature = "full_crypto")]
+use ecdsa::RecoveryId;
 use p256::{
 	ecdsa::{
-		signature::hazmat::{PrehashSigner, PrehashVerifier},
-		Signature as EcdsaSignature, SigningKey, VerifyingKey,
+		signature::hazmat::PrehashVerifier, Signature as EcdsaSignature, SigningKey, VerifyingKey,
 	},
 	elliptic_curve::sec1::ToEncodedPoint,
 	PublicKey,
@@ -188,16 +189,18 @@ impl<'de> Deserialize<'de> for Public {
 	}
 }
 
+const SIG_LEN: usize = 65;
+
 /// A signature (a 512-bit value).
 #[derive(Encode, Decode, MaxEncodedLen, PassByInner, TypeInfo, PartialEq, Eq)]
-pub struct Signature(pub [u8; 64]);
+pub struct Signature(pub [u8; SIG_LEN]);
 
 impl TryFrom<&[u8]> for Signature {
 	type Error = ();
 
 	fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
-		if data.len() == 64 {
-			let mut inner = [0u8; 64];
+		if data.len() == SIG_LEN {
+			let mut inner = [0u8; SIG_LEN];
 			inner.copy_from_slice(data);
 			Ok(Signature(inner))
 		} else {
@@ -231,7 +234,7 @@ impl<'de> Deserialize<'de> for Signature {
 
 impl Clone for Signature {
 	fn clone(&self) -> Self {
-		let mut r = [0u8; 64];
+		let mut r = [0u8; SIG_LEN];
 		r.copy_from_slice(&self.0[..]);
 		Signature(r)
 	}
@@ -239,18 +242,18 @@ impl Clone for Signature {
 
 impl Default for Signature {
 	fn default() -> Self {
-		Signature([0u8; 64])
+		Signature([0u8; SIG_LEN])
 	}
 }
 
-impl From<Signature> for [u8; 64] {
-	fn from(v: Signature) -> [u8; 64] {
+impl From<Signature> for [u8; SIG_LEN] {
+	fn from(v: Signature) -> [u8; SIG_LEN] {
 		v.0
 	}
 }
 
-impl AsRef<[u8; 64]> for Signature {
-	fn as_ref(&self) -> &[u8; 64] {
+impl AsRef<[u8; SIG_LEN]> for Signature {
+	fn as_ref(&self) -> &[u8; SIG_LEN] {
 		&self.0
 	}
 }
@@ -267,6 +270,16 @@ impl AsMut<[u8]> for Signature {
 	}
 }
 
+#[cfg(feature = "full_crypto")]
+impl From<(EcdsaSignature, RecoveryId)> for Signature {
+	fn from((sig, recid): (EcdsaSignature, RecoveryId)) -> Signature {
+		let mut data = [0u8; SIG_LEN];
+		data[..64].copy_from_slice(&sig.to_bytes());
+		data[64] = recid.to_byte();
+		Signature(data)
+	}
+}
+
 impl sp_std::fmt::Debug for Signature {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
@@ -279,41 +292,59 @@ impl sp_std::fmt::Debug for Signature {
 	}
 }
 
-impl UncheckedFrom<[u8; 64]> for Signature {
-	fn unchecked_from(data: [u8; 64]) -> Signature {
+impl UncheckedFrom<[u8; SIG_LEN]> for Signature {
+	fn unchecked_from(data: [u8; SIG_LEN]) -> Signature {
 		Signature(data)
 	}
 }
 
 impl Signature {
-	/// A new instance from the given 64-byte `data`.
+	/// A new instance from the given 65-byte `data`.
 	///
 	/// NOTE: No checking goes on to ensure this is a real signature. Only use it if
 	/// you are certain that the array actually is a signature. GIGO!
-	pub fn from_raw(data: [u8; 64]) -> Signature {
+	pub fn from_raw(data: [u8; SIG_LEN]) -> Signature {
 		Signature(data)
 	}
 
-	/// A new instance from the given slice that should be 64 bytes long.
+	/// A new instance from the given slice that should be 65 bytes long.
 	///
 	/// NOTE: No checking goes on to ensure this is a real signature. Only use it if
 	/// you are certain that the array actually is a signature. GIGO!
 	pub fn from_slice(data: &[u8]) -> Option<Self> {
-		if data.len() != 64 {
+		if data.len() != SIG_LEN {
 			return None
 		}
-		let mut r = [0u8; 64];
+		let mut r = [0u8; SIG_LEN];
 		r.copy_from_slice(data);
 		Some(Signature(r))
 	}
 
 	/// A new instance from ASN.1 DER encoded bytes.
+	/*
 	#[cfg(feature = "std")]
 	pub fn from_der(data: &[u8]) -> Option<Self> {
 		match EcdsaSignature::from_der(data) {
 			Ok(sig) => Some(Self(sig.to_bytes().into())),
 			Err(..) => None,
 		}
+	}
+	*/
+
+	#[cfg(feature = "full_crypto")]
+	pub fn recover<M: AsRef<[u8]>>(&self, message: M) -> Option<Public> {
+		self.recover_prehashed(&blake2_256(message.as_ref()))
+	}
+
+	#[cfg(feature = "full_crypto")]
+	pub fn recover_prehashed(&self, message: &[u8; 32]) -> Option<Public> {
+		let recid = RecoveryId::from_byte(self.0[64])?;
+		let sig = EcdsaSignature::from_bytes(self.0[..64].into()).ok()?;
+
+		VerifyingKey::recover_from_prehash(&message[..], &sig, recid)
+			.ok()
+			.map(|pubkey| Public::from_slice(pubkey.to_encoded_point(true).as_bytes()).ok())
+			.flatten()
 	}
 }
 
@@ -430,24 +461,16 @@ impl Pair {
 	/// Sign a pre-hashed message
 	#[cfg(feature = "full_crypto")]
 	pub fn sign_prehashed(&self, message: &[u8; 32]) -> Signature {
-		let sig: EcdsaSignature = self.secret.sign_prehash(message).unwrap();
-		Signature(sig.to_bytes().into())
+		Signature::from(self.secret.sign_prehash_recoverable(message).unwrap())
 	}
 
 	/// Verify a signature on a pre-hashed message. Return `true` if the signature is valid
 	/// and thus matches the given `public` key.
 	pub fn verify_prehashed(sig: &Signature, message: &[u8; 32], pubkey: &Public) -> bool {
-		Self::verify_prehashed_weak(sig, message, pubkey)
-	}
-
-	fn verify_prehashed_weak<S: AsRef<[u8]>, P: AsRef<[u8]>>(
-		sig: S,
-		message: &[u8; 32],
-		pubkey: P,
-	) -> bool {
-		let ver = VerifyingKey::from_sec1_bytes(pubkey.as_ref()).unwrap();
-		let sig = EcdsaSignature::try_from(sig.as_ref()).unwrap();
-		ver.verify_prehash(message, &sig).is_ok()
+		match sig.recover_prehashed(message) {
+			Some(actual) => actual == *pubkey,
+			None => false,
+		}
 	}
 }
 
@@ -512,7 +535,7 @@ mod tests {
 			).unwrap(),
 		);
 		let message = b"";
-		let signature = array_bytes::hex2array_unchecked("97a98171d9c2ba5a566f51c246ba8390b817d8664d00eb9edace9e042f26e333433bafa6a9ac4ed52a4b68d429ad95a447fa6157ad76bef561cbe76f498c00c0");
+		let signature = array_bytes::hex2array_unchecked("97a98171d9c2ba5a566f51c246ba8390b817d8664d00eb9edace9e042f26e333433bafa6a9ac4ed52a4b68d429ad95a447fa6157ad76bef561cbe76f498c00c000");
 		let signature = Signature::from_raw(signature);
 		assert!(pair.sign(&message[..]) == signature);
 		assert!(Pair::verify(&signature, &message[..], &public));
@@ -533,7 +556,7 @@ mod tests {
 			).unwrap(),
 		);
 		let message = b"";
-		let signature = array_bytes::hex2array_unchecked("97a98171d9c2ba5a566f51c246ba8390b817d8664d00eb9edace9e042f26e333433bafa6a9ac4ed52a4b68d429ad95a447fa6157ad76bef561cbe76f498c00c0");
+		let signature = array_bytes::hex2array_unchecked("97a98171d9c2ba5a566f51c246ba8390b817d8664d00eb9edace9e042f26e333433bafa6a9ac4ed52a4b68d429ad95a447fa6157ad76bef561cbe76f498c00c000");
 		let signature = Signature::from_raw(signature);
 		assert!(pair.sign(&message[..]) == signature);
 		assert!(Pair::verify(&signature, &message[..], &public));
@@ -665,8 +688,8 @@ mod tests {
 		let message = b"Something important";
 		let signature = pair.sign(&message[..]);
 		let serialized_signature = serde_json::to_string(&signature).unwrap();
-		// Signature is 64 bytes, so 128 chars + 2 quote chars
-		assert_eq!(serialized_signature.len(), 130);
+		// Signature is 65 bytes, so 130 chars + 2 quote chars
+		assert_eq!(serialized_signature.len(), 132);
 		let signature = serde_json::from_str(&serialized_signature).unwrap();
 		assert!(Pair::verify(&signature, &message[..], &pair.public()));
 	}
@@ -689,10 +712,8 @@ mod tests {
 		// `msg` shouldn't be mangled
 		let msg = [0u8; 32];
 		let sig1 = pair.sign_prehashed(&msg);
-		let sig2: Signature = {
-			let sig: EcdsaSignature = pair.secret.sign_prehash(&msg).unwrap();
-			Signature(sig.to_bytes().into())
-		};
+		let sig2: Signature =
+			{ Signature::from(pair.secret.sign_prehash_recoverable(&msg).unwrap()) };
 		assert_eq!(sig1, sig2);
 
 		// signature is actually different

@@ -10,6 +10,7 @@ repository = { workspace = true }
 [dependencies]
 array-bytes = { workspace = true, optional = true }
 base64ct = { workspace = true, optional = true }
+ecdsa = { workspace = true }
 hmac = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
@@ -34,6 +35,7 @@ default = ["std"]
 std = [
 	"full_crypto",
 	"base64ct/std",
+	"ecdsa/std",
 	"hmac/std",
 	"lazy_static",
 	"parity-scale-codec/std",
