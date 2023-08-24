@@ -69,9 +69,11 @@ pub enum UniversalAddressKind {
 
 /// A universal representation of a public key encoded with multicodec.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", derive(Hash))]
 pub struct UniversalAddress(pub Vec<u8>);
 
+/*
 #[cfg(feature = "serde")]
 impl Serialize for UniversalAddress {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -112,6 +114,7 @@ impl<'de> Deserialize<'de> for UniversalAddress {
 		deserializer.deserialize_str(UniversalAddressVisitor)
 	}
 }
+*/
 
 impl UniversalAddress {
 	/// Get the type of public key that contains.
