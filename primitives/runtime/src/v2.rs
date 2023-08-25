@@ -50,12 +50,18 @@ impl Verify for UniversalSignature {
 					_ => false,
 				}
 			},
+			(Self::P256(ref sig), who) => {
+				let m = sp_io::hashing::blake2_256(msg.get());
+				match np_io::crypto::p256_recover_compressed(sig.as_ref(), &m) {
+					Ok(pubkey) =>
+						&sp_io::hashing::blake2_256(pubkey.as_ref()) ==
+							<dyn AsRef<[u8; 32]>>::as_ref(who),
+					_ => false,
+				}
+			},
 			_ => false,
 			/*
-			(Self::P256(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {
-				Ok(signer) => np_io::crypto::p256_verify(sig, msg.get(), &signer),
-				Err(_) => false,
-			},
+
 			(Self::WebAuthn(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {
 				Ok(signer) => np_io::crypto::webauthn_verify(sig, msg.get(), &signer),
 				Err(_) => false,

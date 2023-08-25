@@ -331,11 +331,13 @@ impl Signature {
 	}
 	*/
 
+	/// Recover the public key from this signature and a message.
 	#[cfg(feature = "full_crypto")]
 	pub fn recover<M: AsRef<[u8]>>(&self, message: M) -> Option<Public> {
 		self.recover_prehashed(&blake2_256(message.as_ref()))
 	}
 
+	/// Recover the public key from this signature and a pre-hashed message.
 	#[cfg(feature = "full_crypto")]
 	pub fn recover_prehashed(&self, message: &[u8; 32]) -> Option<Public> {
 		let recid = RecoveryId::from_byte(self.0[64])?;
