@@ -159,6 +159,7 @@ where
 			pending_create_inherent_data_providers,
 			Some(Box::new(AuraConsensusDataProvider::new(client.clone()))),
 		)
+		.replace_config::<EC>()
 		.into_rpc(),
 	)?;
 

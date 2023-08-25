@@ -4,11 +4,11 @@ resolver = "2"
 members = [
 	"core-primitives",
 	"frame/alias",
-	"node",
+	# "node",
 	"primitives/crypto",
 	"primitives/io",
 	"primitives/runtime",
-	"runtime",
+	# "runtime",
 ]
 
 [workspace.package]
