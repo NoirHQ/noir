@@ -73,6 +73,21 @@ pub enum UniversalAddressKind {
 #[cfg_attr(feature = "std", derive(Hash))]
 pub struct UniversalAddress(pub Vec<u8>);
 
+impl IdentifyAccount for UniversalAddress {
+	type AccountId = AccountId32;
+
+	fn into_account(self) -> Self::AccountId {
+		match self.kind() {
+			UniversalAddressKind::Ed25519 | UniversalAddressKind::Sr25519 =>
+				<[u8; 32]>::try_from(&self.0[2..]).unwrap().into(),
+			UniversalAddressKind::Secp256k1 | UniversalAddressKind::P256 =>
+				sp_io::hashing::blake2_256(&self.0[2..]).into(),
+			UniversalAddressKind::Blake2b256 => <[u8; 32]>::try_from(&self.0[4..]).unwrap().into(),
+			_ => panic!("invalid universal address"),
+		}
+	}
+}
+
 /*
 #[cfg(feature = "serde")]
 impl Serialize for UniversalAddress {

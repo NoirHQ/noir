@@ -22,6 +22,7 @@ array-bytes = "6.2.2"
 async-trait = "0.1.66"
 base64ct = { version = "1.6.0", default-features = false }
 clap = { version = "4.1.8", features = ["derive"] }
+derive_more = "0.99.17"
 ecdsa = "0.16.8"
 ethereum = { version = "0.15.0", default-features = false, features = ["with-codec"] }
 futures = { version = "0.3.26", features = ["thread-pool"] }

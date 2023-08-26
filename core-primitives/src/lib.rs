@@ -24,6 +24,8 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// An index to a block.
 pub type BlockNumber = u32;
+/// An instant or duration in time.
+pub type Moment = u64;
 /// Block header type as expected by this runtime.
 pub type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
 /// Block type as expected by this runtime.
@@ -40,6 +42,6 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 /// Index of a transaction in the chain.
 pub type Nonce = u32;
 /// The type for looking up accounts.
-pub type AccountIndex = u128;
+pub type AccountIndex = ();
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, AccountIndex>;
