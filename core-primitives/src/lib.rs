@@ -38,7 +38,7 @@ pub type Signature = np_runtime::UniversalSignature;
 /// to the public key of our transaction signing scheme.
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 /// Index of a transaction in the chain.
-pub type Index = u32;
+pub type Nonce = u32;
 /// The type for looking up accounts.
 pub type AccountIndex = u128;
 /// The address format for describing accounts.

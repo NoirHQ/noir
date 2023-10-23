@@ -28,14 +28,19 @@ sp-std = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"array-bytes",
 	"base64ct/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
-	"serde",
+	"serde/std",
 	"np-crypto/std",
 	"np-io/std",
 	"sp-core/std",
+	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+]
+serde = [
+	"dep:serde",
+	"array-bytes",
+	"base64ct/alloc",
 ]

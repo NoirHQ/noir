@@ -26,10 +26,11 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 # frontier
+fc-api = { workspace = true }
 fc-cli = { workspace = true }
 fc-consensus = { workspace = true }
 fc-db = { workspace = true }
-fc-mapping-sync = { workspace = true }
+fc-mapping-sync = { workspace = true, features = ["rocksdb", "sql"] }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
@@ -49,15 +50,17 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 prometheus-endpoint = { workspace = true }
 sc-basic-authorship = { workspace = true }
 sc-chain-spec = { workspace = true }
+sc-consensus-grandpa = { workspace = true }
 sc-consensus-manual-seal = { workspace = true }
 sc-cli = { workspace = true }
 sc-client-api = { workspace = true }
 sc-consensus = { workspace = true }
 sc-consensus-aura = { workspace = true }
 sc-executor = { workspace = true }
-sc-finality-grandpa = { workspace = true }
 sc-keystore = { workspace = true }
 sc-network = { workspace = true }
+sc-network-sync = { workspace = true }
+sc-offchain = { workspace = true }
 sc-rpc = { workspace = true }
 sc-rpc-api = { workspace = true }
 sc-service = { workspace = true }
@@ -69,7 +72,7 @@ sp-block-builder = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-core = { workspace = true }
 sp-consensus-aura = { workspace = true }
-sp-finality-grandpa = { workspace = true }
+sp-consensus-grandpa = { workspace = true }
 sp-inherents = { workspace = true }
 sp-keyring = { workspace = true }
 sp-offchain = { workspace = true }

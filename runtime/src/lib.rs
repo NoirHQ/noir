@@ -30,24 +30,27 @@ mod compat;
 use compat::ethereum::TransactionExt;
 mod precompiles;
 
-use fp_ethereum::TransactionValidationError;
+use fp_evm::TransactionValidationError;
 use fp_rpc::TransactionStatus;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
-		tokens::fungible, ConstU128, ConstU32, ConstU64, ConstU8, FindAuthor, KeyOwnerProofSystem,
-		OnTimestampSet,
+		tokens::{fungible, Fortitude, Preservation},
+		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, FindAuthor, OnFinalize, OnTimestampSet,
 	},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
 		IdentityFee, Weight,
 	},
 };
-pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Signature};
+pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Nonce, Signature};
 use np_crypto::ecdsa::EcdsaExt;
 use np_runtime::{AccountName, UniversalAddressKind};
 use pallet_cosmos::handler::cosm::MsgHandler;
-use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
+use pallet_ethereum::{
+	Call::transact, PostLogContent, Transaction as EthereumTransaction, TransactionAction,
+	TransactionData,
+};
 use pallet_evm::{Account as EVMAccount, AddressMapping, FeeCalculator, Runner};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -347,16 +350,14 @@ impl frame_system::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = Alias;
+	///
+	type Block = Block;
 	/// The index type for storing how many extrinsics an account has signed.
-	type Index = Index;
-	/// The index type for blocks.
-	type BlockNumber = BlockNumber;
+	type Nonce = Nonce;
 	/// The type for hashing blocks and tries.
 	type Hash = Hash;
 	/// The hashing algorithm used.
 	type Hashing = BlakeTwo256;
-	/// The header type.
-	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
@@ -424,6 +425,8 @@ impl pallet_aura::Config for Runtime {
 	type DisabledValidators = ();
 	/// The maximum number of authorities that the pallet can hold.
 	type MaxAuthorities = ConstU32<32>;
+	///
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 /// Existential deposit.
@@ -444,6 +447,10 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type RuntimeHoldReason = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ();
+	type MaxFreezes = ();
 }
 
 parameter_types! {
@@ -490,6 +497,7 @@ impl pallet_ethereum::Config for Runtime {
 	/// How Ethereum state root is calculated.
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
 	type PostLogContent = PostBlockAndTxnHashes;
+	type ExtraDataLength = ConstU32<30>;
 }
 
 pub struct FindAuthorTruncated<F>(PhantomData<F>);
@@ -506,11 +514,14 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 	}
 }
 
+const BLOCK_GAS_LIMIT: u64 = 75_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 const WEIGHT_PER_GAS: u64 = 20_000;
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
+	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
-	pub WeightPerGas: Weight = Weight::from_ref_time(WEIGHT_PER_GAS);
+	pub WeightPerGas: Weight = Weight::from_parts(WEIGHT_PER_GAS, 0);
 }
 
 impl pallet_evm::Config for Runtime {
@@ -533,38 +544,34 @@ impl pallet_evm::Config for Runtime {
 	type OnCreate = ();
 	/// Find author for the current block.
 	type FindAuthor = FindAuthorTruncated<Aura>;
+	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	type Timestamp = Timestamp;
+	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
 }
 
 impl pallet_evm_chain_id::Config for Runtime {}
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	/// A system for proving ownership of keys, i.e. that a given key was part
-	/// of a validator set, needed for validating equivocation reports.
-	type KeyOwnerProofSystem = ();
 	/// The proof of key ownership, used for validating equivocation reports
 	/// The proof must include the session index and validator count of the
 	/// session at which the equivocation occurred.
-	type KeyOwnerProof =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-	/// The identification of a key owner, used when reporting equivocations.
-	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-		KeyTypeId,
-		GrandpaId,
-	)>>::IdentificationTuple;
+	type KeyOwnerProof = sp_core::Void;
 	/// The equivocation handling subsystem, defines methods to report an
 	/// offence (after the equivocation has been validated) and for submitting a
 	/// transaction to report an equivocation (from an offchain context).
-	type HandleEquivocation = ();
+	type EquivocationReportSystem = ();
 	type WeightInfo = ();
 	/// Max Authorities in use.
 	type MaxAuthorities = ConstU32<32>;
+	type MaxNominators = ConstU32<0>;
 	type MaxSetIdSessionEntries = ConstU64<0>;
 }
 
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
+	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Self>;
 }
 
 /// This determines the average expected block time that we are targeting.
@@ -643,13 +650,9 @@ impl pallet_cosmos::Config for Runtime {
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
+// TODO: rearrange pallets
 construct_runtime!(
-	pub struct Runtime
-	where
-		Block = Block,
-		NodeBlock = noir_core_primitives::Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
+	pub struct Runtime {
 		Alias: pallet_alias,
 		Aura: pallet_aura,
 		Balances: pallet_balances,
@@ -705,34 +708,40 @@ impl Runtime {
 	}
 
 	fn migrate_evm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
-		use fungible::{Inspect, Transfer};
+		use fungible::{Inspect, Mutate};
 		let interim_account =
 			<Runtime as pallet_evm::Config>::AddressMapping::into_account_id(*address);
-		let balance =
-			pallet_balances::Pallet::<Runtime>::reducible_balance(&interim_account, false);
-		<pallet_balances::Pallet<Runtime> as Transfer<AccountId>>::transfer(
+		let balance = pallet_balances::Pallet::<Runtime>::reducible_balance(
+			&interim_account,
+			Preservation::Expendable,
+			Fortitude::Polite,
+		);
+		<pallet_balances::Pallet<Runtime> as Mutate<AccountId>>::transfer(
 			&interim_account,
 			who,
 			balance,
-			false,
+			Preservation::Expendable,
 		)
 		.map_err(|_| ())
 		.map(|_| balance)
 	}
 
 	fn migrate_cosm_account(address: &H160, who: &AccountId) -> Result<Balance, ()> {
-		use fungible::{Inspect, Transfer};
+		use fungible::{Inspect, Mutate};
 		use pallet_cosmos::AddressMapping;
 
 		let interim_account =
 			<Runtime as pallet_cosmos::Config>::AddressMapping::into_account_id(*address);
-		let balance =
-			pallet_balances::Pallet::<Runtime>::reducible_balance(&interim_account, false);
-		<pallet_balances::Pallet<Runtime> as Transfer<AccountId>>::transfer(
+		let balance = pallet_balances::Pallet::<Runtime>::reducible_balance(
+			&interim_account,
+			Preservation::Expendable,
+			Fortitude::Polite,
+		);
+		<pallet_balances::Pallet<Runtime> as Mutate<AccountId>>::transfer(
 			&interim_account,
 			who,
 			balance,
-			false,
+			Preservation::Expendable,
 		)
 		.map_err(|_| ())
 		.map(|_| balance)
@@ -794,7 +803,7 @@ impl_runtime_apis! {
 		}
 
 		fn account_code_at(address: H160) -> Vec<u8> {
-			EVM::account_codes(address)
+			pallet_evm::AccountCodes::<Runtime>::get(address)
 		}
 
 		fn author() -> H160 {
@@ -804,7 +813,7 @@ impl_runtime_apis! {
 		fn storage_at(address: H160, index: U256) -> H256 {
 			let mut tmp = [0u8; 32];
 			index.to_big_endian(&mut tmp);
-			EVM::account_storages(address, H256::from_slice(&tmp[..]))
+			pallet_evm::AccountStorages::<Runtime>::get(address, H256::from_slice(&tmp[..]))
 		}
 
 		fn call(
@@ -830,6 +839,21 @@ impl_runtime_apis! {
 			let is_transactional = false;
 			let validate = true;
 			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
+			let gas_limit = gas_limit.min(u64::MAX.into());
+			let transaction_data = TransactionData::new(
+				TransactionAction::Call(to),
+				data.clone(),
+				nonce.unwrap_or_default(),
+				gas_limit,
+				None,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				value,
+				Some(<Runtime as pallet_evm::Config>::ChainId::get()),
+				access_list.clone().unwrap_or_default(),
+			);
+			let (weight_limit, proof_size_base_cost) = pallet_ethereum::Pallet::<Runtime>::transaction_weight(&transaction_data);
+
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
 				to,
@@ -842,6 +866,8 @@ impl_runtime_apis! {
 				access_list.unwrap_or_default(),
 				is_transactional,
 				validate,
+				weight_limit,
+				proof_size_base_cost,
 				evm_config,
 			).map_err(|err| err.error.into())
 		}
@@ -868,6 +894,21 @@ impl_runtime_apis! {
 			let is_transactional = false;
 			let validate = true;
 			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
+
+			let transaction_data = TransactionData::new(
+				TransactionAction::Create,
+				data.clone(),
+				nonce.unwrap_or_default(),
+				gas_limit,
+				None,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				value,
+				Some(<Runtime as pallet_evm::Config>::ChainId::get()),
+				access_list.clone().unwrap_or_default(),
+			);
+			let (weight_limit, proof_size_base_cost) = pallet_ethereum::Pallet::<Runtime>::transaction_weight(&transaction_data);
+
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,
@@ -879,20 +920,22 @@ impl_runtime_apis! {
 				access_list.unwrap_or_default(),
 				is_transactional,
 				validate,
+				weight_limit,
+				proof_size_base_cost,
 				evm_config,
 			).map_err(|err| err.error.into())
 		}
 
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
-			Ethereum::current_transaction_statuses()
+			pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
 		}
 
 		fn current_block() -> Option<pallet_ethereum::Block> {
-			Ethereum::current_block()
+			pallet_ethereum::CurrentBlock::<Runtime>::get()
 		}
 
 		fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
-			Ethereum::current_receipts()
+			pallet_ethereum::CurrentReceipts::<Runtime>::get()
 		}
 
 		fn current_all() -> (
@@ -901,9 +944,9 @@ impl_runtime_apis! {
 			Option<Vec<TransactionStatus>>
 		) {
 			(
-				Ethereum::current_block(),
-				Ethereum::current_receipts(),
-				Ethereum::current_transaction_statuses()
+				pallet_ethereum::CurrentBlock::<Runtime>::get(),
+				pallet_ethereum::CurrentReceipts::<Runtime>::get(),
+				pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
 			)
 		}
 
@@ -917,10 +960,25 @@ impl_runtime_apis! {
 		}
 
 		fn elasticity() -> Option<Permill> {
-			Some(BaseFee::elasticity())
+			Some(pallet_base_fee::Elasticity::<Runtime>::get())
 		}
 
 		fn gas_limit_multiplier_support() {}
+
+		fn pending_block(
+			xts: Vec<<Block as BlockT>::Extrinsic>,
+		) -> (Option<pallet_ethereum::Block>, Option<Vec<TransactionStatus>>) {
+			for ext in xts.into_iter() {
+				let _ = Executive::apply_extrinsic(ext);
+			}
+
+			Ethereum::on_finalize(System::block_number() + 1);
+
+			(
+				pallet_ethereum::CurrentBlock::<Runtime>::get(),
+				pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
+			)
+		}
 	}
 
 	impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
@@ -931,8 +989,8 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-		fn account_nonce(account: AccountId) -> Index {
+	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce> for Runtime {
+		fn account_nonce(account: AccountId) -> Nonce {
 			System::account_nonce(account)
 		}
 	}
@@ -996,6 +1054,14 @@ impl_runtime_apis! {
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> Vec<u32> {
+			Runtime::metadata_versions()
 		}
 	}
 

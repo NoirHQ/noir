@@ -21,8 +21,8 @@ use crate::{
 	cli::{Cli, Subcommand},
 	service::{self, db_config_dir},
 };
-use fc_db::frontier_database_dir;
-use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+use fc_db::kv::frontier_database_dir;
+use sc_cli::SubstrateCli;
 use sc_service::DatabaseSource;
 
 impl SubstrateCli for Cli {
@@ -60,10 +60,6 @@ impl SubstrateCli for Cli {
 			path =>
 				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 		})
-	}
-
-	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&noir_runtime::VERSION
 	}
 }
 
@@ -135,7 +131,7 @@ pub fn run() -> sc_cli::Result<()> {
 				let (client, backend, _, task_manager, _) =
 					service::new_chain_ops(&mut config, &cli.eth)?;
 				let aux_revert = Box::new(move |client, _, blocks| {
-					sc_finality_grandpa::revert(client, blocks)?;
+					sc_consensus_grandpa::revert(client, blocks)?;
 					Ok(())
 				});
 				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
@@ -146,6 +142,10 @@ pub fn run() -> sc_cli::Result<()> {
 			runner.sync_run(|mut config| {
 				let (client, _, _, _, frontier_backend) =
 					service::new_chain_ops(&mut config, &cli.eth)?;
+				let frontier_backend = match frontier_backend {
+					fc_db::Backend::KeyValue(kv) => std::sync::Arc::new(kv),
+					_ => panic!("Only fc_db::Backend::KeyValue supported"),
+				};
 				cmd.run(client, frontier_backend)
 			})
 		},

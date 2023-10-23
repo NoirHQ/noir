@@ -23,13 +23,15 @@ use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
 use sp_std::vec::Vec;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use base64ct::{Base64UrlUnpadded as Base64, Encoding};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{
 	de::{Deserialize, Deserializer, Error as DeError, Visitor},
 	ser::{Serialize, Serializer},
 };
+#[cfg(all(not(feature = "std"), feature = "serde"))]
+use sp_std::alloc::string::String;
 
 /// Multicodec codes encoded with unsigned varint.
 #[allow(dead_code)]
@@ -69,7 +71,7 @@ pub enum UniversalAddressKind {
 #[cfg_attr(feature = "std", derive(Hash))]
 pub struct UniversalAddress(pub Vec<u8>);
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl Serialize for UniversalAddress {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -80,7 +82,7 @@ impl Serialize for UniversalAddress {
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for UniversalAddress {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -91,7 +93,7 @@ impl<'de> Deserialize<'de> for UniversalAddress {
 		impl<'de> Visitor<'de> for UniversalAddressVisitor {
 			type Value = UniversalAddress;
 
-			fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+			fn expecting(&self, formatter: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 				formatter.write_str("a multibase (base64url) encoded string")
 			}
 
@@ -307,7 +309,7 @@ impl TryInto<p256::Public> for UniversalAddress {
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl sp_std::str::FromStr for UniversalAddress {
 	type Err = ();
 
