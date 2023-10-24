@@ -18,8 +18,9 @@ scale-info = { workspace = true }
 # frontier
 ethereum = { workspace = true }
 fp-ethereum = { workspace = true }
+fp-evm = { workspace = true, features = ["serde"] }
 fp-rpc = { workspace = true }
-fp-self-contained = { workspace = true }
+fp-self-contained = { workspace = true, features = ["serde"] }
 pallet-base-fee = { workspace = true }
 pallet-dynamic-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
@@ -35,7 +36,7 @@ pallet-evm-precompile-simple = { workspace = true }
 noir-core-primitives = { workspace = true }
 np-crypto = { workspace = true }
 np-io = { workspace = true }
-np-runtime = { workspace = true }
+np-runtime = { workspace = true, features = ["serde"] }
 
 # substrate
 frame-executive = { workspace = true }

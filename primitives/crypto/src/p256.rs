@@ -35,11 +35,12 @@ use p256::{
 };
 #[cfg(feature = "std")]
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+#[cfg(feature = "full_crypto")]
+use sp_core::crypto::DeriveError;
 #[cfg(feature = "std")]
 use sp_core::crypto::Ss58Codec;
 use sp_core::crypto::{
-	ByteArray, CryptoType, CryptoTypeId, CryptoTypePublicPair, Derive, Public as TraitPublic,
-	UncheckedFrom,
+	ByteArray, CryptoType, CryptoTypeId, Derive, Public as TraitPublic, UncheckedFrom,
 };
 #[cfg(feature = "full_crypto")]
 use sp_core::{
@@ -109,23 +110,7 @@ impl ByteArray for Public {
 	const LEN: usize = 33;
 }
 
-impl TraitPublic for Public {
-	fn to_public_crypto_pair(&self) -> CryptoTypePublicPair {
-		CryptoTypePublicPair(CRYPTO_ID, self.to_raw_vec())
-	}
-}
-
-impl From<Public> for CryptoTypePublicPair {
-	fn from(key: Public) -> Self {
-		(&key).into()
-	}
-}
-
-impl From<&Public> for CryptoTypePublicPair {
-	fn from(key: &Public) -> Self {
-		CryptoTypePublicPair(CRYPTO_ID, key.to_raw_vec())
-	}
-}
+impl TraitPublic for Public {}
 
 impl Derive for Public {}
 
@@ -344,13 +329,6 @@ fn derive_hard_junction(secret_seed: &Seed, cc: &[u8; 32]) -> Seed {
 	("Secp256r1HDKD", secret_seed, cc).using_encoded(sp_core::hashing::blake2_256)
 }
 
-/// An error when deriving a key.
-#[cfg(feature = "full_crypto")]
-pub enum DeriveError {
-	/// A soft key was found in the path (and is unsupported).
-	SoftKeyInPath,
-}
-
 /// A key pair.
 #[cfg(feature = "full_crypto")]
 #[derive(Clone)]
@@ -364,7 +342,6 @@ impl TraitPair for Pair {
 	type Public = Public;
 	type Seed = Seed;
 	type Signature = Signature;
-	type DeriveError = DeriveError;
 
 	/// Generate new secure (random) key pair and provide the recovery phrase.
 	///
@@ -443,15 +420,7 @@ impl TraitPair for Pair {
 
 	/// Verify a signature on a message. Returns true if the signature is good.
 	fn verify<M: AsRef<[u8]>>(sig: &Self::Signature, message: M, pubkey: &Self::Public) -> bool {
-		Self::verify_weak(&sig.0, &message, &pubkey.0)
-	}
-
-	/// Verify a signature on a message. Returns true if the signature is good.
-	///
-	/// This doesn't use the type system to ensure that `sig` and `pubkey` are the correct
-	/// size. Use it only if you're coming from byte buffers and need the speed.
-	fn verify_weak<P: AsRef<[u8]>, M: AsRef<[u8]>>(sig: &[u8], message: M, pubkey: P) -> bool {
-		Self::verify_prehashed_weak(sig, &blake2_256(message.as_ref()), pubkey.as_ref())
+		Self::verify_prehashed(sig, &blake2_256(message.as_ref()), pubkey)
 	}
 
 	/// Return a vec filled with raw data.

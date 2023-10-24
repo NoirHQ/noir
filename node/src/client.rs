@@ -18,10 +18,9 @@
 
 use crate::eth::EthCompatRuntimeApiCollection;
 use noir_core_primitives::Block;
-use noir_runtime::{AccountId, Balance, Index};
+use noir_runtime::{AccountId, Balance, Nonce};
 use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch, NativeVersion};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_runtime::traits::BlakeTwo256;
 
 pub type Client = FullClient<noir_runtime::RuntimeApi, TemplateRuntimeExecutor>;
 /// Full backend.
@@ -51,20 +50,16 @@ pub trait BaseRuntimeApiCollection:
 	+ sp_offchain::OffchainWorkerApi<Block>
 	+ sp_session::SessionKeys<Block>
 	+ sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
-where
-	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }
 
-impl<Api> BaseRuntimeApiCollection for Api
-where
+impl<Api> BaseRuntimeApiCollection for Api where
 	Api: sp_api::ApiExt<Block>
 		+ sp_api::Metadata<Block>
 		+ sp_block_builder::BlockBuilder<Block>
 		+ sp_offchain::OffchainWorkerApi<Block>
 		+ sp_session::SessionKeys<Block>
-		+ sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>,
-	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+		+ sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
 {
 }
 
@@ -74,23 +69,19 @@ pub trait RuntimeApiCollection:
 	+ EthCompatRuntimeApiCollection
 	+ hp_rpc::ConvertTxRuntimeApi<Block>
 	+ sp_consensus_aura::AuraApi<Block, AuraId>
-	+ sp_finality_grandpa::GrandpaApi<Block>
-	+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index>
+	+ sp_consensus_grandpa::GrandpaApi<Block>
+	+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce>
 	+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
-where
-	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }
 
-impl<Api> RuntimeApiCollection for Api
-where
+impl<Api> RuntimeApiCollection for Api where
 	Api: BaseRuntimeApiCollection
 		+ EthCompatRuntimeApiCollection
 		+ hp_rpc::ConvertTxRuntimeApi<Block>
 		+ sp_consensus_aura::AuraApi<Block, AuraId>
-		+ sp_finality_grandpa::GrandpaApi<Block>
-		+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index>
-		+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>,
-	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+		+ sp_consensus_grandpa::GrandpaApi<Block>
+		+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce>
+		+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
 {
 }
