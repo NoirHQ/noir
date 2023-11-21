@@ -14,7 +14,7 @@ members = [
 [workspace.package]
 authors = ["Haderech Pte. Ltd."]
 edition = "2021"
-repository = "https://github.com/NoirHQ/noir/"
+repository = "https://github.com/noirhq/noir/"
 
 [workspace.dependencies]
 array-bytes = "6.0"
@@ -132,11 +132,11 @@ pallet-evm-precompile-sha3fips = { git = "https://github.com/paritytech/frontier
 pallet-evm-precompile-simple = { git = "https://github.com/paritytech/frontier", branch = "polkadot-v1.1.0", default-features = false }
 
 # horizon
-hc-rpc = { git = "https://github.com/NoirHQ/horizon", branch = "polkadot-v1.1.0" }
-hp-crypto = { git = "https://github.com/NoirHQ/horizon", branch = "polkadot-v1.1.0", default-features = false }
-hp-rpc = { git = "https://github.com/NoirHQ/horizon", branch = "polkadot-v1.1.0", default-features = false }
-hp-cosmos = { git = "https://github.com/NoirHQ/horizon", branch = "polkadot-v1.1.0", default-features = false }
-pallet-cosmos = { git = "https://github.com/NoirHQ/horizon", branch = "polkadot-v1.1.0", default-features = false }
+hc-rpc = { git = "https://github.com/noirhq/horizon", branch = "polkadot-v1.1.0" }
+hp-crypto = { git = "https://github.com/noirhq/horizon", branch = "polkadot-v1.1.0", default-features = false }
+hp-rpc = { git = "https://github.com/noirhq/horizon", branch = "polkadot-v1.1.0", default-features = false }
+hp-cosmos = { git = "https://github.com/noirhq/horizon", branch = "polkadot-v1.1.0", default-features = false }
+pallet-cosmos = { git = "https://github.com/noirhq/horizon", branch = "polkadot-v1.1.0", default-features = false }
 
 [profile.release]
 panic = "unwind"
