@@ -653,20 +653,20 @@ impl pallet_cosmos::Config for Runtime {
 // TODO: rearrange pallets
 construct_runtime!(
 	pub struct Runtime {
-		Alias: pallet_alias,
+		System: frame_system,
+		Timestamp: pallet_timestamp,
 		Aura: pallet_aura,
+		Grandpa: pallet_grandpa,
 		Balances: pallet_balances,
-		BaseFee: pallet_base_fee,
-		Cosmos: pallet_cosmos,
-		DynamicFee: pallet_dynamic_fee,
+		TransactionPayment: pallet_transaction_payment,
+		Sudo: pallet_sudo,
+		Alias: pallet_alias,
 		Ethereum: pallet_ethereum,
 		EVM: pallet_evm,
 		EVMChainId: pallet_evm_chain_id,
-		Grandpa: pallet_grandpa,
-		Sudo: pallet_sudo,
-		System: frame_system,
-		Timestamp: pallet_timestamp,
-		TransactionPayment: pallet_transaction_payment,
+		Cosmos: pallet_cosmos,
+		DynamicFee: pallet_dynamic_fee,
+		BaseFee: pallet_base_fee,
 	}
 );
 
