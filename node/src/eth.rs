@@ -18,7 +18,6 @@
 
 use crate::client::{FullBackend, FullClient};
 pub use fc_consensus::FrontierBlockImport;
-pub use fc_db::kv::frontier_database_dir;
 use fc_rpc::{EthTask, OverrideHandle};
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 use futures::{future, prelude::*};
