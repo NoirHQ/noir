@@ -17,8 +17,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use fc_rpc::{
-	EthBlockDataCacheTask, EthConfig, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
-	SchemaV2Override, SchemaV3Override, StorageOverride,
+	EthBlockDataCacheTask, EthConfig, OverrideHandle,
 };
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 pub use fc_storage::overrides_handle;
