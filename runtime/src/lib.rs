@@ -33,10 +33,12 @@ mod precompiles;
 use fp_evm::TransactionValidationError;
 use fp_rpc::TransactionStatus;
 use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime, derive_impl,
+	genesis_builder_helper::{build_config, create_default_config},
+	parameter_types,
 	traits::{
 		tokens::{fungible, Fortitude, Preservation},
-		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, FindAuthor, OnFinalize, OnTimestampSet,
+		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, FindAuthor, OnFinalize,
 	},
 	weights::{
 		constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
@@ -337,6 +339,8 @@ impl frame_support::traits::OnNewAccount<AccountId> for OnNewAccount {
 		}
 	}
 }
+
+#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -448,6 +452,7 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type RuntimeHoldReason = ();
+	type RuntimeFreezeReason = ();
 	type FreezeIdentifier = ();
 	type MaxHolds = ();
 	type MaxFreezes = ();
@@ -517,6 +522,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 const BLOCK_GAS_LIMIT: u64 = 75_000_000;
 const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 const WEIGHT_PER_GAS: u64 = 20_000;
+
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT.ref_time() / WEIGHT_PER_GAS);
 	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
@@ -547,6 +553,7 @@ impl pallet_evm::Config for Runtime {
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type Timestamp = Timestamp;
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
+	type SuicideQuickClearLimit = ConstU32<0>;
 }
 
 impl pallet_evm_chain_id::Config for Runtime {}
@@ -588,24 +595,13 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
-	pub storage EnableManualSeal: bool = false;
-}
-
-pub struct ConsensusOnTimestampSet<T>(PhantomData<T>);
-impl<T: pallet_aura::Config> OnTimestampSet<T::Moment> for ConsensusOnTimestampSet<T> {
-	fn on_timestamp_set(moment: T::Moment) {
-		if EnableManualSeal::get() {
-			return
-		}
-		<pallet_aura::Pallet<T> as OnTimestampSet<T::Moment>>::on_timestamp_set(moment)
-	}
 }
 
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
 	/// Something which can be notified when the timestamp is set.
-	type OnTimestampSet = ConsensusOnTimestampSet<Self>;
+	type OnTimestampSet = Aura;
 	/// The minimum period between blocks.
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
@@ -1121,6 +1117,16 @@ impl_runtime_apis! {
 			encoded: Vec<u8>,
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
 			opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
+		}
+	}
+
+	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+		fn create_default_config() -> Vec<u8> {
+			create_default_config::<RuntimeGenesisConfig>()
+		}
+
+		fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
+			build_config::<RuntimeGenesisConfig>(config)
 		}
 	}
 }

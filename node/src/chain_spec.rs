@@ -16,15 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use noir_runtime::{AccountId, EnableManualSeal, RuntimeGenesisConfig, Signature, WASM_BINARY};
+use noir_runtime::{AccountId, RuntimeGenesisConfig, Signature, WASM_BINARY};
 use sc_chain_spec::Properties;
 use sc_service::ChainType;
-use serde::{Deserialize, Serialize};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::{sr25519, storage::Storage, Pair, Public, H160, U256};
+use sp_core::{sr25519, Pair, Public, H160, U256};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use sp_state_machine::BasicExternalities;
 use std::{collections::BTreeMap, str::FromStr};
 
 // The URL for the telemetry server.
@@ -32,28 +30,6 @@ use std::{collections::BTreeMap, str::FromStr};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig>;
-/// Specialized `ChainSpec` for development.
-pub type DevChainSpec = sc_service::GenericChainSpec<DevGenesisExt>;
-
-/// Extension for the dev genesis config to support a custom changes to the genesis state.
-#[derive(Serialize, Deserialize)]
-pub struct DevGenesisExt {
-	/// Genesis config.
-	genesis_config: RuntimeGenesisConfig,
-	/// The flag that if enable manual-seal mode.
-	enable_manual_seal: Option<bool>,
-}
-
-impl sp_runtime::BuildStorage for DevGenesisExt {
-	fn assimilate_storage(&self, storage: &mut Storage) -> Result<(), String> {
-		BasicExternalities::execute_with_storage(storage, || {
-			if let Some(enable_manual_seal) = &self.enable_manual_seal {
-				EnableManualSeal::set(enable_manual_seal);
-			}
-		});
-		self.genesis_config.assimilate_storage(storage)
-	}
-}
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -77,50 +53,32 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 	(get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
 }
 
-pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
+pub fn development_config() -> ChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 	let mut properties = Properties::new();
 	properties.insert("tokenDecimals".to_string(), serde_json::Value::from(18));
 	properties.insert("tokenSymbol".to_string(), serde_json::Value::from("CDT"));
 
-	DevChainSpec::from_genesis(
-		// Name
-		"Development",
-		// ID
-		"dev",
-		ChainType::Development,
-		move || {
-			DevGenesisExt {
-				genesis_config: testnet_genesis(
-					wasm_binary,
-					// Sudo account
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					// Pre-funded accounts
-					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					],
-					// Initial PoA authorities
-					vec![authority_keys_from_seed("Alice")],
-					42,
-				),
-				enable_manual_seal,
-			}
-		},
-		// Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		None,
-		None,
-		// Properties
-		Some(properties),
-		// Extensions
-		None,
-	)
+	ChainSpec::builder(wasm_binary, None)
+		.with_name("Development")
+		.with_id("dev")
+		.with_chain_type(ChainType::Development)
+		.with_genesis_config_patch(testnet_genesis(
+			// Sudo account
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			// Pre-funded accounts
+			vec![
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+			],
+			// Initial PoA authorities
+			vec![authority_keys_from_seed("Alice")],
+			42,
+		))
+		.with_properties(properties)
+		.build()
 }
 
 pub fn local_testnet_config() -> ChainSpec {
@@ -129,93 +87,64 @@ pub fn local_testnet_config() -> ChainSpec {
 	properties.insert("tokenDecimals".to_string(), serde_json::Value::from(18));
 	properties.insert("tokenSymbol".to_string(), serde_json::Value::from("CDT"));
 
-	ChainSpec::from_genesis(
-		// Name
-		"Local Testnet",
-		// ID
-		"local_testnet",
-		ChainType::Local,
-		move || {
-			testnet_genesis(
-				wasm_binary,
-				// Initial PoA authorities
-				// Sudo account
+	ChainSpec::builder(wasm_binary, None)
+		.with_name("Local Testnet")
+		.with_id("local_testnet")
+		.with_chain_type(ChainType::Local)
+		.with_genesis_config_patch(testnet_genesis(
+			// Initial PoA authorities
+			// Sudo account
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			// Pre-funded accounts
+			vec![
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				// Pre-funded accounts
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-				],
-				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
-				42,
-			)
-		},
-		// Bootnodes
-		vec![],
-		// Telemetry
-		None,
-		// Protocol ID
-		None,
-		None,
-		// Properties
-		Some(properties),
-		// Extensions
-		None,
-	)
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				get_account_id_from_seed::<sr25519::Public>("Dave"),
+				get_account_id_from_seed::<sr25519::Public>("Eve"),
+				get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+				get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+				get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+				get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+				get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+			],
+			vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
+			42,
+		))
+		.with_properties(properties)
+		.build()
 }
 
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
-	wasm_binary: &[u8],
 	sudo_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	initial_authorities: Vec<(AuraId, GrandpaId)>,
 	chain_id: u64,
-) -> RuntimeGenesisConfig {
-	use noir_runtime::{
-		AuraConfig, BalancesConfig, EVMChainIdConfig, EVMConfig, GrandpaConfig, SudoConfig,
-		SystemConfig,
-	};
-
-	RuntimeGenesisConfig {
-		// System
-		system: SystemConfig {
-			// Add Wasm runtime to storage.
-			code: wasm_binary.to_vec(),
-			..Default::default()
-		},
-		sudo: SudoConfig {
+) -> serde_json::Value {
+	serde_json::json!({
+		"sudo": {
 			// Assign network admin rights.
-			key: Some(sudo_key),
+			"key": Some(sudo_key),
 		},
 		// Monetary
-		balances: BalancesConfig {
+		"balances": {
 			// Configure endowed accounts with initial balance of 1 << 60.
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+			"balances": endowed_accounts.iter().cloned().map(|k| (k, 1u64 << 60)).collect::<Vec<_>>(),
 		},
-		transaction_payment: Default::default(),
 		// Consensus
-		aura: AuraConfig {
-			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
+		"aura": {
+			"authorities": initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
 		},
-		grandpa: GrandpaConfig {
-			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
-			..Default::default()
+		"grandpa": {
+			"authorities": initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect::<Vec<_>>(),
 		},
 		// EVM compatibility
-		evm_chain_id: EVMChainIdConfig { chain_id, ..Default::default() },
-		evm: EVMConfig {
-			accounts: {
+		"evmChainId": { "chainId": chain_id },
+		"evm": {
+			"accounts": (|| {
 				let mut map = BTreeMap::new();
 				map.insert(
 					// H160 address of Alice dev account
@@ -258,11 +187,7 @@ fn testnet_genesis(
 					},
 				);
 				map
-			},
-			..Default::default()
+			})(),
 		},
-		ethereum: Default::default(),
-		dynamic_fee: Default::default(),
-		base_fee: Default::default(),
-	}
+	})
 }

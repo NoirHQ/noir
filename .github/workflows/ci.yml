@@ -19,7 +19,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@nightly
       with:
         targets: wasm32-unknown-unknown
-        components: rustfmt
+        components: rust-src, rustfmt
     - name: Install build dependencies
       run: sudo apt-get install protobuf-compiler
     - name: Rust Cache
