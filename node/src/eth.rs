@@ -20,7 +20,7 @@ use crate::client::{FullBackend, FullClient};
 pub use fc_consensus::FrontierBlockImport;
 use fc_rpc::{EthTask, OverrideHandle};
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-use futures::{future, prelude::*};
+use futures::prelude::*;
 use noir_core_primitives::Block;
 use sc_client_api::BlockchainEvents;
 use sc_executor::NativeExecutionDispatch;

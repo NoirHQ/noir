@@ -33,7 +33,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 use regex::Regex;
 #[cfg(feature = "std")]
 use sp_core::crypto::SecretStringError;
-#[cfg(feature = "std")]
+#[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]

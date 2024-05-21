@@ -13,7 +13,7 @@ base64ct = { workspace = true, optional = true }
 hmac = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
-p256 = { workspace = true, optional = true }
+p256 = { workspace = true }
 regex = { workspace = true, optional = true }
 scale-info = { workspace = true }
 secp256k1 = { workspace = true, optional = true }
@@ -54,7 +54,6 @@ full_crypto = [
 	"array-bytes",
 	"base64ct",
 	"hmac",
-	"p256",
 	"sha2",
 	"secp256k1",
 	"sp-core/full_crypto",

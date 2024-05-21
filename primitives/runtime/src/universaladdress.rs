@@ -21,6 +21,7 @@ use np_crypto::{ecdsa::EcdsaExt, p256};
 use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
+#[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
 #[cfg(feature = "serde")]

@@ -24,7 +24,6 @@ use sp_runtime_interface::pass_by::PassByInner;
 
 #[cfg(feature = "std")]
 use bip39::{Language, Mnemonic, MnemonicType};
-#[cfg(feature = "full_crypto")]
 use p256::{
 	ecdsa::{
 		signature::hazmat::{PrehashSigner, PrehashVerifier},
@@ -35,19 +34,16 @@ use p256::{
 };
 #[cfg(feature = "std")]
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "full_crypto")]
-use sp_core::crypto::DeriveError;
 #[cfg(feature = "std")]
 use sp_core::crypto::Ss58Codec;
-use sp_core::crypto::{
-	ByteArray, CryptoType, CryptoTypeId, Derive, Public as TraitPublic, UncheckedFrom,
-};
-#[cfg(feature = "full_crypto")]
 use sp_core::{
-	crypto::{DeriveJunction, Pair as TraitPair, SecretStringError},
+	crypto::{
+		ByteArray, CryptoType, CryptoTypeId, Derive, DeriveError, DeriveJunction,
+		Pair as TraitPair, Public as TraitPublic, SecretStringError, UncheckedFrom,
+	},
 	hashing::blake2_256,
 };
-#[cfg(feature = "full_crypto")]
+#[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
 /// An identifier used to match public keys against ecdsa P-256 keys
@@ -56,11 +52,9 @@ pub const CRYPTO_ID: CryptoTypeId = CryptoTypeId(*b"p256");
 /// A secret seed (which is bytewise essentially equivalent to a SecretKey).
 ///
 /// We need it as a different type because `Seed` is expected to be AsRef<[u8]>.
-#[cfg(feature = "full_crypto")]
 type Seed = [u8; 32];
 
 /// The ECDSA P-256 compressed public key.
-#[cfg_attr(feature = "full_crypto", derive(Hash))]
 #[derive(
 	Clone,
 	Copy,
@@ -73,6 +67,7 @@ type Seed = [u8; 32];
 	PartialEq,
 	PartialOrd,
 	Ord,
+	Hash,
 )]
 pub struct Public(pub [u8; 33]);
 
@@ -194,7 +189,6 @@ impl<'de> Deserialize<'de> for Public {
 }
 
 /// A signature (a 512-bit value).
-#[cfg_attr(feature = "full_crypto", derive(Hash))]
 #[derive(Encode, Decode, MaxEncodedLen, PassByInner, TypeInfo, PartialEq, Eq)]
 pub struct Signature(pub [u8; 64]);
 
@@ -324,20 +318,17 @@ impl Signature {
 }
 
 /// Derive a single hard junction.
-#[cfg(feature = "full_crypto")]
 fn derive_hard_junction(secret_seed: &Seed, cc: &[u8; 32]) -> Seed {
 	("Secp256r1HDKD", secret_seed, cc).using_encoded(sp_core::hashing::blake2_256)
 }
 
 /// A key pair.
-#[cfg(feature = "full_crypto")]
 #[derive(Clone)]
 pub struct Pair {
 	public: Public,
 	secret: SigningKey,
 }
 
-#[cfg(feature = "full_crypto")]
 impl TraitPair for Pair {
 	type Public = Public;
 	type Seed = Seed;
@@ -414,6 +405,7 @@ impl TraitPair for Pair {
 	}
 
 	/// Sign a message.
+	#[cfg(feature = "full_crypto")]
 	fn sign(&self, message: &[u8]) -> Signature {
 		self.sign_prehashed(&blake2_256(message))
 	}
@@ -429,7 +421,6 @@ impl TraitPair for Pair {
 	}
 }
 
-#[cfg(feature = "full_crypto")]
 impl Pair {
 	/// Get the seed for this key.
 	pub fn seed(&self) -> Seed {
@@ -437,6 +428,7 @@ impl Pair {
 	}
 
 	/// Sign a pre-hashed message
+	#[cfg(feature = "full_crypto")]
 	pub fn sign_prehashed(&self, message: &[u8; 32]) -> Signature {
 		let sig: EcdsaSignature = self.secret.sign_prehash(message).unwrap();
 		Signature(sig.to_bytes().into())
@@ -460,16 +452,13 @@ impl Pair {
 }
 
 impl CryptoType for Public {
-	#[cfg(feature = "full_crypto")]
 	type Pair = Pair;
 }
 
 impl CryptoType for Signature {
-	#[cfg(feature = "full_crypto")]
 	type Pair = Pair;
 }
 
-#[cfg(feature = "full_crypto")]
 impl CryptoType for Pair {
 	type Pair = Pair;
 }
