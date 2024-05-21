@@ -402,12 +402,11 @@ where
 		None
 	} else {
 		net_config.add_notification_protocol(grandpa_protocol_config);
-		let warp_sync: Arc<dyn sc_network_sync::warp::WarpSyncProvider<Block>> =
-			Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
-				backend.clone(),
-				grandpa_link.shared_authority_set().clone(),
-				Vec::default(),
-			));
+		let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
+			backend.clone(),
+			grandpa_link.shared_authority_set().clone(),
+			Vec::default(),
+		));
 		Some(WarpSyncParams::WithProvider(warp_sync))
 	};
 

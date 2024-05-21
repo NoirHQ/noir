@@ -20,6 +20,7 @@
 
 use parity_scale_codec::{Compact, CompactAs, Decode, Encode, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
+#[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
 /// An account alias consisting of human readable string and 4-digit number.

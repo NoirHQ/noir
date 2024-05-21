@@ -20,6 +20,7 @@
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime_interface::pass_by::PassByCodec;
+#[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
 use crate::p256;
