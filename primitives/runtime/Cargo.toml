@@ -10,7 +10,6 @@ repository = { workspace = true }
 [dependencies]
 array-bytes = { workspace = true, optional = true }
 base64ct = { workspace = true, optional = true }
-derive_more = { workspace = true }
 parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }

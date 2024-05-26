@@ -29,7 +29,6 @@ pub use universaladdress::{UniversalAddress, UniversalAddressKind};
 #[cfg(feature = "serde")]
 pub use serde::{Deserialize, Serialize};
 
-use derive_more::{From, TryInto};
 use np_crypto::{p256, webauthn};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
