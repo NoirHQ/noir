@@ -16,9 +16,9 @@ lazy_static = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
 p256 = { workspace = true }
 regex = { workspace = true, optional = true }
-scale-info = { workspace = true }
+scale-info = { workspace = true, features = ["derive"] }
 secp256k1 = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
 serde_json = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
 substrate-bip39 = { workspace = true, optional = true }

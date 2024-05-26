@@ -8,7 +8,7 @@ members = [
 	"primitives/crypto",
 	"primitives/io",
 	"primitives/runtime",
-	# "runtime",
+	"runtime",
 ]
 
 [workspace.package]

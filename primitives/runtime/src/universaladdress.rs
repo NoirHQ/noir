@@ -21,6 +21,7 @@ use np_crypto::{ecdsa::EcdsaExt, p256};
 use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
+use sp_runtime::traits::IdentifyAccount;
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
@@ -28,8 +29,9 @@ use sp_std::vec::Vec;
 use base64ct::{Base64UrlUnpadded as Base64, Encoding};
 #[cfg(feature = "serde")]
 use serde::{
-	de::{Deserialize, Deserializer, Error as DeError, Visitor},
-	ser::{Serialize, Serializer},
+	de::{Deserializer, Error as DeError, Visitor},
+	ser::Serializer,
+	Deserialize, Serialize,
 };
 #[cfg(all(not(feature = "std"), feature = "serde"))]
 use sp_std::alloc::string::String;

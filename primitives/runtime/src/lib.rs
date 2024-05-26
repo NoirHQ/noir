@@ -34,7 +34,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::{crypto::AccountId32, ecdsa, ed25519, sr25519};
 use sp_runtime::{
-	traits::{IdentifyAccount, Lazy, Verify},
+	traits::{Lazy, Verify},
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -51,8 +51,8 @@ pub enum UniversalSignature {
 	Secp256k1(ecdsa::Signature),
 	/// A P-256 signature.
 	P256(p256::Signature),
-	/// A WebAuthn ES256 signature.
-	WebAuthn(webauthn::Signature),
+	// A WebAuthn ES256 signature.
+	//WebAuthn(webauthn::Signature),
 }
 
 impl Verify for UniversalSignature {
