@@ -86,7 +86,6 @@ impl Verify for UniversalSignature {
 					_ => false,
 				}
 			},
-			_ => false,
 			/*
 
 			(Self::WebAuthn(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {

@@ -34,7 +34,7 @@ pallet-evm-precompile-simple = { workspace = true }
 
 # noir
 noir-core-primitives = { workspace = true }
-np-crypto = { workspace = true }
+np-crypto = { workspace = true, features = ["serde"] }
 np-io = { workspace = true }
 np-runtime = { workspace = true, features = ["serde"] }
 

@@ -24,18 +24,15 @@ use sp_runtime_interface::pass_by::PassByInner;
 
 #[cfg(feature = "std")]
 use bip39::{Language, Mnemonic, MnemonicType};
-#[cfg(feature = "full_crypto")]
 use ecdsa::RecoveryId;
 use p256::{
-	ecdsa::{
-		signature::hazmat::PrehashVerifier, Signature as EcdsaSignature, SigningKey, VerifyingKey,
-	},
+	ecdsa::{Signature as EcdsaSignature, SigningKey, VerifyingKey},
 	elliptic_curve::sec1::ToEncodedPoint,
 	PublicKey,
 };
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use sp_core::crypto::Ss58Codec;
 use sp_core::{
 	crypto::{
@@ -44,6 +41,8 @@ use sp_core::{
 	},
 	hashing::blake2_256,
 };
+#[cfg(all(not(feature = "std"), feature = "serde"))]
+use sp_std::alloc::{format, string::String};
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
@@ -168,7 +167,7 @@ impl sp_std::fmt::Debug for Public {
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl Serialize for Public {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -178,7 +177,7 @@ impl Serialize for Public {
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Public {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -209,7 +208,7 @@ impl TryFrom<&[u8]> for Signature {
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl Serialize for Signature {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -219,7 +218,7 @@ impl Serialize for Signature {
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Signature {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
@@ -332,13 +331,11 @@ impl Signature {
 	*/
 
 	/// Recover the public key from this signature and a message.
-	#[cfg(feature = "full_crypto")]
 	pub fn recover<M: AsRef<[u8]>>(&self, message: M) -> Option<Public> {
 		self.recover_prehashed(&blake2_256(message.as_ref()))
 	}
 
 	/// Recover the public key from this signature and a pre-hashed message.
-	#[cfg(feature = "full_crypto")]
 	pub fn recover_prehashed(&self, message: &[u8; 32]) -> Option<Public> {
 		let recid = RecoveryId::from_byte(self.0[64])?;
 		let sig = EcdsaSignature::from_bytes(self.0[..64].into()).ok()?;
