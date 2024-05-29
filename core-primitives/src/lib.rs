@@ -45,3 +45,10 @@ pub type Nonce = u32;
 pub type AccountIndex = ();
 /// The address format for describing accounts.
 pub type Address = sp_runtime::MultiAddress<AccountId, AccountIndex>;
+
+/// Basic currency unit.
+pub const DOLLARS: Balance = 1_000_000_000_000_000_000;
+/// Decimals of currency.
+pub const DECIMALS: u8 = 18;
+/// Symbol of currency.
+pub const SYMBOL: &str = "CDT";

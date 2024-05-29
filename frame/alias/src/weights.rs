@@ -25,41 +25,17 @@ use frame_support::{traits::Get, weights::Weight};
 
 /// Weight functions needed for pallet_alias.
 pub trait WeightInfo {
-	fn create_account_name() -> Weight;
-	fn update_account_name() -> Weight;
-	fn connect_aliases() -> Weight;
-	fn force_set_account_name() -> Weight;
+	fn alias() -> Weight;
 }
 
 /// Weights for pallet_alias using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: AccountIdOf (r:1 w:1), AccountNameOf (r:1 w:1)
-	fn create_account_name() -> Weight {
-    // Base fee
-		Weight::from_parts(50_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
-	}
-  // Storage: AccountIdOf (r:1 w:2), AccountNameOf (r:1 w:1)
-	fn update_account_name() -> Weight {
-    // Base fee
-		Weight::from_parts(100_000_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(3 as u64))
-	}
-	// Storage: AccountIdOf (r:1 w:1), AccountNameOf (r:1 w:1)
-	fn connect_aliases() -> Weight {
+	fn alias() -> Weight {
 		// Base fee
 		Weight::from_parts(50_000_000, 0)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
-	}
-	// Storage: AccountIdOf (r:1 w:2), AccountNameOf (r:1 w:1)
-	fn force_set_account_name() -> Weight {
-		// Base fee
-		Weight::from_parts(50_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 }

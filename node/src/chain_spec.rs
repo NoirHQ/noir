@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use noir_core_primitives::{DECIMALS, DOLLARS, SYMBOL};
 use noir_runtime::{AccountId, RuntimeGenesisConfig, Signature, WASM_BINARY};
 use sc_chain_spec::Properties;
 use sc_service::ChainType;
@@ -53,11 +54,15 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 	(get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
 }
 
+fn properties() -> Properties {
+	let mut properties = Properties::new();
+	properties.insert("tokenDecimals".to_string(), DECIMALS.into());
+	properties.insert("tokenSymbol".to_string(), SYMBOL.into());
+	properties
+}
+
 pub fn development_config() -> ChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
-	let mut properties = Properties::new();
-	properties.insert("tokenDecimals".to_string(), serde_json::Value::from(18));
-	properties.insert("tokenSymbol".to_string(), serde_json::Value::from("CDT"));
 
 	ChainSpec::builder(wasm_binary, None)
 		.with_name("Development")
@@ -77,15 +82,12 @@ pub fn development_config() -> ChainSpec {
 			vec![authority_keys_from_seed("Alice")],
 			42,
 		))
-		.with_properties(properties)
+		.with_properties(properties())
 		.build()
 }
 
 pub fn local_testnet_config() -> ChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
-	let mut properties = Properties::new();
-	properties.insert("tokenDecimals".to_string(), serde_json::Value::from(18));
-	properties.insert("tokenSymbol".to_string(), serde_json::Value::from("CDT"));
 
 	ChainSpec::builder(wasm_binary, None)
 		.with_name("Local Testnet")
@@ -113,7 +115,7 @@ pub fn local_testnet_config() -> ChainSpec {
 			vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
 			42,
 		))
-		.with_properties(properties)
+		.with_properties(properties())
 		.build()
 }
 
@@ -132,7 +134,7 @@ fn testnet_genesis(
 		// Monetary
 		"balances": {
 			// Configure endowed accounts with initial balance of 1 << 60.
-			"balances": endowed_accounts.iter().cloned().map(|k| (k, 1u64 << 60)).collect::<Vec<_>>(),
+			"balances": endowed_accounts.iter().cloned().map(|k| (k, 10000 * DOLLARS)).collect::<Vec<_>>(),
 		},
 		// Consensus
 		"aura": {
@@ -153,11 +155,10 @@ fn testnet_genesis(
 					// hex: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
 					// Using the full hex key, truncating to the first 20 bytes (the first 40 hex
 					// chars)
-					H160::from_str("d43593c715fdd31c61141abd04a99fd6822c8558")
+					H160::from_str("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")
 						.expect("internal H160 is valid; qed"),
 					fp_evm::GenesisAccount {
-						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")
-							.expect("internal U256 is valid; qed"),
+						balance: U256::from(10000 * DOLLARS),
 						code: Default::default(),
 						nonce: Default::default(),
 						storage: Default::default(),
@@ -165,11 +166,10 @@ fn testnet_genesis(
 				);
 				map.insert(
 					// H160 address of CI test runner account
-					H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+					H160::from_str("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")
 						.expect("internal H160 is valid; qed"),
 					fp_evm::GenesisAccount {
-						balance: U256::from_str("0xffffffffffffffffffffffffffffffff")
-							.expect("internal U256 is valid; qed"),
+						balance: U256::from(10000 * DOLLARS),
 						code: Default::default(),
 						nonce: Default::default(),
 						storage: Default::default(),

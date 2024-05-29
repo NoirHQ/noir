@@ -17,11 +17,12 @@
 
 //! Universal account infrastructure.
 
+use crate::AccountId32;
 use np_crypto::{ecdsa::EcdsaExt, p256};
 use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
-use sp_runtime::{traits::IdentifyAccount, AccountId32};
+use sp_runtime::traits::IdentifyAccount;
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
