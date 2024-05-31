@@ -1,6 +1,6 @@
 [package]
 name = "np-runtime"
-version = "0.2.0"
+version = { workspace = true }
 license = "Apache-2.0"
 
 authors = { workspace = true }

@@ -15,6 +15,7 @@ members = [
 authors = ["Haderech Pte. Ltd."]
 edition = "2021"
 repository = "https://github.com/noirhq/noir/"
+version = "0.2.0"
 
 [workspace.dependencies]
 array-bytes = "6.2.2"
