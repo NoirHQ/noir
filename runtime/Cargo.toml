@@ -1,6 +1,6 @@
 [package]
 name = "noir-runtime"
-version = "0.1.0"
+version = { workspace = true }
 license = "GPL-3.0-or-later"
 build = "build.rs"
 

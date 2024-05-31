@@ -1,6 +1,6 @@
 [package]
 name = "noir-node"
-version = "0.2.0"
+version = { workspace = true }
 description = "Noir Node"
 license = "GPL-3.0-or-later"
 build = "build.rs"
