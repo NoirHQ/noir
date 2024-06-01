@@ -31,19 +31,15 @@ use sc_client_api::{
 	AuxStore, UsageProvider,
 };
 use sc_consensus_manual_seal::rpc::EngineCommand;
-use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
 use sc_service::TransactionPool;
-use sc_transaction_pool::ChainApi;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_inherents::CreateInherentDataProviders;
-use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
 /// Full client dependencies.
-pub struct FullDeps<C, P, A: ChainApi, CT, CIDP> {
+pub struct FullDeps<C, P> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
@@ -52,33 +48,13 @@ pub struct FullDeps<C, P, A: ChainApi, CT, CIDP> {
 	pub deny_unsafe: DenyUnsafe,
 	/// Manual seal command sink
 	pub command_sink: Option<mpsc::Sender<EngineCommand<Hash>>>,
-	/// Ethereum-compatibility specific dependencies.
-	pub eth: EthDeps<Block, C, P, A, CT, CIDP>,
 	/// A copy of the chain spec.
 	pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
 }
 
-pub struct DefaultEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
-
-impl<C, BE> fc_rpc::EthConfig<Block, C> for DefaultEthConfig<C, BE>
-where
-	C: StorageProvider<Block, BE> + Sync + Send + 'static,
-	BE: Backend<Block> + 'static,
-{
-	type EstimateGasAdapter = ();
-	type RuntimeStorageOverride =
-		fc_rpc::frontier_backend_client::SystemAccountId20StorageOverride<Block, C, BE>;
-}
-
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, BE, A, CT, CIDP>(
-	deps: FullDeps<C, P, A, CT, CIDP>,
-	subscription_task_executor: SubscriptionTaskExecutor,
-	pubsub_notification_sinks: Arc<
-		fc_mapping_sync::EthereumBlockNotificationSinks<
-			fc_mapping_sync::EthereumBlockNotification<Block>,
-		>,
-	>,
+pub fn create_full<C, P, BE>(
+	deps: FullDeps<C, P>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: CallApiAt<Block> + ProvideRuntimeApi<Block>,
@@ -86,16 +62,11 @@ where
 	C::Api: sp_consensus_aura::AuraApi<Block, AuraId>,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
-	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	C::Api: hp_rpc::ConvertTxRuntimeApi<Block>,
 	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
 	C: BlockchainEvents<Block> + AuxStore + UsageProvider<Block> + StorageProvider<Block, BE>,
 	BE: Backend<Block> + 'static,
 	P: TransactionPool<Block = Block> + 'static,
-	A: ChainApi<Block = Block> + 'static,
-	CIDP: CreateInherentDataProviders<Block, ()> + Send + 'static,
-	CT: fp_rpc::ConvertTransaction<<Block as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
 	use hc_rpc::{Cosm, CosmApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -103,7 +74,7 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	let mut io = RpcModule::new(());
-	let FullDeps { client, pool, deny_unsafe, command_sink, eth, chain_spec } = deps;
+	let FullDeps { client, pool, deny_unsafe, command_sink, chain_spec } = deps;
 
 	io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
 	io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
@@ -118,14 +89,6 @@ where
 
 	// Cosmos compatibility RPCs
 	io.merge(Cosm::new(chain_spec, pool, client).into_rpc())?;
-
-	// Ethereum compatibility RPCs
-	let io = create_eth::<_, _, _, _, _, _, _, DefaultEthConfig<C, BE>>(
-		io,
-		eth,
-		subscription_task_executor,
-		pubsub_notification_sinks,
-	)?;
 
 	Ok(io)
 }
