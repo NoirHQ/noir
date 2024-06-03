@@ -27,7 +27,7 @@ use bip39::{Language, Mnemonic, MnemonicType};
 use ecdsa::RecoveryId;
 use p256::{
 	ecdsa::{Signature as EcdsaSignature, SigningKey, VerifyingKey},
-	elliptic_curve::sec1::ToEncodedPoint,
+	elliptic_curve::{scalar::IsHigh, sec1::ToEncodedPoint},
 	PublicKey,
 };
 #[cfg(feature = "serde")]
@@ -339,6 +339,9 @@ impl Signature {
 	pub fn recover_prehashed(&self, message: &[u8; 32]) -> Option<Public> {
 		let recid = RecoveryId::from_byte(self.0[64])?;
 		let sig = EcdsaSignature::from_bytes(self.0[..64].into()).ok()?;
+		if sig.s().is_high().into() {
+			return None;
+		}
 
 		VerifyingKey::recover_from_prehash(&message[..], &sig, recid)
 			.ok()
@@ -460,7 +463,11 @@ impl Pair {
 	/// Sign a pre-hashed message
 	#[cfg(feature = "full_crypto")]
 	pub fn sign_prehashed(&self, message: &[u8; 32]) -> Signature {
-		Signature::from(self.secret.sign_prehash_recoverable(message).unwrap())
+		let (mut sig, recid) = self.secret.sign_prehash_recoverable(message).unwrap();
+		if sig.s().is_high().into() {
+			sig = sig.normalize_s().unwrap();
+		}
+		Signature::from((sig, recid))
 	}
 
 	/// Verify a signature on a pre-hashed message. Return `true` if the signature is valid

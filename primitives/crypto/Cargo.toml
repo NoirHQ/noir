@@ -14,7 +14,7 @@ ecdsa = { workspace = true }
 hmac = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
-p256 = { workspace = true }
+p256 = { workspace = true, features = ["arithmetic"] }
 regex = { workspace = true, optional = true }
 scale-info = { workspace = true, features = ["derive"] }
 secp256k1 = { workspace = true, optional = true }
