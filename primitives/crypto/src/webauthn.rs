@@ -29,6 +29,8 @@ use crate::p256;
 use base64ct::{Base64UrlUnpadded as Base64, Encoding};
 #[cfg(feature = "full_crypto")]
 use sp_core::hashing::{blake2_256, sha2_256};
+#[cfg(feature = "full_crypto")]
+use url::Url;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -48,12 +50,16 @@ struct ClientDataJson {
 #[cfg(feature = "full_crypto")]
 impl ClientDataJson {
 	fn check_origin(&self) -> bool {
-		if self.origin.starts_with("https://") {
-			true
-		} else if self.origin.starts_with("http://localhost") {
-			true
-		} else {
-			false
+		let origin = match Url::parse(&self.origin) {
+			Ok(url) => url,
+			Err(_) => return false,
+		};
+
+		match origin.scheme() {
+			"https" => origin.host_str().is_some(),
+			"http" =>
+				matches!(origin.host_str(), Some(host) if host == "127.0.0.1" || host == "localhost" || host.ends_with(".localhost")),
+			_ => false,
 		}
 	}
 
