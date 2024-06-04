@@ -32,7 +32,7 @@ use sp_core::hashing::{blake2_256, sha2_256};
 #[cfg(feature = "full_crypto")]
 use url::Url;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Webauthn es256 public key.
@@ -126,7 +126,7 @@ impl TryFrom<&[u8]> for ClientDataJson {
 
 /// Webauthn es256 signature. This type corresponds to AuthenticatorAssertionResponse.
 #[cfg_attr(feature = "full_crypto", derive(Hash))]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 #[derive(Clone, Encode, Decode, TypeInfo, PassByCodec, PartialEq, Eq)]
 pub struct Signature {
 	/// Client data passed to the authenticator to generate a signature.
@@ -147,30 +147,34 @@ impl Signature {
 	/// Verify a signature on a pre-hashed message. Return `true` if the signature is valid
 	/// and thus matches the given `public` key.
 	pub fn verify_prehashed(&self, message_hash: &[u8; 32], pubkey: &Public) -> bool {
+		self.recover_prehashed(message_hash)
+			.map_or(false, |recovered_pubkey| recovered_pubkey == *pubkey)
+	}
+
+	pub fn recover<M: AsRef<[u8]>>(&self, message: M) -> Option<Public> {
+		self.recover_prehashed(&blake2_256(message.as_ref()))
+	}
+
+	pub fn recover_prehashed(&self, message_hash: &[u8; 32]) -> Option<Public> {
 		let client_data = match ClientDataJson::try_from(&self.client_data_json[..]) {
 			Ok(c) => c,
-			Err(_) => return false,
+			Err(_) => return None,
 		};
 		if !client_data.check_message(message_hash) {
-			return false
+			return None
 		}
 		if self.authenticator_data.len() < 37 {
-			return false
+			return None
 		}
 		if !client_data.check_rpid(self.rpid_hash()) {
-			return false
+			return None
 		}
 		let mut signed_message: Vec<u8> = Vec::new();
 		signed_message.extend(&self.authenticator_data);
 		signed_message.extend(sha2_256(&self.client_data_json));
-		/*
-		match p256::Signature::from_der(&self.signature[..]) {
-			Some(sig) =>
-				p256::Pair::verify_prehashed(&sig, &sha2_256(&signed_message[..]), &pubkey),
-			None => false,
-		}
-		*/
-		false
+
+		let signature = p256::Signature::try_from(&self.signature[..]).ok()?;
+		p256::Signature::recover_prehashed(&signature, &sha2_256(&signed_message[..]))
 	}
 
 	// WARNING: This function doesn't check the size of authenticator data.

@@ -53,8 +53,8 @@ pub enum UniversalSignature {
 	Secp256k1(ecdsa::Signature),
 	/// A P-256 signature.
 	P256(p256::Signature),
-	// A WebAuthn ES256 signature.
-	//WebAuthn(webauthn::Signature),
+	/// A WebAuthn ES256 signature.
+	WebAuthn(webauthn::Signature),
 }
 
 /// Means of signature verification.
@@ -102,13 +102,14 @@ impl SubstrateVerify for UniversalSignature {
 					_ => false,
 				}
 			},
-			/*
-
-			(Self::WebAuthn(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {
-				Ok(signer) => np_io::crypto::webauthn_verify(sig, msg.get(), &signer),
-				Err(_) => false,
+			(Self::WebAuthn(ref sig), who) => {
+				match np_io::crypto::webauthn_recover(&sig, msg.get()) {
+					Some(pubkey) =>
+						&sp_io::hashing::blake2_256(pubkey.as_ref()) ==
+							<dyn AsRef<[u8; 32]>>::as_ref(&who),
+					_ => false,
+				}
 			},
-			*/
 		}
 	}
 }
@@ -156,13 +157,20 @@ impl Verify for UniversalSignature {
 					_ => false,
 				}
 			},
-			/*
-
-			(Self::WebAuthn(ref sig), who) => match p256::Public::try_from(&who.0[2..]) {
-				Ok(signer) => np_io::crypto::webauthn_verify(sig, msg.get(), &signer),
-				Err(_) => false,
+			(Self::WebAuthn(ref sig), who) => {
+				match np_io::crypto::webauthn_recover(&sig, msg.get()) {
+					Some(pubkey) =>
+						if &sp_io::hashing::blake2_256(pubkey.as_ref()) ==
+							AsRef::<[u8; 32]>::as_ref(&who)
+						{
+							signer.origin = Some(p256::Public(pubkey).into());
+							true
+						} else {
+							false
+						},
+					_ => false,
+				}
 			},
-			*/
 		}
 	}
 }

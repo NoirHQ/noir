@@ -34,6 +34,7 @@ pub trait Crypto {
 		p256::Pair::verify_prehashed(sig, &sp_io::hashing::sha2_256(msg), pubkey)
 	}
 
+	/// Verify and recover a P-256 signature.
 	fn p256_recover_compressed(sig: &[u8; 65], msg: &[u8; 32]) -> Option<[u8; 33]> {
 		p256::Signature::from_raw(*sig).recover_prehashed(msg).map(|pubkey| pubkey.0)
 	}
@@ -41,6 +42,11 @@ pub trait Crypto {
 	/// Verify WebAuthn ES256 signature.
 	fn webauthn_verify(sig: &webauthn::Signature, msg: &[u8], pubkey: &webauthn::Public) -> bool {
 		sig.verify(msg, pubkey)
+	}
+
+	/// Verify WebAuthn ES256 signature.
+	fn webauthn_recover(sig: &webauthn::Signature, msg: &[u8]) -> Option<[u8; 33]> {
+		sig.recover(msg).map(|pubkey| pubkey.0)
 	}
 
 	/// Decompress secp256k1 public key.
