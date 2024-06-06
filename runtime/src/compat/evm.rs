@@ -20,7 +20,7 @@
 
 use frame_support::dispatch::RawOrigin;
 use np_crypto::ecdsa::EcdsaExt;
-use np_runtime::{Derived, UniversalAddress, UniversalAddressKind};
+use np_runtime::{Multikey, MultikeyKind};
 use pallet_alias::AccountAlias;
 use pallet_evm::{AddressMapping, EnsureAddressOrigin};
 use sp_core::{Hasher, H160, H256};
@@ -32,7 +32,7 @@ pub struct EnsureAddressHashed<AccountId>(PhantomData<AccountId>);
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressHashed<AccountId>
 where
 	OuterOrigin: Into<Result<RawOrigin<AccountId>, OuterOrigin>> + From<RawOrigin<AccountId>>,
-	AccountId: Derived<Origin = UniversalAddress> + Clone,
+	AccountId: TryInto<Multikey> + Clone,
 {
 	type Success = AccountId;
 
@@ -42,9 +42,9 @@ where
 	) -> Result<Self::Success, OuterOrigin> {
 		origin.into().and_then(|o| match o {
 			RawOrigin::Signed(who) => {
-				if let Some(origin) = who.clone().origin() {
-					if origin.kind() == UniversalAddressKind::Secp256k1 {
-						if let Some(hashed) = origin.to_eth_address() {
+				if let Ok(source) = who.clone().try_into() {
+					if source.kind() == MultikeyKind::Secp256k1 {
+						if let Some(hashed) = source.to_eth_address() {
 							if &hashed == address {
 								return Ok(who)
 							}

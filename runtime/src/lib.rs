@@ -47,7 +47,6 @@ use frame_support::{
 };
 pub use noir_core_primitives::{AccountId, Balance, BlockNumber, Hash, Nonce, Signature};
 use np_crypto::ecdsa::EcdsaExt;
-use np_runtime::UniversalAddress;
 use pallet_cosmos::handler::cosm::MsgHandler;
 use pallet_ethereum::{
 	Call::transact, PostLogContent, Transaction as EthereumTransaction, TransactionAction,
@@ -390,8 +389,6 @@ impl pallet_alias::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	/// Weight information for extrinsics in this pallet.
 	type WeightInfo = pallet_alias::weights::SubstrateWeight<Runtime>;
-
-	type Origin = UniversalAddress;
 }
 
 impl pallet_aura::Config for Runtime {

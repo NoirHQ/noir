@@ -17,7 +17,7 @@
 
 //! Generic implementation of an unchecked (pre-verification) extrinsic.
 
-use crate::Verify;
+use crate::traits::VerifyMut;
 use parity_scale_codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
 use sp_io::hashing::blake2_256;
@@ -153,8 +153,8 @@ impl<LookupSource, AccountId, Call, Signature, Extra, Lookup> Checkable<Lookup>
 where
 	LookupSource: Member + MaybeDisplay,
 	Call: Encode + Member,
-	Signature: Member + Verify,
-	<Signature as Verify>::Signer: IdentifyAccount<AccountId = AccountId>,
+	Signature: Member + VerifyMut,
+	<Signature as VerifyMut>::Signer: IdentifyAccount<AccountId = AccountId>,
 	Extra: SignedExtension<AccountId = AccountId>,
 	AccountId: Member + MaybeDisplay,
 	Lookup: traits::Lookup<Source = LookupSource, Target = AccountId>,
@@ -166,7 +166,8 @@ where
 			Some((signed, signature, extra)) => {
 				let mut signed = lookup.lookup(signed)?;
 				let raw_payload = SignedPayload::new(self.function, extra)?;
-				if !raw_payload.using_encoded(|payload| signature.verify(payload, &mut signed)) {
+				if !raw_payload.using_encoded(|payload| signature.verify_mut(payload, &mut signed))
+				{
 					return Err(InvalidTransaction::BadProof.into())
 				}
 

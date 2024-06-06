@@ -16,12 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{Derived, UniversalAddress};
+use crate::Multikey;
 use np_crypto::ecdsa::EcdsaExt;
 use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen};
 use scale_info::{Type, TypeInfo};
 #[cfg(feature = "serde")]
-use sp_core::crypto::{PublicError, Ss58Codec};
+use sp_core::crypto::{PublicError, Ss58AddressFormat, Ss58Codec};
 use sp_core::{
 	crypto::{AccountId32 as SubstrateAccountId32, FromEntropy, UncheckedFrom},
 	ByteArray, H160, H256,
@@ -32,23 +32,33 @@ use sp_std::{
 	vec::Vec,
 };
 
+/// An opaque 32-byte cryptographic identifier.
+///
+/// HACK: This type replaces Substrate AccountId32 to be passed keeping recovered public key.
+/// `source` field should be ignored during serialization.
 #[derive(Clone, Eq)]
 pub struct AccountId32 {
 	inner: [u8; 32],
-	pub origin: Option<UniversalAddress>,
+	source: Option<Multikey>,
 }
 
 impl AccountId32 {
+	/// Create a new instance from its raw inner byte value.
+	///
+	/// Equivalent to this types `From<[u8; 32]>` implementation. For the lack of const
+	/// support in traits we have this constructor.
 	pub const fn new(inner: [u8; 32]) -> Self {
-		Self { inner, origin: None }
+		Self { inner, source: None }
 	}
-}
 
-impl Derived for AccountId32 {
-	type Origin = UniversalAddress;
+	/// Returns the source of account id, if possible.
+	pub fn source(&self) -> Option<&Multikey> {
+		self.source.as_ref()
+	}
 
-	fn origin(&self) -> Option<Self::Origin> {
-		self.origin.clone()
+	/// Sets the source of account id.
+	pub fn set_source(&mut self, source: Multikey) {
+		self.source = Some(source);
 	}
 }
 
@@ -84,7 +94,7 @@ impl EncodeLike for AccountId32 {}
 
 impl Decode for AccountId32 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
-		Ok(Self { inner: <[u8; 32]>::decode(input)?, origin: None })
+		Ok(Self { inner: <[u8; 32]>::decode(input)?, source: None })
 	}
 }
 
@@ -111,7 +121,7 @@ impl sp_std::hash::Hash for AccountId32 {
 
 impl UncheckedFrom<H256> for AccountId32 {
 	fn unchecked_from(h: H256) -> Self {
-		Self { inner: h.into(), origin: None }
+		Self { inner: h.into(), source: None }
 	}
 }
 
@@ -121,12 +131,13 @@ impl ByteArray for AccountId32 {
 
 #[cfg(feature = "serde")]
 impl Ss58Codec for AccountId32 {
-	fn to_ss58check(&self) -> String {
-		SubstrateAccountId32::new(self.inner).to_ss58check()
+	fn from_ss58check_with_version(s: &str) -> Result<(Self, Ss58AddressFormat), PublicError> {
+		SubstrateAccountId32::from_ss58check_with_version(s)
+			.map(|(inner, format)| (Self { inner: inner.into(), source: None }, format))
 	}
 
-	fn from_ss58check(s: &str) -> Result<Self, PublicError> {
-		Ok(Self { inner: SubstrateAccountId32::from_ss58check(s)?.into(), origin: None })
+	fn to_ss58check_with_version(&self, version: Ss58AddressFormat) -> String {
+		SubstrateAccountId32::new(self.inner).to_ss58check_with_version(version)
 	}
 }
 
@@ -182,7 +193,7 @@ impl From<H256> for AccountId32 {
 
 impl From<sp_core::ecdsa::Public> for AccountId32 {
 	fn from(v: sp_core::ecdsa::Public) -> Self {
-		Self { inner: sp_core::blake2_256(v.as_ref()), origin: Some(v.into()) }
+		Self { inner: sp_core::blake2_256(v.as_ref()), source: Some(v.into()) }
 	}
 }
 
@@ -260,10 +271,10 @@ impl FromEntropy for AccountId32 {
 
 impl EcdsaExt for AccountId32 {
 	fn to_eth_address(&self) -> Option<H160> {
-		self.origin.as_ref().and_then(EcdsaExt::to_eth_address)
+		self.source.as_ref().and_then(EcdsaExt::to_eth_address)
 	}
 
 	fn to_cosm_address(&self) -> Option<H160> {
-		self.origin.as_ref().and_then(EcdsaExt::to_cosm_address)
+		self.source.as_ref().and_then(EcdsaExt::to_cosm_address)
 	}
 }

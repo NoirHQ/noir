@@ -15,19 +15,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Universal account infrastructure.
+//! Interoperable public key representation.
 
 use crate::AccountId32;
 use np_crypto::{ecdsa::EcdsaExt, p256};
-use parity_scale_codec::{Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, EncodeLike, Error as CodecError, Input, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::{ecdsa, ed25519, sr25519, H160, H256};
+use sp_core::{
+	crypto::{PublicError, UncheckedFrom},
+	ecdsa, ed25519, sr25519, ByteArray, H160, H256,
+};
 use sp_runtime::traits::IdentifyAccount;
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
 #[cfg(feature = "serde")]
-use base64ct::{Base64UrlUnpadded as Base64, Encoding};
+use base64ct::{Base64UrlUnpadded, Encoding};
 #[cfg(feature = "serde")]
 use serde::{
 	de::{Deserializer, Error as DeError, Visitor},
@@ -52,10 +55,10 @@ pub mod multicodec {
 	pub const BLAKE2B_256: &[u8] = &[0xa0, 0xe4, 0x02, 0x20];
 }
 
-/// The type of public key that universal address contains.
+/// The type of public key that multikey contains.
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Clone, PartialEq, Eq)]
-pub enum UniversalAddressKind {
+pub enum MultikeyKind {
 	/// Unknown public key type. (Invalid)
 	Unknown,
 	/// Ed25519 public key type.
@@ -70,49 +73,59 @@ pub enum UniversalAddressKind {
 	Blake2b256,
 }
 
-/// A universal representation of a public key encoded with multicodec.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, TypeInfo)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "std", derive(Hash))]
-pub struct UniversalAddress(pub Vec<u8>);
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Error {
+	#[cfg_attr(feature = "std", error("invalid length"))]
+	BadLength,
+	#[cfg_attr(feature = "std", error("invalid multicodec prefix"))]
+	InvalidPrefix,
+}
 
-impl IdentifyAccount for UniversalAddress {
+/// A universal representation of a public key encoded with multicodec.
+///
+/// NOTE: https://www.w3.org/TR/vc-data-integrity/#multikey
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Hash))]
+pub struct Multikey(Vec<u8>);
+
+impl IdentifyAccount for Multikey {
 	type AccountId = AccountId32;
 
 	fn into_account(self) -> Self::AccountId {
 		match self.kind() {
-			UniversalAddressKind::Ed25519 | UniversalAddressKind::Sr25519 =>
+			MultikeyKind::Ed25519 | MultikeyKind::Sr25519 =>
 				<[u8; 32]>::try_from(&self.0[2..]).unwrap().into(),
-			UniversalAddressKind::Secp256k1 | UniversalAddressKind::P256 =>
+			MultikeyKind::Secp256k1 | MultikeyKind::P256 =>
 				sp_io::hashing::blake2_256(&self.0[2..]).into(),
-			UniversalAddressKind::Blake2b256 => <[u8; 32]>::try_from(&self.0[4..]).unwrap().into(),
-			_ => panic!("invalid universal address"),
+			MultikeyKind::Blake2b256 => <[u8; 32]>::try_from(&self.0[4..]).unwrap().into(),
+			_ => panic!("invalid multikey"),
 		}
 	}
 }
 
-/*
 #[cfg(feature = "serde")]
-impl Serialize for UniversalAddress {
+impl Serialize for Multikey {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: Serializer,
 	{
-		let encoded = String::from("u") + &Base64::encode_string(&self.0);
+		let encoded = String::from("u") + &Base64UrlUnpadded::encode_string(&self.0);
 		serializer.serialize_str(&encoded)
 	}
 }
 
+// TODO: Support other multibase formats other than base64url.
 #[cfg(feature = "serde")]
-impl<'de> Deserialize<'de> for UniversalAddress {
+impl<'de> Deserialize<'de> for Multikey {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
 		D: Deserializer<'de>,
 	{
-		struct UniversalAddressVisitor;
+		struct MultikeyVisitor;
 
-		impl<'de> Visitor<'de> for UniversalAddressVisitor {
-			type Value = UniversalAddress;
+		impl<'de> Visitor<'de> for MultikeyVisitor {
+			type Value = Multikey;
 
 			fn expecting(&self, formatter: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 				formatter.write_str("a multibase (base64url) encoded string")
@@ -124,34 +137,32 @@ impl<'de> Deserialize<'de> for UniversalAddress {
 			{
 				use sp_std::str::FromStr;
 
-				UniversalAddress::from_str(value)
-					.map_err(|_| E::custom("invalid universal address"))
+				Multikey::from_str(value).map_err(|_| E::custom("invalid multikey"))
 			}
 		}
 
-		deserializer.deserialize_str(UniversalAddressVisitor)
+		deserializer.deserialize_str(MultikeyVisitor)
 	}
 }
-*/
 
-impl UniversalAddress {
+impl Multikey {
 	/// Get the type of public key that contains.
-	pub fn kind(&self) -> UniversalAddressKind {
+	pub fn kind(&self) -> MultikeyKind {
 		match &self.0[0..4] {
-			[0xe7, 0x01, ..] => UniversalAddressKind::Secp256k1,
-			[0xed, 0x01, ..] => UniversalAddressKind::Ed25519,
-			[0xef, 0x01, ..] => UniversalAddressKind::Sr25519,
-			[0x80, 0x24, ..] => UniversalAddressKind::P256,
-			[0xa0, 0xe4, 0x02, 0x20] => UniversalAddressKind::Blake2b256,
-			_ => UniversalAddressKind::Unknown,
+			[0xe7, 0x01, ..] => MultikeyKind::Secp256k1,
+			[0xed, 0x01, ..] => MultikeyKind::Ed25519,
+			[0xef, 0x01, ..] => MultikeyKind::Sr25519,
+			[0x80, 0x24, ..] => MultikeyKind::P256,
+			[0xa0, 0xe4, 0x02, 0x20] => MultikeyKind::Blake2b256,
+			_ => MultikeyKind::Unknown,
 		}
 	}
 }
 
-impl EcdsaExt for UniversalAddress {
+impl EcdsaExt for Multikey {
 	fn to_eth_address(&self) -> Option<H160> {
 		match self.kind() {
-			UniversalAddressKind::Secp256k1 => {
+			MultikeyKind::Secp256k1 => {
 				let pubkey =
 					np_io::crypto::secp256k1_pubkey_serialize(&self.0[2..].try_into().unwrap())?;
 				Some(H160::from_slice(&sp_io::hashing::keccak_256(&pubkey)[12..]))
@@ -162,7 +173,7 @@ impl EcdsaExt for UniversalAddress {
 
 	fn to_cosm_address(&self) -> Option<H160> {
 		match self.kind() {
-			UniversalAddressKind::Secp256k1 => {
+			MultikeyKind::Secp256k1 => {
 				let hashed = sp_io::hashing::sha2_256(&self.0[2..]);
 				Some(np_io::crypto::ripemd160(&hashed).into())
 			},
@@ -171,40 +182,69 @@ impl EcdsaExt for UniversalAddress {
 	}
 }
 
-impl AsRef<[u8]> for UniversalAddress {
+impl AsRef<[u8]> for Multikey {
 	fn as_ref(&self) -> &[u8] {
 		self.0.as_ref()
 	}
 }
 
-impl AsMut<[u8]> for UniversalAddress {
+impl AsMut<[u8]> for Multikey {
 	fn as_mut(&mut self) -> &mut [u8] {
 		self.0.as_mut()
 	}
 }
 
-impl TryFrom<&[u8]> for UniversalAddress {
-	type Error = ();
+impl TryFrom<&[u8]> for Multikey {
+	type Error = Error;
 
 	fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
-		Ok(Self(Vec::try_from(data).map_err(|_| ())?))
+		Ok(Self::try_from(Vec::from(data))?)
 	}
 }
 
-impl MaxEncodedLen for UniversalAddress {
+impl TryFrom<Vec<u8>> for Multikey {
+	type Error = Error;
+
+	fn try_from(v: Vec<u8>) -> Result<Self, Self::Error> {
+		if v.len() > 0 && v.len() < 34 {
+			return Err(Error::BadLength);
+		}
+		match &v[0..4] {
+			[0xe7, 0x01, ..] =>
+				ecdsa::Public::try_from(&v[2..]).map_err(|_| Error::BadLength).map(Into::into),
+			[0xed, 0x01, ..] =>
+				ed25519::Public::try_from(&v[2..]).map_err(|_| Error::BadLength).map(Into::into),
+			[0xef, 0x01, ..] =>
+				sr25519::Public::try_from(&v[2..]).map_err(|_| Error::BadLength).map(Into::into),
+			[0x80, 0x24, ..] =>
+				p256::Public::try_from(&v[2..]).map_err(|_| Error::BadLength).map(Into::into),
+			[0xa0, 0xe4, 0x02, 0x20] =>
+				(v.len() == 36).then(|| Self(Vec::from(&v[4..]))).ok_or(Error::BadLength),
+			_ => Err(Error::InvalidPrefix),
+		}
+	}
+}
+
+impl UncheckedFrom<Vec<u8>> for Multikey {
+	fn unchecked_from(v: Vec<u8>) -> Self {
+		Self(v)
+	}
+}
+
+impl MaxEncodedLen for Multikey {
 	fn max_encoded_len() -> usize {
 		36
 	}
 }
 
-impl Encode for UniversalAddress {
+impl Encode for Multikey {
 	fn size_hint(&self) -> usize {
 		match self.kind() {
-			UniversalAddressKind::Ed25519 => 34,
-			UniversalAddressKind::Sr25519 => 34,
-			UniversalAddressKind::Secp256k1 => 35,
-			UniversalAddressKind::P256 => 35,
-			UniversalAddressKind::Blake2b256 => 36,
+			MultikeyKind::Ed25519 => 34,
+			MultikeyKind::Sr25519 => 34,
+			MultikeyKind::Secp256k1 => 35,
+			MultikeyKind::P256 => 35,
+			MultikeyKind::Blake2b256 => 36,
 			_ => 0,
 		}
 	}
@@ -218,150 +258,165 @@ impl Encode for UniversalAddress {
 	}
 }
 
-impl EncodeLike for UniversalAddress {}
+impl EncodeLike for Multikey {}
 
-impl Decode for UniversalAddress {
-	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
+impl Decode for Multikey {
+	fn decode<I: Input>(input: &mut I) -> Result<Self, CodecError> {
 		let byte = input.read_byte()?;
 		let expected_len = match byte {
 			0xed | 0xef => 34,
 			0xe7 | 0x80 => 35,
 			0xa0 => 36,
-			_ => return Err("unexpected first byte decoding UniversalAddress".into()),
+			_ => return Err("unexpected first byte decoding Multikey".into()),
 		};
 		let mut res = Vec::new();
 		res.resize(expected_len, 0);
 		res[0] = byte;
 		input.read(&mut res[1..])?;
 
-		let res = UniversalAddress(res);
+		let res = Multikey(res);
 		match res.kind() {
-			UniversalAddressKind::Unknown => Err("Could not decode UniversalAddress".into()),
+			MultikeyKind::Unknown => Err("Could not decode Multikey".into()),
 			_ => Ok(res),
 		}
 	}
 }
 
-impl From<ed25519::Public> for UniversalAddress {
+impl From<ed25519::Public> for Multikey {
 	fn from(k: ed25519::Public) -> Self {
-		let mut v: Vec<u8> = Vec::new();
+		let mut v: Vec<u8> =
+			Vec::with_capacity(multicodec::ED25519_PUB.len() + ed25519::Public::LEN);
 		v.extend_from_slice(multicodec::ED25519_PUB);
 		v.extend_from_slice(k.as_ref());
 		Self(v)
 	}
 }
 
-impl From<sr25519::Public> for UniversalAddress {
+impl From<sr25519::Public> for Multikey {
 	fn from(k: sr25519::Public) -> Self {
-		let mut v: Vec<u8> = Vec::new();
+		let mut v: Vec<u8> =
+			Vec::with_capacity(multicodec::SR25519_PUB.len() + sr25519::Public::LEN);
 		v.extend_from_slice(multicodec::SR25519_PUB);
 		v.extend_from_slice(k.as_ref());
 		Self(v)
 	}
 }
 
-impl From<ecdsa::Public> for UniversalAddress {
+impl From<ecdsa::Public> for Multikey {
 	fn from(k: ecdsa::Public) -> Self {
-		let mut v: Vec<u8> = Vec::new();
+		let mut v: Vec<u8> =
+			Vec::with_capacity(multicodec::SECP256K1_PUB.len() + ecdsa::Public::LEN);
 		v.extend_from_slice(multicodec::SECP256K1_PUB);
 		v.extend_from_slice(k.as_ref());
 		Self(v)
 	}
 }
 
-impl From<p256::Public> for UniversalAddress {
+impl From<p256::Public> for Multikey {
 	fn from(k: p256::Public) -> Self {
-		let mut v: Vec<u8> = Vec::new();
+		let mut v: Vec<u8> = Vec::with_capacity(multicodec::P256_PUB.len() + p256::Public::LEN);
 		v.extend_from_slice(multicodec::P256_PUB);
 		v.extend_from_slice(k.as_ref());
 		Self(v)
 	}
 }
 
-impl From<H256> for UniversalAddress {
+impl From<H256> for Multikey {
 	fn from(hash: H256) -> Self {
-		let mut v: Vec<u8> = Vec::new();
+		let mut v: Vec<u8> = Vec::with_capacity(multicodec::BLAKE2B_256.len() + H256::len_bytes());
 		v.extend_from_slice(multicodec::BLAKE2B_256);
 		v.extend_from_slice(hash.as_ref());
 		Self(v)
 	}
 }
 
-impl TryInto<ed25519::Public> for UniversalAddress {
+impl TryFrom<AccountId32> for Multikey {
 	type Error = ();
 
-	fn try_into(self) -> Result<ed25519::Public, Self::Error> {
-		match &self.0[0..2] {
-			multicodec::ED25519_PUB => Ok(ed25519::Public::try_from(&self.0[2..]).map_err(|_| ())?),
-			_ => Err(()),
+	fn try_from(v: AccountId32) -> Result<Self, Self::Error> {
+		v.source().ok_or(()).cloned()
+	}
+}
+
+impl TryFrom<Multikey> for ed25519::Public {
+	type Error = PublicError;
+
+	fn try_from(v: Multikey) -> Result<Self, Self::Error> {
+		if v.kind() == MultikeyKind::Ed25519 {
+			ed25519::Public::try_from(&v.0[2..]).map_err(|_| PublicError::BadLength)
+		} else {
+			Err(PublicError::InvalidPrefix)
 		}
 	}
 }
 
-impl TryInto<sr25519::Public> for UniversalAddress {
-	type Error = ();
+impl TryFrom<Multikey> for sr25519::Public {
+	type Error = PublicError;
 
-	fn try_into(self) -> Result<sr25519::Public, Self::Error> {
-		match &self.0[0..2] {
-			multicodec::SR25519_PUB => Ok(sr25519::Public::try_from(&self.0[2..]).map_err(|_| ())?),
-			_ => Err(()),
+	fn try_from(v: Multikey) -> Result<Self, Self::Error> {
+		if v.kind() == MultikeyKind::Sr25519 {
+			sr25519::Public::try_from(&v.0[2..]).map_err(|_| PublicError::BadLength)
+		} else {
+			Err(PublicError::InvalidPrefix)
 		}
 	}
 }
 
-impl TryInto<ecdsa::Public> for UniversalAddress {
-	type Error = ();
+impl TryFrom<Multikey> for ecdsa::Public {
+	type Error = PublicError;
 
-	fn try_into(self) -> Result<ecdsa::Public, Self::Error> {
-		match &self.0[0..2] {
-			multicodec::SECP256K1_PUB => Ok(ecdsa::Public::try_from(&self.0[2..]).map_err(|_| ())?),
-			_ => Err(()),
+	fn try_from(v: Multikey) -> Result<Self, Self::Error> {
+		if v.kind() == MultikeyKind::Secp256k1 {
+			ecdsa::Public::try_from(&v.0[2..]).map_err(|_| PublicError::BadLength)
+		} else {
+			Err(PublicError::InvalidPrefix)
 		}
 	}
 }
 
-impl TryInto<p256::Public> for UniversalAddress {
-	type Error = ();
+impl TryFrom<Multikey> for p256::Public {
+	type Error = PublicError;
 
-	fn try_into(self) -> Result<p256::Public, Self::Error> {
-		match &self.0[0..2] {
-			multicodec::P256_PUB => Ok(p256::Public::try_from(&self.0[2..]).map_err(|_| ())?),
-			_ => Err(()),
+	fn try_from(v: Multikey) -> Result<Self, Self::Error> {
+		if v.kind() == MultikeyKind::P256 {
+			p256::Public::try_from(&v.0[2..]).map_err(|_| PublicError::BadLength)
+		} else {
+			Err(PublicError::InvalidPrefix)
 		}
 	}
 }
 
 #[cfg(feature = "serde")]
-impl sp_std::str::FromStr for UniversalAddress {
+impl sp_std::str::FromStr for Multikey {
 	type Err = ();
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let addr = if s.starts_with('u') {
-			UniversalAddress(Base64::decode_vec(&s[1..]).map_err(|_| ())?)
+			Multikey(Base64UrlUnpadded::decode_vec(&s[1..]).map_err(|_| ())?)
 		} else if s.starts_with("0x") {
-			UniversalAddress(array_bytes::hex2bytes(&s[2..]).map_err(|_| ())?)
+			Multikey(array_bytes::hex2bytes(&s[2..]).map_err(|_| ())?)
 		} else {
 			return Err(())
 		};
 
 		match addr.kind() {
-			UniversalAddressKind::Unknown => Err(()),
+			MultikeyKind::Unknown => Err(()),
 			_ => Ok(addr),
 		}
 	}
 }
 
 #[cfg(feature = "std")]
-impl std::fmt::Display for UniversalAddress {
+impl std::fmt::Display for Multikey {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		write!(f, "u{}", Base64::encode_string(self.as_ref()))
+		write!(f, "u{}", Base64UrlUnpadded::encode_string(self.as_ref()))
 	}
 }
 
-impl sp_std::fmt::Debug for UniversalAddress {
+impl sp_std::fmt::Debug for Multikey {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "u{}", Base64::encode_string(self.as_ref()))
+		write!(f, "u{}", Base64UrlUnpadded::encode_string(self.as_ref()))
 	}
 
 	#[cfg(not(feature = "std"))]
@@ -383,7 +438,7 @@ mod tests {
 		)
 		.unwrap();
 
-		let addr = UniversalAddress::from_str("u5wECOvHh76TR4a1cueOWfpjpAdr803xEzwv7bCFpl_XuUd8");
+		let addr = Multikey::from_str("u5wECOvHh76TR4a1cueOWfpjpAdr803xEzwv7bCFpl_XuUd8");
 		assert!(addr.is_ok());
 
 		let addr = addr.unwrap();
@@ -398,8 +453,8 @@ mod tests {
 		)
 		.unwrap();
 		let pubkey = ecdsa::Public::try_from(&pubkey[..]).unwrap();
-		let addr = UniversalAddress::from(pubkey);
-		assert_eq!(addr.kind(), UniversalAddressKind::Secp256k1);
+		let addr = Multikey::from(pubkey);
+		assert_eq!(addr.kind(), MultikeyKind::Secp256k1);
 	}
 
 	#[test]
@@ -408,14 +463,14 @@ mod tests {
 			"e701023af1e1efa4d1e1ad5cb9e3967e98e901dafcd37c44cf0bfb6c216997f5ee51df",
 		)
 		.unwrap();
-		let addr = UniversalAddress(raw.clone());
-		assert_eq!(addr.kind(), UniversalAddressKind::Secp256k1);
+		let addr = Multikey(raw.clone());
+		assert_eq!(addr.kind(), MultikeyKind::Secp256k1);
 
 		let encoded = addr.encode();
 		assert_eq!(encoded, raw);
 
 		let mut io = IoReader(&encoded[..]);
-		let decoded = UniversalAddress::decode(&mut io);
+		let decoded = Multikey::decode(&mut io);
 		assert!(decoded.is_ok());
 		assert_eq!(decoded.unwrap(), addr);
 	}

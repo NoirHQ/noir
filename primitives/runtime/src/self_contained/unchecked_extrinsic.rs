@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{generic, Verify};
+use crate::{generic, traits::VerifyMut};
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	traits::ExtrinsicCall,
@@ -84,8 +84,8 @@ impl<Address, AccountId, Call, Signature, Extra, Lookup> Checkable<Lookup>
 where
 	Address: Member + MaybeDisplay,
 	Call: Encode + Member + SelfContainedCall,
-	Signature: Member + Verify,
-	<Signature as Verify>::Signer: IdentifyAccount<AccountId = AccountId>,
+	Signature: Member + VerifyMut,
+	<Signature as VerifyMut>::Signer: IdentifyAccount<AccountId = AccountId>,
 	Extra: SignedExtension<AccountId = AccountId>,
 	AccountId: Member + MaybeDisplay,
 	Lookup: traits::Lookup<Source = Address, Target = AccountId>,

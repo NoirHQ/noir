@@ -21,12 +21,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod accountid32;
+/// Generic extrinsic implementation.
 pub mod generic;
+mod multikey;
+/// Self-contained (including verification proofs) types to handle extrinsics of foreign protocols.
 pub mod self_contained;
-mod universaladdress;
+/// Traits for runtime types.
+pub mod traits;
 
 pub use accountid32::AccountId32;
-pub use universaladdress::{UniversalAddress, UniversalAddressKind};
+pub use multikey::{Multikey, MultikeyKind};
 
 #[cfg(feature = "serde")]
 pub use serde::{Deserialize, Serialize};
@@ -36,7 +40,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, ed25519, sr25519};
 use sp_runtime::{
-	traits::{IdentifyAccount, Lazy, Verify as SubstrateVerify},
+	traits::{Lazy, Verify},
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
@@ -44,7 +48,7 @@ use sp_std::prelude::*;
 /// Signature verify that can work with any known signature types.
 #[derive(Eq, PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum UniversalSignature {
+pub enum AuthenticationProof {
 	/// A Ed25519 signature.
 	Ed25519(ed25519::Signature),
 	/// A Sr25519 signature.
@@ -57,22 +61,8 @@ pub enum UniversalSignature {
 	WebAuthn(webauthn::Signature),
 }
 
-/// Means of signature verification.
-pub trait Verify {
-	/// Type of the signer.
-	type Signer: IdentifyAccount;
-	/// Verify a signature.
-	///
-	/// Return `true` if signature is valid for the value.
-	fn verify<L: Lazy<[u8]>>(
-		&self,
-		msg: L,
-		signer: &mut <Self::Signer as IdentifyAccount>::AccountId,
-	) -> bool;
-}
-
-impl SubstrateVerify for UniversalSignature {
-	type Signer = UniversalAddress;
+impl Verify for AuthenticationProof {
+	type Signer = Multikey;
 
 	fn verify<L: Lazy<[u8]>>(&self, mut msg: L, signer: &AccountId32) -> bool {
 		match (self, signer) {
@@ -114,10 +104,10 @@ impl SubstrateVerify for UniversalSignature {
 	}
 }
 
-impl Verify for UniversalSignature {
-	type Signer = UniversalAddress;
+impl traits::VerifyMut for AuthenticationProof {
+	type Signer = Multikey;
 
-	fn verify<L: Lazy<[u8]>>(&self, mut msg: L, signer: &mut AccountId32) -> bool {
+	fn verify_mut<L: Lazy<[u8]>>(&self, mut msg: L, signer: &mut AccountId32) -> bool {
 		match (self, signer.clone()) {
 			(Self::Ed25519(ref sig), who) => match ed25519::Public::try_from(who.as_ref()) {
 				Ok(signer) => sig.verify(msg, &signer),
@@ -134,7 +124,7 @@ impl Verify for UniversalSignature {
 						if &sp_io::hashing::blake2_256(pubkey.as_ref()) ==
 							AsRef::<[u8; 32]>::as_ref(&who)
 						{
-							signer.origin = Some(ecdsa::Public(pubkey).into());
+							signer.set_source(ecdsa::Public(pubkey).into());
 							true
 						} else {
 							false
@@ -149,7 +139,7 @@ impl Verify for UniversalSignature {
 						if &sp_io::hashing::blake2_256(pubkey.as_ref()) ==
 							AsRef::<[u8; 32]>::as_ref(&who)
 						{
-							signer.origin = Some(p256::Public(pubkey).into());
+							signer.set_source(p256::Public(pubkey).into());
 							true
 						} else {
 							false
@@ -163,7 +153,7 @@ impl Verify for UniversalSignature {
 						if &sp_io::hashing::blake2_256(pubkey.as_ref()) ==
 							AsRef::<[u8; 32]>::as_ref(&who)
 						{
-							signer.origin = Some(p256::Public(pubkey).into());
+							signer.set_source(webauthn::Public::from_raw(pubkey).into());
 							true
 						} else {
 							false
@@ -173,10 +163,4 @@ impl Verify for UniversalSignature {
 			},
 		}
 	}
-}
-
-pub trait Derived {
-	type Origin;
-
-	fn origin(&self) -> Option<Self::Origin>;
 }

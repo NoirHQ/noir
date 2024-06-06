@@ -13,6 +13,7 @@ base64ct = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
 scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"], optional = true }
+thiserror = { workspace = true, optional = true }
 
 # noir
 np-crypto = { workspace = true }
@@ -42,6 +43,7 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"thiserror",
 ]
 serde = [
 	"dep:serde",
