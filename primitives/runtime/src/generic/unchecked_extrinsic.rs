@@ -408,16 +408,28 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::{
-		parity_scale_codec::{Decode, Encode},
-		testing::TestSignature as TestSig,
-		traits::{DispatchInfoOf, IdentityLookup, SignedExtension},
-	};
 	use sp_io::hashing::blake2_256;
+	use sp_runtime::{
+		codec::{Decode, Encode},
+		testing::TestSignature as TestSig,
+		traits::{DispatchInfoOf, IdentityLookup, Lazy, SignedExtension, Verify},
+	};
 
 	type TestContext = IdentityLookup<u64>;
 	type TestAccountId = u64;
 	type TestCall = Vec<u8>;
+
+	impl VerifyMut for TestSig {
+		type Signer = <TestSig as Verify>::Signer;
+
+		fn verify_mut<L: Lazy<[u8]>>(
+			&self,
+			msg: L,
+			signer: &mut <Self::Signer as IdentifyAccount>::AccountId,
+		) -> bool {
+			self.verify(msg, signer)
+		}
+	}
 
 	const TEST_ACCOUNT: TestAccountId = 0;
 

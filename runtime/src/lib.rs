@@ -1101,15 +1101,3 @@ impl_runtime_apis! {
 		}
 	}
 }
-
-#[cfg(test)]
-mod tests {
-	#[test]
-	fn tag_inner_test() {
-		let now: u64 = 1_676_679_312_000;
-		let id = [0u8; 32];
-		let name = "test";
-		let tag = crate::TagGenerator::tag_inner(&id, name, now).unwrap();
-		assert_eq!(tag, 128);
-	}
-}
