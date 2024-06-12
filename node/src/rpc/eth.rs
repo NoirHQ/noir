@@ -81,9 +81,21 @@ pub struct EthDeps<B: BlockT, C, P, A: ChainApi, CT, CIDP> {
 	pub pending_create_inherent_data_providers: CIDP,
 }
 
+pub struct DefaultEthConfig<B, C, BE>(std::marker::PhantomData<(B, C, BE)>);
+
+impl<B, C, BE> EthConfig<B, C> for DefaultEthConfig<B, C, BE>
+where
+	B: BlockT<Hash = H256>,
+	C: StorageProvider<B, BE> + Sync + Send + 'static,
+	BE: Backend<B> + 'static,
+{
+	type EstimateGasAdapter = ();
+	type RuntimeStorageOverride =
+		fc_rpc::frontier_backend_client::SystemAccountId20StorageOverride<B, C, BE>;
+}
+
 /// Instantiate Ethereum-compatible RPC extensions.
-pub fn create_eth<B, C, BE, P, A, CT, CIDP, EC>(
-	mut io: RpcModule<()>,
+pub fn create_eth<B, C, BE, P, A, CT, CIDP>(
 	deps: EthDeps<B, C, P, A, CT, CIDP>,
 	subscription_task_executor: SubscriptionTaskExecutor,
 	pubsub_notification_sinks: Arc<
@@ -106,7 +118,6 @@ where
 	A: ChainApi<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
-	EC: EthConfig<B, C>,
 {
 	use fc_rpc::{
 		pending::AuraConsensusDataProvider, Eth, EthApiServer, EthDevSigner, EthFilter,
@@ -114,6 +125,7 @@ where
 		Web3ApiServer,
 	};
 
+	let mut io = RpcModule::new(());
 	let EthDeps {
 		client,
 		pool,
@@ -141,7 +153,7 @@ where
 	}
 
 	io.merge(
-		Eth::<B, C, P, CT, BE, A, CIDP, EC>::new(
+		Eth::<B, C, P, CT, BE, A, CIDP, DefaultEthConfig<B, C, BE>>::new(
 			client.clone(),
 			pool.clone(),
 			graph.clone(),
@@ -159,6 +171,7 @@ where
 			pending_create_inherent_data_providers,
 			Some(Box::new(AuraConsensusDataProvider::new(client.clone()))),
 		)
+		.replace_config::<DefaultEthConfig<B, C, BE>>()
 		.into_rpc(),
 	)?;
 

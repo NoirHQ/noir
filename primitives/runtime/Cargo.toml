@@ -11,14 +11,17 @@ repository = { workspace = true }
 array-bytes = { workspace = true, optional = true }
 base64ct = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
-scale-info = { workspace = true }
-serde = { workspace = true, optional = true }
+scale-info = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = ["derive"], optional = true }
+thiserror = { workspace = true, optional = true }
 
 # noir
 np-crypto = { workspace = true }
 np-io = { workspace = true }
 
 # substrate
+fp-self-contained = { workspace = true }
+frame-support = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
@@ -29,6 +32,8 @@ sp-std = { workspace = true }
 default = ["std"]
 std = [
 	"base64ct/std",
+	"fp-self-contained/std",
+	"frame-support/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",
@@ -38,9 +43,11 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"thiserror",
 ]
 serde = [
 	"dep:serde",
 	"array-bytes",
 	"base64ct/alloc",
 ]
+try-runtime = []

@@ -22,39 +22,26 @@
 
 pub mod weights;
 
+pub use pallet::*;
+
 use crate::weights::WeightInfo;
 use np_crypto::ecdsa::EcdsaExt;
-use np_runtime::AccountName;
-pub use pallet::*;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::{LookupError, StaticLookup},
-	DispatchError, MultiAddress,
-};
-use sp_std::prelude::*;
-
-type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
-
-/// A generator for tag number that discriminates the same name accounts.
-pub trait TagGenerator<T: Config> {
-	fn tag(id: &T::AccountId, name: &str) -> Result<u16, ()>;
-}
+use sp_runtime::{BoundedBTreeSet, DispatchError};
+use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 
 #[cfg_attr(feature = "std", derive(Hash))]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum AccountAlias {
-	AccountName(AccountName),
 	EthereumAddress([u8; 20]),
 	CosmosAddress([u8; 20]),
 }
 
 #[frame_support::pallet]
 pub mod pallet {
-
 	use super::*;
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
 
 	/// The module's config trait.
 	#[pallet::config]
@@ -63,126 +50,14 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
-		/// The generator for tag number that discriminates the same name accounts.
-		type TagGenerator: TagGenerator<Self>;
 	}
 
 	#[pallet::pallet]
-	pub struct Pallet<T>(PhantomData<T>);
-
-	#[pallet::call]
-	impl<T: Config> Pallet<T>
-	where
-		T::AccountId: EcdsaExt,
-	{
-		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::create_account_name())]
-		pub fn create_account_name(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			ensure!(AccountNameOf::<T>::get(&who).is_none(), Error::<T>::AlreadyExists);
-			let name =
-				sp_std::str::from_utf8(&name[..]).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			let tag =
-				T::TagGenerator::tag(&who, name).map_err(|_| Error::<T>::TagGenerationFailed)?;
-			let account_name =
-				AccountName::new(&name, tag).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			AccountIdOf::<T>::try_mutate(
-				AccountAlias::AccountName(account_name),
-				|maybe_value| -> DispatchResult {
-					ensure!(maybe_value.is_none(), Error::<T>::InUse);
-					*maybe_value = Some(who.clone());
-					Ok(())
-				},
-			)?;
-			AccountNameOf::<T>::insert(&who, account_name);
-			Self::deposit_event(Event::<T>::AccountNameUpdated {
-				who,
-				name: account_name,
-				deleted: None,
-			});
-			Ok(())
-		}
-
-		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::update_account_name())]
-		pub fn update_account_name(origin: OriginFor<T>, new_name: Vec<u8>) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			let account_name = AccountNameOf::<T>::get(&who).ok_or(Error::<T>::NotExists)?;
-			let new_name =
-				sp_std::str::from_utf8(&new_name[..]).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			let tag = T::TagGenerator::tag(&who, new_name)
-				.map_err(|_| Error::<T>::TagGenerationFailed)?;
-			let new_account_name =
-				AccountName::new(&new_name, tag).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			AccountIdOf::<T>::try_mutate(
-				AccountAlias::AccountName(new_account_name),
-				|maybe_value| -> DispatchResult {
-					ensure!(maybe_value.is_none(), Error::<T>::InUse);
-					*maybe_value = Some(who.clone());
-					Ok(())
-				},
-			)?;
-			AccountIdOf::<T>::remove(AccountAlias::AccountName(account_name));
-			AccountNameOf::<T>::insert(&who, new_account_name);
-			Self::deposit_event(Event::<T>::AccountNameUpdated {
-				who,
-				name: new_account_name,
-				deleted: Some(account_name),
-			});
-			Ok(())
-		}
-
-		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::connect_aliases())]
-		pub fn connect_aliases(origin: OriginFor<T>) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			Self::connect_aliases_secp256k1(&who)?;
-			Ok(())
-		}
-
-		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::force_set_account_name())]
-		pub fn force_set_account_name(
-			origin: OriginFor<T>,
-			dest: AccountIdLookupOf<T>,
-			name: Vec<u8>,
-			tag: u16,
-		) -> DispatchResult {
-			ensure_root(origin)?;
-			let dest = T::Lookup::lookup(dest)?;
-			let name =
-				sp_std::str::from_utf8(&name[..]).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			let new_account_name =
-				AccountName::new(&name, tag).map_err(|_| Error::<T>::InvalidNameFormat)?;
-			AccountIdOf::<T>::try_mutate(
-				AccountAlias::AccountName(new_account_name),
-				|maybe_value| -> DispatchResult {
-					ensure!(maybe_value.is_none(), Error::<T>::InUse);
-					*maybe_value = Some(dest.clone());
-					Ok(())
-				},
-			)?;
-
-			let past_name = AccountNameOf::<T>::get(&dest);
-			match past_name {
-				Some(past_name) => AccountIdOf::<T>::remove(AccountAlias::AccountName(past_name)),
-				None => (),
-			};
-			AccountNameOf::<T>::insert(&dest, new_account_name);
-			Self::deposit_event(Event::<T>::AccountNameUpdated {
-				who: dest,
-				name: new_account_name,
-				deleted: past_name,
-			});
-			Ok(())
-		}
-	}
+	pub struct Pallet<T>(_);
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// An account name was updated.
-		AccountNameUpdated { who: T::AccountId, name: AccountName, deleted: Option<AccountName> },
 		/// An ethereum address was published.
 		EthereumAddressPublished { who: T::AccountId, address: [u8; 20] },
 		/// An cosmos address was published.
@@ -191,16 +66,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// The account name already exists.
-		AlreadyExists,
-		/// The account name does not exists.
-		NotExists,
-		/// The account name is not available.
-		InUse,
-		/// Invalid name foramt.
-		InvalidNameFormat,
-		/// Tag generation failed.
-		TagGenerationFailed,
 		/// Ethereum address conversion failed.
 		EthereumAddressConversionFailed,
 		/// Cosmos address conversion failed.
@@ -208,66 +73,59 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
+	#[pallet::getter(fn accountid)]
 	pub type AccountIdOf<T: Config> = StorageMap<_, Blake2_128Concat, AccountAlias, T::AccountId>;
+
 	#[pallet::storage]
-	pub type AccountNameOf<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, AccountName>;
+	#[pallet::getter(fn aliases)]
+	pub type AccountAliases<T: Config> =
+		StorageMap<_, Blake2_128Concat, T::AccountId, BoundedBTreeSet<AccountAlias, ConstU32<2>>>;
 }
 
 impl<T: Config> Pallet<T>
 where
 	T::AccountId: EcdsaExt,
 {
-	// PUBLIC IMMUTABLES
-
 	/// Lookup an AccountAlias to get an Id, if exists.
 	pub fn lookup(alias: &AccountAlias) -> Option<T::AccountId> {
 		AccountIdOf::<T>::get(alias).map(|x| x)
 	}
 
-	pub fn connect_aliases_secp256k1(who: &T::AccountId) -> Result<(), DispatchError> {
-		let ethereum_address = who
+	pub fn alias_secp256k1(who: &T::AccountId) -> Result<(), DispatchError> {
+		let mut aliases = BTreeSet::new();
+		let eth = who
 			.to_eth_address()
 			.map(|x| x.into())
 			.ok_or(Error::<T>::EthereumAddressConversionFailed)?;
-		if AccountIdOf::<T>::get(AccountAlias::EthereumAddress(ethereum_address)).is_none() {
-			AccountIdOf::<T>::insert(AccountAlias::EthereumAddress(ethereum_address), who);
+		let eth_alias = AccountAlias::EthereumAddress(eth);
+		if AccountIdOf::<T>::get(eth_alias).is_none() {
+			AccountIdOf::<T>::insert(eth_alias, who.clone());
+			aliases.insert(eth_alias);
 			Self::deposit_event(Event::<T>::EthereumAddressPublished {
 				who: who.clone(),
-				address: ethereum_address,
+				address: eth,
 			});
 		}
-		let cosmos_address = who
+		let cosm = who
 			.to_cosm_address()
 			.map(|x| x.into())
 			.ok_or(Error::<T>::CosmosAddressConversionFailed)?;
-		if AccountIdOf::<T>::get(AccountAlias::CosmosAddress(cosmos_address)).is_none() {
-			AccountIdOf::<T>::insert(AccountAlias::CosmosAddress(cosmos_address), who);
+		let cosm_alias = AccountAlias::CosmosAddress(cosm);
+		if AccountIdOf::<T>::get(cosm_alias).is_none() {
+			AccountIdOf::<T>::insert(cosm_alias, who.clone());
+			aliases.insert(cosm_alias);
 			Self::deposit_event(Event::<T>::CosmosAddressPublished {
 				who: who.clone(),
-				address: cosmos_address,
+				address: cosm,
 			});
 		}
-		Ok(())
-	}
-}
-
-impl<T: Config> StaticLookup for Pallet<T>
-where
-	T::AccountId: EcdsaExt,
-{
-	type Source = MultiAddress<T::AccountId, AccountName>;
-	type Target = T::AccountId;
-
-	fn lookup(a: Self::Source) -> Result<Self::Target, LookupError> {
-		match a {
-			MultiAddress::Id(id) => Ok(id),
-			MultiAddress::Index(name) =>
-				Self::lookup(&AccountAlias::AccountName(name)).ok_or(LookupError),
-			_ => Err(LookupError),
+		if !aliases.is_empty() {
+			AccountAliases::<T>::insert(
+				who,
+				BoundedBTreeSet::try_from(aliases)
+					.map_err(|_| DispatchError::Other("Too many aliases"))?,
+			);
 		}
-	}
-
-	fn unlookup(a: Self::Target) -> Self::Source {
-		MultiAddress::Id(a)
+		Ok(())
 	}
 }

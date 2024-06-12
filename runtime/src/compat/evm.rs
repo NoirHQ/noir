@@ -18,11 +18,12 @@
 
 //! Adapter types for EVM pallet compatibility.
 
-use frame_support::{crypto::ecdsa::ECDSAExt, dispatch::RawOrigin};
+use frame_support::dispatch::RawOrigin;
 use np_crypto::ecdsa::EcdsaExt;
+use np_runtime::{Multikey, MultikeyKind};
 use pallet_alias::AccountAlias;
 use pallet_evm::{AddressMapping, EnsureAddressOrigin};
-use sp_core::{ecdsa, Hasher, H160, H256};
+use sp_core::{Hasher, H160, H256};
 use sp_std::marker::PhantomData;
 
 /// Ensure that the address is truncated hash of the origin.
@@ -31,7 +32,7 @@ pub struct EnsureAddressHashed<AccountId>(PhantomData<AccountId>);
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressHashed<AccountId>
 where
 	OuterOrigin: Into<Result<RawOrigin<AccountId>, OuterOrigin>> + From<RawOrigin<AccountId>>,
-	AccountId: TryInto<ecdsa::Public> + Clone,
+	AccountId: TryInto<Multikey> + Clone,
 {
 	type Success = AccountId;
 
@@ -41,13 +42,15 @@ where
 	) -> Result<Self::Success, OuterOrigin> {
 		origin.into().and_then(|o| match o {
 			RawOrigin::Signed(who) => {
-				if let Ok(pubkey) = who.clone().try_into() {
-					if let Ok(hashed) = pubkey.to_eth_address() {
-						if &hashed == &address.0 {
-							return Ok(who)
-						}
-					};
-				};
+				if let Ok(source) = who.clone().try_into() {
+					if source.kind() == MultikeyKind::Secp256k1 {
+						if let Some(hashed) = source.to_eth_address() {
+							if &hashed == address {
+								return Ok(who)
+							}
+						};
+					}
+				}
 				Err(OuterOrigin::from(RawOrigin::Signed(who)))
 			},
 			r => Err(OuterOrigin::from(r)),

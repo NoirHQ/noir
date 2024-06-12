@@ -463,15 +463,12 @@ where
 	> = Default::default();
 	let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
-	// for ethereum-compatibility rpc.
-	config.rpc_id_provider = Some(Box::new(fc_rpc::EthereumSubIdProvider));
-
-	let rpc_builder = {
+	let eth_rpc_builder = {
 		let client = client.clone();
 		let pool = transaction_pool.clone();
-		let chain_spec = config.chain_spec.cloned_box();
 		let network = network.clone();
 		let sync_service = sync_service.clone();
+		let subscription_task_executor = Arc::new(task_manager.spawn_handle());
 
 		let is_authority = role.is_authority();
 		let enable_dev_signer = eth_config.enable_dev_signer;
@@ -482,6 +479,9 @@ where
 		let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 		let overrides = overrides.clone();
 		let fee_history_cache = fee_history_cache.clone();
+
+		let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
+		let target_gas_price = eth_config.target_gas_price;
 		let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 			task_manager.spawn_handle(),
 			overrides.clone(),
@@ -489,9 +489,6 @@ where
 			eth_config.eth_statuses_cache,
 			prometheus_registry.clone(),
 		));
-
-		let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-		let target_gas_price = eth_config.target_gas_price;
 		let pending_create_inherent_data_providers = move |_, ()| async move {
 			let current = sp_timestamp::InherentDataProvider::from_system_time();
 			let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
@@ -504,7 +501,7 @@ where
 			Ok((slot, timestamp, dynamic_fee))
 		};
 
-		Box::new(move |deny_unsafe, subscription_task_executor| {
+		Box::new(move |_deny_unsafe| {
 			let eth_deps = crate::rpc::EthDeps {
 				client: client.clone(),
 				pool: pool.clone(),
@@ -528,20 +525,54 @@ where
 				forced_parent_hashes: None,
 				pending_create_inherent_data_providers,
 			};
+			let subscription_task_executor = subscription_task_executor.clone();
+			crate::rpc::create_eth(
+				eth_deps,
+				subscription_task_executor,
+				pubsub_notification_sinks.clone(),
+			)
+			.map_err(Into::into)
+		})
+	};
+
+	let rpc_addr = config.rpc_addr.take();
+	let rpc_port = config.rpc_port;
+	let prometheus_config = config.prometheus_config.take();
+
+	{
+		let gen_rpc_module = |deny_unsafe: sc_rpc::DenyUnsafe| eth_rpc_builder(deny_unsafe);
+		config.rpc_port = 8545;
+		let rpc = sc_service::start_rpc_servers(
+			&config,
+			gen_rpc_module,
+			Some(Box::new(fc_rpc::EthereumSubIdProvider)),
+		);
+		if rpc.is_ok() {
+			log::info!("Eth RPC started: {}", config.rpc_port);
+		} else {
+			log::warn!("Eth RPC not started");
+		}
+		task_manager.keep_alive(rpc);
+	}
+
+	config.rpc_addr = rpc_addr;
+	config.rpc_port = rpc_port;
+	config.prometheus_config = prometheus_config;
+
+	let rpc_builder = {
+		let client = client.clone();
+		let pool = transaction_pool.clone();
+		let chain_spec = config.chain_spec.cloned_box();
+
+		Box::new(move |deny_unsafe, _subscription_task_executor| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
 				deny_unsafe,
 				command_sink: if sealing.is_some() { Some(command_sink.clone()) } else { None },
-				eth: eth_deps,
 				chain_spec: chain_spec.cloned_box(),
 			};
-			crate::rpc::create_full(
-				deps,
-				subscription_task_executor,
-				pubsub_notification_sinks.clone(),
-			)
-			.map_err(Into::into)
+			crate::rpc::create_full(deps).map_err(Into::into)
 		})
 	};
 

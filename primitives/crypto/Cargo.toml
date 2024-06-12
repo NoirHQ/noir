@@ -10,18 +10,20 @@ repository = { workspace = true }
 [dependencies]
 array-bytes = { workspace = true, optional = true }
 base64ct = { workspace = true, optional = true }
+ecdsa = { workspace = true }
 hmac = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
-p256 = { workspace = true }
+p256 = { workspace = true, features = ["arithmetic"] }
 regex = { workspace = true, optional = true }
-scale-info = { workspace = true }
+scale-info = { workspace = true, features = ["derive"] }
 secp256k1 = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
 serde_json = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
 substrate-bip39 = { workspace = true, optional = true }
 tiny-bip39 = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
 zeroize = { workspace = true, optional = true }
 
 # substrate
@@ -34,6 +36,7 @@ default = ["std"]
 std = [
 	"full_crypto",
 	"base64ct/std",
+	"ecdsa/std",
 	"hmac/std",
 	"lazy_static",
 	"parity-scale-codec/std",
@@ -50,12 +53,17 @@ std = [
 	"tiny-bip39",
 	"zeroize/alloc",
 ]
-full_crypto = [
+serde = [
+	"dep:serde",
 	"array-bytes",
+	"sp-core/serde",
+]
+full_crypto = [
 	"base64ct",
 	"hmac",
 	"sha2",
 	"secp256k1",
 	"sp-core/full_crypto",
+	"url",
 	"zeroize",
 ]
