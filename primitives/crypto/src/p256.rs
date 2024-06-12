@@ -442,9 +442,10 @@ impl Pair {
 	/// Sign a pre-hashed message
 	#[cfg(feature = "full_crypto")]
 	pub fn sign_prehashed(&self, message: &[u8; 32]) -> Signature {
-		let (mut sig, rid) = self.secret.sign_prehash_recoverable(message).unwrap();
+		let (mut sig, mut rid) = self.secret.sign_prehash_recoverable(message).unwrap();
 		if sig.s().is_high().into() {
 			sig = sig.normalize_s().unwrap();
+			rid = RecoveryId::from_byte(rid.to_byte() ^ 1).unwrap();
 		}
 		Signature::from((sig, rid))
 	}
@@ -713,9 +714,10 @@ mod tests {
 		let msg = [0u8; 32];
 		let sig1 = pair.sign_prehashed(&msg);
 		let sig2: Signature = {
-			let (mut sig, rid) = pair.secret.sign_prehash_recoverable(&msg).unwrap();
+			let (mut sig, mut rid) = pair.secret.sign_prehash_recoverable(&msg).unwrap();
 			if sig.s().is_high().into() {
 				sig = sig.normalize_s().unwrap();
+				rid = RecoveryId::from_byte(rid.to_byte() ^ 1).unwrap();
 			}
 			Signature::from((sig, rid))
 		};
