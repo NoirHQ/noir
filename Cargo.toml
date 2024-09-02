@@ -1,8 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
+	"core-primitives",
 	"primitives/runtime",
 ]
+
+[workspace.dependencies]
+noir-core-primitives = { path = "core-primitives", default-features = false }
+np-runtime = { path = "primitives/runtime", default-features = false }
 
 [profile.release]
 panic = "unwind"
