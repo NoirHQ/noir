@@ -1,32 +1,47 @@
 name: CI
-
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  check:
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@nightly
-      with:
-        targets: wasm32-unknown-unknown
-        components: rust-src, rustfmt
-    - name: Install build dependencies
-      run: sudo apt-get install protobuf-compiler
-    - name: Rust Cache
-      uses: Swatinem/rust-cache@v2.2.1
-    - name: Lint
-      run: cargo fmt -- --check
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: arduino/setup-protoc@v3
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v2
+      - name: Check
+        run: cargo check --all-targets
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Lint
+        run: cargo clippy --no-deps -- -Dwarnings
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: arduino/setup-protoc@v3
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build -v
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: arduino/setup-protoc@v3
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v2
+      - name: Test
+        run: cargo test --all

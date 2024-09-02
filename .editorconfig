@@ -1,4 +1,5 @@
 root = true
+
 [*]
 indent_style=tab
 indent_size=tab
@@ -8,6 +9,9 @@ charset=utf-8
 trim_trailing_whitespace=true
 max_line_length=100
 insert_final_newline=true
+
+[*.toml]
+max_line_length=off
 
 [*.md]
 max_line_length=80
