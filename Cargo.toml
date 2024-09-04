@@ -2,12 +2,14 @@
 resolver = "2"
 members = [
 	"core-primitives",
+	"frame/multimap",
 	"primitives/runtime",
 ]
 
 [workspace.dependencies]
 noir-core-primitives = { path = "core-primitives", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
+pallet-multimap = { path = "frame/multimap", default-features = false }
 
 [profile.release]
 panic = "unwind"
