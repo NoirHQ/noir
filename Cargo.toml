@@ -7,11 +7,13 @@ members = [
 	"primitives/cosmos",
 	"primitives/ethereum",
 	"primitives/runtime",
+	"runtime/common",
 ]
 
 [workspace.dependencies]
 frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
+noir-runtime-common = { path = "runtime/common", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
