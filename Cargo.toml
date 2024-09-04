@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
 	"core-primitives",
+	"frame/babel",
 	"frame/multimap",
 	"primitives/cosmos",
 	"primitives/ethereum",
@@ -9,6 +10,7 @@ members = [
 ]
 
 [workspace.dependencies]
+frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }

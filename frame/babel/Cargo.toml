@@ -1,0 +1,88 @@
+[package]
+name = "frame-babel"
+version = "0.4.0"
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/noirhq/noir.git"
+publish = false
+
+[dependencies]
+ethereum = { version = "0.15.0", default-features = false, optional = true }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+np-cosmos = { workspace = true, optional = true }
+np-ethereum = { workspace = true, optional = true }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-ethereum = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
+pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
+pallet-evm-precompile-blake2 = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
+pallet-evm-precompile-bn128 = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
+pallet-evm-precompile-modexp = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
+pallet-evm-precompile-sha3fips = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
+pallet-evm-precompile-simple = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
+pallet-multimap = { workspace = true }
+parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+
+[features]
+default = [
+	"std",
+	"cosmos",
+	"ethereum",
+]
+std = [
+	"ethereum?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"np-cosmos?/std",
+	"np-ethereum?/std",
+	"pallet-balances/std",
+	"pallet-ethereum?/std",
+	"pallet-evm?/std",
+	"pallet-evm-precompile-blake2?/std",
+	"pallet-evm-precompile-bn128?/std",
+	"pallet-evm-precompile-modexp?/std",
+	"pallet-evm-precompile-sha3fips?/std",
+	"pallet-evm-precompile-simple?/std",
+	"pallet-multimap/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-core/std",
+	"sp-runtime/std",
+]
+cosmos = [
+	"np-cosmos",
+]
+ethereum = [
+	"dep:ethereum",
+	"np-ethereum",
+	"pallet-ethereum",
+	"pallet-evm",
+	"pallet-evm-precompile-blake2",
+	"pallet-evm-precompile-bn128",
+	"pallet-evm-precompile-modexp",
+	"pallet-evm-precompile-sha3fips",
+	"pallet-evm-precompile-simple",
+]
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
+	"pallet-ethereum?/runtime-benchmarks",
+	"pallet-evm?/runtime-benchmarks",
+	"pallet-multimap/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-balances/try-runtime",
+	"pallet-ethereum?/try-runtime",
+	"pallet-evm?/try-runtime",
+	"pallet-multimap/try-runtime",
+	"sp-runtime/try-runtime",
+]
