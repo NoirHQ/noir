@@ -21,6 +21,7 @@
 //! values with the same key.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(unreachable_patterns)]
 
 extern crate alloc;
 
