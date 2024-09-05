@@ -24,6 +24,7 @@ use np_runtime::{
 	MultiSignature,
 };
 use sp_core::H256;
+use sp_runtime::{generic, OpaqueExtrinsic};
 
 pub use sp_runtime::traits::BlakeTwo256;
 
@@ -54,20 +55,14 @@ pub type Moment = u64;
 /// Digital signature.
 pub type Signature = MultiSignature;
 
-/// Opaque types.
-pub mod opaque {
-	use super::*;
-	use sp_runtime::{generic, OpaqueExtrinsic};
+/// Opaque block.
+pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
-	/// Opaque block.
-	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+/// Opaque block identifier.
+pub type BlockId = generic::BlockId<Block>;
 
-	/// Opaque block identifier.
-	pub type BlockId = generic::BlockId<Block>;
+/// Opaque block header.
+pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 
-	/// Opaque block header.
-	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-
-	/// Opaque extrinsic.
-	pub type UncheckedExtrinsic = OpaqueExtrinsic;
-}
+/// Opaque extrinsic.
+pub type UncheckedExtrinsic = OpaqueExtrinsic;
