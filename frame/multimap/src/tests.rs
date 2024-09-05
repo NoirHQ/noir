@@ -29,6 +29,9 @@ fn unique_multimap_works() {
 
 		// overflow capacity per
 		assert!(matches!(Multimap::try_insert(0, 1002), Err(Error::<Test>::CapacityOverflow)));
+		assert!(matches!(Multimap::try_insert(0, 1001), Ok(false)));
+		assert_eq!(Multimap::get(0), BTreeSet::from_iter(vec![1000, 1001]));
+
 		// duplicate value
 		assert!(matches!(Multimap::try_insert(1, 1000), Err(Error::<Test>::DuplicateValue)));
 

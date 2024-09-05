@@ -45,7 +45,10 @@ impl<T: Config<I>, I: 'static> UniqueMultimap<T::Key, T::Value> for Pallet<T, I>
 
 	fn try_insert(key: T::Key, value: T::Value) -> Result<bool, Error<T, I>> {
 		Map::<T, I>::try_mutate(&key, |values| {
-			ensure!(!Index::<T, I>::contains_key(&value), Error::<T, I>::DuplicateValue);
+			ensure!(
+				Index::<T, I>::get(&value).filter(|k| *k != key).is_none(),
+				Error::<T, I>::DuplicateValue
+			);
 			values
 				.try_insert(value.clone())
 				.inspect(|ok| {
