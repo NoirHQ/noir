@@ -1,6 +1,6 @@
 // This file is part of Noir.
 
-// Copyright (C) 2023 Haderech Pte. Ltd.
+// Copyright (c) Haderech Pte. Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // This program is free software: you can redistribute it and/or modify
@@ -16,14 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Noir node binary.
+//! Substrate Node Template CLI library.
 #![warn(missing_docs)]
 
+mod benchmarking;
 mod chain_spec;
 mod cli;
-mod client;
 mod command;
-mod eth;
 mod rpc;
 mod service;
 

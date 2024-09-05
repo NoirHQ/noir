@@ -1,16 +1,16 @@
 [package]
 name = "noir-core-primitives"
-version = { workspace = true }
-license = "GPL-3.0-or-later"
-
-authors = { workspace = true }
-edition = { workspace = true }
-repository = { workspace = true }
+version = "0.4.0"
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/noirhq/noir.git"
+publish = false
 
 [dependencies]
 np-runtime = { workspace = true }
-sp-core = { workspace = true }
-sp-runtime = { workspace = true }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
 [features]
 default = ["std"]

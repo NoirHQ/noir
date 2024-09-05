@@ -1,0 +1,17 @@
+[package]
+name = "noir-runtime-common"
+version = "0.4.0"
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/noirhq/noir.git"
+publish = false
+
+[dependencies]
+noir-core-primitives = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"noir-core-primitives/std",
+]

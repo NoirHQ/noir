@@ -1,54 +1,68 @@
 // This file is part of Noir.
 
-// Copyright (C) 2023 Haderech Pte. Ltd.
-// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) Haderech Pte. Ltd.
+// SPDX-License-Identifier: Apache-2.0
 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+// 	http://www.apache.org/licenses/LICENSE-2.0
 //
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-//! Core Noir types.
+//! Noir core primitives.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use np_runtime::{
+	traits::{IdentifyAccount, VerifyMut},
+	MultiSignature,
+};
+use sp_core::H256;
+use sp_runtime::{generic, OpaqueExtrinsic};
 
-/// An index to a block.
-pub type BlockNumber = u32;
-/// An instant or duration in time.
-pub type Moment = u64;
-/// Block header type as expected by this runtime.
-pub type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
-/// Block type as expected by this runtime.
-pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
-/// A hash of some data used by the chain.
-pub type Hash = sp_core::H256;
-/// Balance of an account.
-pub type Balance = u128;
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = np_runtime::AuthenticationProof;
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-/// Index of a transaction in the chain.
-pub type Nonce = u32;
-/// The type for looking up accounts.
+pub use sp_runtime::traits::BlakeTwo256;
+
+/// Account identifier.
+pub type AccountId = <AccountPublic as IdentifyAccount>::AccountId;
+
+/// Sequential index of an account (not used).
 pub type AccountIndex = ();
-/// The address format for describing accounts.
-pub type Address = sp_runtime::MultiAddress<AccountId, AccountIndex>;
 
-/// Basic currency unit.
-pub const DOLLARS: Balance = 1_000_000_000_000_000_000;
-/// Decimals of currency.
-pub const DECIMALS: u8 = 18;
-/// Symbol of currency.
-pub const SYMBOL: &str = "CDT";
+/// Transaction counter (nonce).
+pub type AccountNonce = u32;
+
+/// Account public key.
+pub type AccountPublic = <Signature as VerifyMut>::Signer;
+
+/// Native currency balance.
+pub type Balance = u128;
+
+/// Block index.
+pub type BlockNumber = u32;
+
+/// 256-bit hash.
+pub type Hash = H256;
+
+/// 64-bit timestamp.
+pub type Moment = u64;
+
+/// Digital signature.
+pub type Signature = MultiSignature;
+
+/// Opaque block.
+pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+
+/// Opaque block identifier.
+pub type BlockId = generic::BlockId<Block>;
+
+/// Opaque block header.
+pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+
+/// Opaque extrinsic.
+pub type UncheckedExtrinsic = OpaqueExtrinsic;

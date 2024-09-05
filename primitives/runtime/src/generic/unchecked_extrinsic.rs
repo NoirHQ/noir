@@ -18,21 +18,22 @@
 //! Generic implementation of an unchecked (pre-verification) extrinsic.
 
 use crate::traits::VerifyMut;
-use parity_scale_codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
+#[cfg(all(not(feature = "std"), feature = "serde"))]
+use alloc::format;
+use alloc::{vec, vec::Vec};
+use codec::{Compact, Decode, Encode, EncodeLike, Error, Input};
+use core::fmt;
 use scale_info::{build::Fields, meta_type, Path, StaticTypeInfo, Type, TypeInfo, TypeParameter};
 use sp_io::hashing::blake2_256;
 use sp_runtime::{
 	generic::CheckedExtrinsic,
 	traits::{
 		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
-		SignedExtension,
+		/* SignaturePayload, */ SignedExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 	OpaqueExtrinsic,
 };
-#[cfg(all(not(feature = "std"), feature = "serde"))]
-use sp_std::alloc::format;
-use sp_std::{fmt, prelude::*};
 
 /// Current version of the [`UncheckedExtrinsic`] encoded format.
 ///
@@ -44,21 +45,22 @@ const EXTRINSIC_FORMAT_VERSION: u8 = 4;
 /// The `SignaturePayload` of `UncheckedExtrinsic`.
 type UncheckedSignaturePayload<Address, Signature, Extra> = (Address, Signature, Extra);
 
-// An extrinsic right from the external world. This is unchecked and so can contain a signature.
-//
-// An extrinsic is formally described as any external data that is originating from the outside of
-// the runtime and fed into the runtime as a part of the block-body.
-//
-// Inherents are special types of extrinsics that are placed into the block by the block-builder.
-// They are unsigned because the assertion is that they are "inherently true" by virtue of getting
-// past all validators.
-//
-// Transactions are all other statements provided by external entities that the chain deems values
-// and decided to include in the block. This value is typically in the form of fee payment, but it
-// could in principle be any other interaction. Transactions are either signed or unsigned. A
-// sensible transaction pool should ensure that only transactions that are worthwhile are
-// considered for block-building.
-//#[cfg_attr(feature = "std", doc = simple_mermaid::mermaid!("../../docs/mermaid/extrinsics.mmd"))]
+/// An extrinsic right from the external world. This is unchecked and so can contain a signature.
+///
+/// An extrinsic is formally described as any external data that is originating from the outside of
+/// the runtime and fed into the runtime as a part of the block-body.
+///
+/// Inherents are special types of extrinsics that are placed into the block by the block-builder.
+/// They are unsigned because the assertion is that they are "inherently true" by virtue of getting
+/// past all validators.
+///
+/// Transactions are all other statements provided by external entities that the chain deems values
+/// and decided to include in the block. This value is typically in the form of fee payment, but it
+/// could in principle be any other interaction. Transactions are either signed or unsigned. A
+/// sensible transaction pool should ensure that only transactions that are worthwhile are
+/// considered for block-building.
+//#[cfg_attr(all(feature = "std", not(windows)), doc =
+//#[cfg_attr(all(feature simple_mermaid::mermaid!("../../docs/mermaid/extrinsics.mmd"))]
 /// This type is by no means enforced within Substrate, but given its genericness, it is highly
 /// likely that for most use-cases it will suffice. Thus, the encoding of this type will dictate
 /// exactly what bytes should be sent to a runtime to transact with it.
@@ -79,6 +81,16 @@ where
 	/// The function that should be called.
 	pub function: Call,
 }
+
+/*
+impl<Address: TypeInfo, Signature: TypeInfo, Extra: TypeInfo> SignaturePayload
+	for UncheckedSignaturePayload<Address, Signature, Extra>
+{
+	type SignatureAddress = Address;
+	type Signature = Signature;
+	type SignatureExtra = Extra;
+}
+*/
 
 /// Manual [`TypeInfo`] implementation because of custom encoding. The data is a valid encoded
 /// `Vec<u8>`, but requires some logic to extract the signature and payload.
@@ -310,7 +322,7 @@ where
 	Extra: SignedExtension,
 {
 	fn encode(&self) -> Vec<u8> {
-		let mut tmp = Vec::with_capacity(sp_std::mem::size_of::<Self>());
+		let mut tmp = Vec::with_capacity(core::mem::size_of::<Self>());
 
 		// 1 byte version id.
 		match self.signature.as_ref() {
@@ -324,7 +336,7 @@ where
 		}
 		self.function.encode_to(&mut tmp);
 
-		let compact_len = parity_scale_codec::Compact::<u32>(tmp.len() as u32);
+		let compact_len = codec::Compact::<u32>(tmp.len() as u32);
 
 		// Allocate the output buffer with the correct length
 		let mut output = Vec::with_capacity(compact_len.size_hint() + tmp.len());
@@ -443,7 +455,7 @@ mod tests {
 		type AdditionalSigned = ();
 		type Pre = ();
 
-		fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+		fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
 			Ok(())
 		}
 

@@ -1,53 +1,50 @@
 [package]
 name = "np-runtime"
-version = { workspace = true }
+version = "0.4.0"
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
 license = "Apache-2.0"
-
-authors = { workspace = true }
-edition = { workspace = true }
-repository = { workspace = true }
+repository = "https://github.com/noirhq/noir.git"
+publish = false
 
 [dependencies]
-array-bytes = { workspace = true, optional = true }
-base64ct = { workspace = true, optional = true }
-parity-scale-codec = { workspace = true, features = ["derive", "max-encoded-len"] }
-scale-info = { workspace = true, features = ["derive"] }
-serde = { workspace = true, features = ["derive"], optional = true }
-thiserror = { workspace = true, optional = true }
-
-# noir
-np-crypto = { workspace = true }
-np-io = { workspace = true }
-
-# substrate
-fp-self-contained = { workspace = true }
-frame-support = { workspace = true }
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-runtime-interface = { workspace = true }
-sp-std = { workspace = true }
+buidl = { version = "0.1.1", default-features = false, features = ["derive"] }
+const-hex = { version = "1.12", default-features = false }
+fp-self-contained = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+serde = { version = "1.0", default-features = false, optional = true }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
 [features]
 default = ["std"]
 std = [
-	"base64ct/std",
+	"buidl/std",
+	"const-hex/std",
 	"fp-self-contained/std",
 	"frame-support/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",
-	"np-crypto/std",
-	"np-io/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"sp-std/std",
-	"thiserror",
 ]
 serde = [
 	"dep:serde",
-	"array-bytes",
-	"base64ct/alloc",
+	"fp-self-contained/serde",
+	"scale-info/serde",
+	"sp-core/serde",
+	"sp-runtime/serde",
 ]
-try-runtime = []
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"sp-runtime/try-runtime",
+]

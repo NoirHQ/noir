@@ -15,12 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{generic, traits::VerifyMut};
+use crate::traits::VerifyMut;
+use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	traits::ExtrinsicCall,
 };
-use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
@@ -37,7 +37,7 @@ use fp_self_contained::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
 /// can contain a signature.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct UncheckedExtrinsic<Address, Call, Signature, Extra: SignedExtension>(
-	pub generic::UncheckedExtrinsic<Address, Call, Signature, Extra>,
+	pub crate::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>,
 );
 
 impl<Address, Call, Signature, Extra: SignedExtension>
@@ -45,12 +45,12 @@ impl<Address, Call, Signature, Extra: SignedExtension>
 {
 	/// New instance of a signed extrinsic aka "transaction".
 	pub fn new_signed(function: Call, signed: Address, signature: Signature, extra: Extra) -> Self {
-		Self(generic::UncheckedExtrinsic::new_signed(function, signed, signature, extra))
+		Self(crate::generic::UncheckedExtrinsic::new_signed(function, signed, signature, extra))
 	}
 
 	/// New instance of an unsigned extrinsic aka "inherent".
 	pub fn new_unsigned(function: Call) -> Self {
-		Self(generic::UncheckedExtrinsic::new_unsigned(function))
+		Self(crate::generic::UncheckedExtrinsic::new_unsigned(function))
 	}
 }
 
@@ -75,7 +75,7 @@ where
 	}
 
 	fn new(function: Call, signed_data: Option<Self::SignaturePayload>) -> Option<Self> {
-		generic::UncheckedExtrinsic::new(function, signed_data).map(Self)
+		crate::generic::UncheckedExtrinsic::new(function, signed_data).map(Self)
 	}
 }
 
@@ -158,7 +158,7 @@ impl<Address, Call, Signature, Extra> ExtrinsicMetadata
 where
 	Extra: SignedExtension,
 {
-	const VERSION: u8 = <generic::UncheckedExtrinsic<Address, Call, Signature, Extra> as ExtrinsicMetadata>::VERSION;
+	const VERSION: u8 = <crate::generic::UncheckedExtrinsic<Address, Call, Signature, Extra> as ExtrinsicMetadata>::VERSION;
 	type SignedExtensions = Extra;
 }
 
@@ -205,7 +205,8 @@ impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtensio
 	where
 		D: serde::Deserializer<'a>,
 	{
-		<generic::UncheckedExtrinsic<Address, Call, Signature, Extra>>::deserialize(de).map(Self)
+		<crate::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>>::deserialize(de)
+			.map(Self)
 	}
 }
 
