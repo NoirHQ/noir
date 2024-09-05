@@ -54,7 +54,7 @@ impl<T> From<Address<T>> for H160 {
 impl<T> From<ecdsa::Public> for Address<T> {
 	fn from(key: ecdsa::Public) -> Self {
 		let hash = sha2_256(&key.0);
-		let hash = Ripemd160::digest(&hash);
+		let hash = Ripemd160::digest(hash);
 		Self(hash.into(), PhantomData)
 	}
 }

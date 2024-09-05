@@ -76,6 +76,15 @@ where
 
 pub struct FrontierPrecompiles<R>(PhantomData<R>);
 
+impl<R> Default for FrontierPrecompiles<R>
+where
+	R: pallet_evm::Config,
+{
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 impl<R> FrontierPrecompiles<R>
 where
 	R: pallet_evm::Config,
@@ -170,7 +179,7 @@ impl TransactionExt for Transaction {
 			},
 		}
 		sp_io::crypto::secp256k1_ecdsa_recover_compressed(&sig, &msg)
-			.map(|k| ecdsa::Public::from(k))
+			.map(ecdsa::Public::from)
 			.ok()
 	}
 

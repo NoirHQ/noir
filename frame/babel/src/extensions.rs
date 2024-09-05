@@ -33,6 +33,12 @@ use sp_runtime::{
 #[scale_info(skip_type_params(T))]
 pub struct UnifyAccount<T>(PhantomData<fn() -> T>);
 
+impl<T> Default for UnifyAccount<T> {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 impl<T> UnifyAccount<T> {
 	pub const fn new() -> Self {
 		Self(PhantomData)
@@ -40,12 +46,13 @@ impl<T> UnifyAccount<T> {
 }
 
 impl<T: Config> UnifyAccount<T> {
-	pub fn unify_ecdsa(who: &T::AccountId) -> Result<(), ()> {
+	pub fn unify_ecdsa(who: &T::AccountId) -> Result<(), &'static str> {
 		if let Ok(public) = who.clone().try_into() {
 			#[cfg(feature = "ethereum")]
 			{
 				let address = Address::ethereum(public);
-				T::AddressMap::try_insert(who.clone(), address).map_err(|_| ())?;
+				T::AddressMap::try_insert(who.clone(), address)
+					.map_err(|_| "account integration failed: ethereum")?;
 			}
 		}
 		Ok(())

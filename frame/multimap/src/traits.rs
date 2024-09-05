@@ -18,7 +18,7 @@
 use crate::*;
 
 use alloc::collections::BTreeSet;
-use frame_support::{ensure, traits::Get};
+use frame_support::ensure;
 
 /// Unique multimap whose values are unique across all keys.
 pub trait UniqueMultimap<K, V> {
@@ -45,19 +45,15 @@ impl<T: Config<I>, I: 'static> UniqueMultimap<T::Key, T::Value> for Pallet<T, I>
 
 	fn try_insert(key: T::Key, value: T::Value) -> Result<bool, Error<T, I>> {
 		Map::<T, I>::try_mutate(&key, |values| {
-			ensure!(
-				values.len() < T::CapacityPerKey::get() as usize,
-				Error::<T, I>::CapacityOverflow
-			);
 			ensure!(!Index::<T, I>::contains_key(&value), Error::<T, I>::DuplicateValue);
-			match values.try_insert(value.clone()) {
-				Ok(true) => {
-					Index::<T, I>::insert(&value, &key);
-					Ok(true)
-				},
-				Ok(false) => Ok(false),
-				Err(_) => unreachable!(),
-			}
+			values
+				.try_insert(value.clone())
+				.inspect(|ok| {
+					if *ok {
+						Index::<T, I>::insert(&value, &key);
+					}
+				})
+				.map_err(|_| Error::<T, I>::CapacityOverflow)
 		})
 	}
 

@@ -46,12 +46,11 @@ impl SelfContainedCall for RuntimeCall {
 			RuntimeCall::Ethereum(call) => {
 				if let pallet_ethereum::Call::transact { transaction } = call {
 					let check = || {
-						let origin = transaction
-							.recover_key()
-							.map(|key| Self::SignedInfo::from(key))
-							.ok_or(InvalidTransaction::Custom(
+						let origin = transaction.recover_key().map(Self::SignedInfo::from).ok_or(
+							InvalidTransaction::Custom(
 								TransactionValidationError::InvalidSignature as u8,
-							))?;
+							),
+						)?;
 						Ok(origin)
 					};
 					Some(check())
@@ -73,10 +72,12 @@ impl SelfContainedCall for RuntimeCall {
 			RuntimeCall::Ethereum(call) => {
 				if let pallet_ethereum::Call::transact { transaction } = call {
 					if transaction.nonce() == 0 {
-						if UnifyAccount::<Runtime>::unify_ecdsa(info).is_err() {
-							return Some(Err(TransactionValidityError::Unknown(
-								UnknownTransaction::CannotLookup,
-							)))
+						match UnifyAccount::<Runtime>::unify_ecdsa(info) {
+							Ok(_) => (),
+							Err(_) =>
+								return Some(Err(TransactionValidityError::Unknown(
+									UnknownTransaction::CannotLookup,
+								))),
 						}
 					}
 				}
@@ -98,10 +99,12 @@ impl SelfContainedCall for RuntimeCall {
 			RuntimeCall::Ethereum(call) => {
 				if let pallet_ethereum::Call::transact { transaction } = &call {
 					if transaction.nonce() == 0 {
-						if UnifyAccount::<Runtime>::unify_ecdsa(info).is_err() {
-							return Some(Err(TransactionValidityError::Unknown(
-								UnknownTransaction::CannotLookup,
-							)))
+						match UnifyAccount::<Runtime>::unify_ecdsa(info) {
+							Ok(_) => (),
+							Err(_) =>
+								return Some(Err(TransactionValidityError::Unknown(
+									UnknownTransaction::CannotLookup,
+								))),
 						}
 					}
 				}

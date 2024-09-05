@@ -7,6 +7,9 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/noirhq/noir.git"
 publish = false
 
+[lints.clippy]
+identity-op = { level = "allow", priority = 2 }                      # One case where we do 0 +
+
 [dependencies]
 fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
 fp-rpc = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
