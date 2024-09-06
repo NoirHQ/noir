@@ -18,7 +18,7 @@
 
 use crate::*;
 
-use super::system::NORMAL_DISPATCH_RATIO;
+use common::NORMAL_DISPATCH_RATIO;
 use fp_evm::weight_per_gas;
 use frame_babel::ethereum::{AddressMapping, EnsureAddress, FrontierPrecompiles};
 use frame_support::weights::Weight;

@@ -18,27 +18,20 @@
 
 use crate::*;
 
-use common::units::MiB;
+use common::{
+	BlockHashCount, BlockLength, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT,
+	NORMAL_DISPATCH_RATIO,
+};
 use frame_support::{
 	derive_impl,
 	dispatch::DispatchClass,
 	traits::ConstU32,
-	weights::constants::{
-		BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND,
-	},
+	weights::constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
 };
 use frame_system::{config_preludes::SolochainDefaultConfig, limits};
-use sp_runtime::{traits::AccountIdLookup, Perbill};
-
-pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(1);
-pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-pub const MAXIMUM_BLOCK_WEIGHT: Weight =
-	Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
+use sp_runtime::traits::AccountIdLookup;
 
 parameter_types! {
-	pub const BlockHashCount: u32 = super::BLOCK_HASH_COUNT;
-	pub BlockLength: limits::BlockLength = limits::BlockLength
-		::max_with_normal_ratio(5 * MiB, NORMAL_DISPATCH_RATIO);
 	pub BlockWeights: limits::BlockWeights = limits::BlockWeights::builder()
 		.base_block(BlockExecutionWeight::get())
 		.for_class(DispatchClass::all(), |weights| {
