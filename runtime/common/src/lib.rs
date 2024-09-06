@@ -48,7 +48,7 @@ parameter_types! {
 	/// The portion of `NORMAL_DISPATCH_RATIO` for adjusting fees.
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
 	/// Adjustment variable that how much the fee should be adjusted.
-	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(75, 1000_000);
+	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(75, 1_000_000);
 	/// Minimum amount of the multiplier. This value should be high enough to recover from the
 	/// minimum.
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 10u128);
