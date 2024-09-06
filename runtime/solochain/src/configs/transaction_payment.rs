@@ -18,32 +18,19 @@
 
 use crate::*;
 
-use common::units::CENTS;
+use common::{units::CENTS, SlowAdjustingFeeUpdate};
 use frame_support::weights::{
 	constants::ExtrinsicBaseWeight, ConstantMultiplier, WeightToFeeCoefficient,
 	WeightToFeeCoefficients, WeightToFeePolynomial,
 };
-use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
+use pallet_transaction_payment::FungibleAdapter;
 use smallvec::smallvec;
-use sp_runtime::{traits::Bounded, FixedPointNumber, Perbill, Perquintill};
+use sp_runtime::Perbill;
 
 parameter_types! {
 	pub const OperationalFeeMultiplier: u8 = 5;
 	pub const TransactionByteFee: Balance = (1 * CENTS) / 100;
-
-	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
-	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(75, 1_000_000);
-	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 10u128);
-	pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
-
-pub type SlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
-	R,
-	TargetBlockFullness,
-	AdjustmentVariable,
-	MinimumMultiplier,
-	MaximumMultiplier,
->;
 
 pub struct WeightToFee;
 

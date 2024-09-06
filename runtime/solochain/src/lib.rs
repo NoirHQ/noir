@@ -36,7 +36,7 @@ pub use primitives::*;
 pub use version::*;
 
 use alloc::vec::Vec;
-use frame_support::{parameter_types, weights::Weight};
+use frame_support::parameter_types;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_version::RuntimeVersion;
 

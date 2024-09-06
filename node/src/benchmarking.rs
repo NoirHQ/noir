@@ -123,7 +123,10 @@ pub fn create_benchmark_extrinsic(
 	let best_hash = client.chain_info().best_hash;
 	let best_block = client.chain_info().best_number;
 
-	let period = BLOCK_HASH_COUNT.checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+	let period = runtime::common::BlockHashCount::get()
+		.checked_next_power_of_two()
+		.map(|c| c / 2)
+		.unwrap_or(2) as u64;
 	let extra: runtime::SignedExtra = (
 		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
 		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
