@@ -18,10 +18,8 @@
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
-pub type SequenceNumber = u64;
-
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo)]
 pub struct Account {
-	pub sequence: SequenceNumber,
+	pub sequence: u64,
 	pub amount: u128,
 }
