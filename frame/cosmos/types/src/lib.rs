@@ -28,5 +28,4 @@ pub mod gas;
 pub mod handler;
 pub mod macros;
 pub mod msgservice;
-pub mod tx;
 pub mod tx_msgs;
