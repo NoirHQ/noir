@@ -4,6 +4,7 @@ members = [
 	"core-primitives",
 	"frame/babel",
 	"frame/cosmos/types",
+	"frame/cosmos/rpc",
 	"frame/cosmos/runtime-api",
 	"frame/multimap",
 	"primitives/cosmos",
@@ -15,6 +16,7 @@ members = [
 ]
 
 [workspace.dependencies]
+cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
 frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
