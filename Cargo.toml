@@ -3,6 +3,7 @@ resolver = "2"
 members = [
 	"core-primitives",
 	"frame/babel",
+	"frame/cosmos/types",
 	"frame/multimap",
 	"primitives/cosmos",
 	"primitives/ethereum",
@@ -19,6 +20,7 @@ noir-runtime-common = { path = "runtime/common", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
+pallet-cosmos-types = { path = "frame/cosmos/types", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 
 [profile.release]
