@@ -6,6 +6,7 @@ members = [
 	"frame/cosmos/types",
 	"frame/cosmos/rpc",
 	"frame/cosmos/runtime-api",
+	"frame/cosmos/x/auth/migrations",
 	"frame/multimap",
 	"primitives/cosmos",
 	"primitives/ethereum",
@@ -24,6 +25,7 @@ noir-runtime-common = { path = "runtime/common", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
+pallet-cosmos-x-auth-migrations = { path = "frame/cosmos/x/auth/migrations", default-features = false }
 pallet-cosmos-types = { path = "frame/cosmos/types", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 
