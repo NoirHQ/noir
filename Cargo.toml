@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
 	"core-primitives",
+	"composable/composable-support",
 	"cosmwasm/std",
 	"frame/babel",
 	"frame/cosmos/types",
@@ -21,6 +22,7 @@ members = [
 ]
 
 [workspace.dependencies]
+composable-support = { path = "composable/composable-support", default-features = false }
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
 cosmwasm-std = { path = "cosmwasm/std", default-features = false }
