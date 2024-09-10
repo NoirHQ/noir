@@ -4,6 +4,7 @@ members = [
 	"core-primitives",
 	"composable/composable-support",
 	"composable/vm",
+	"composable/vm-wasmi",
 	"cosmwasm/std",
 	"frame/babel",
 	"frame/cosmos/types",
@@ -28,6 +29,7 @@ cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
 cosmwasm-std = { path = "cosmwasm/std", default-features = false }
 cosmwasm-vm = { path = "composable/vm", default-features = false }
+cosmwasm-vm-wasmi = { path = "composable/vm-wasmi", default-features = false }
 frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }
