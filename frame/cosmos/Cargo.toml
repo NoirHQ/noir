@@ -1,0 +1,17 @@
+[package]
+name = "pallet-cosmos"
+version = "0.4.0"
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/noirhq/noir.git"
+publish = false
+
+[dependencies]
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+
+[features]
+default = ["std"]
+std = ["frame-support/std", "frame-system/std", "sp-core/std"]

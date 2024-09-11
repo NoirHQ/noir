@@ -7,6 +7,7 @@ members = [
 	"composable/vm-wasmi",
 	"cosmwasm/std",
 	"frame/babel",
+	"frame/cosmos",
 	"frame/cosmos/types",
 	"frame/cosmos/rpc",
 	"frame/cosmos/runtime-api",
@@ -36,6 +37,7 @@ noir-runtime-common = { path = "runtime/common", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
+pallet-cosmos = { path = "frame/cosmos", default-features = false }
 pallet-cosmos-types = { path = "frame/cosmos/types", default-features = false }
 pallet-cosmos-x-auth-migrations = { path = "frame/cosmos/x/auth/migrations", default-features = false }
 pallet-cosmos-x-auth-signing = { path = "frame/cosmos/x/auth/signing", default-features = false }
