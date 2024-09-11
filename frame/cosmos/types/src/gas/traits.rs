@@ -15,16 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-	events::EventManager,
-	gas::{Gas, GasMeter},
-};
+use super::{Error, Gas};
 
-pub trait Context {
-	type GasMeter: GasMeter;
-	type EventManager: EventManager;
-
+pub trait GasMeter {
 	fn new(limit: Gas) -> Self;
-	fn gas_meter(&mut self) -> &mut Self::GasMeter;
-	fn event_manager(&mut self) -> &mut Self::EventManager;
+	fn consumed_gas(&self) -> Gas;
+	fn gas_remaining(&self) -> Gas;
+	fn limit(&self) -> Gas;
+	fn consume_gas(&mut self, amount: Gas, descriptor: &str) -> Result<Gas, Error>;
 }

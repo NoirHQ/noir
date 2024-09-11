@@ -15,6 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod traits;
+
 pub type Gas = u64;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -23,21 +25,13 @@ pub enum Error {
 	OutOfGas,
 }
 
-pub trait GasMeter {
-	fn new(limit: Gas) -> Self;
-	fn consumed_gas(&self) -> Gas;
-	fn gas_remaining(&self) -> Gas;
-	fn limit(&self) -> Gas;
-	fn consume_gas(&mut self, amount: Gas, descriptor: &str) -> Result<Gas, Error>;
-}
-
 #[derive(Clone, Debug)]
 pub struct BasicGasMeter {
 	pub limit: Gas,
 	pub consumed: Gas,
 }
 
-impl GasMeter for BasicGasMeter {
+impl traits::GasMeter for BasicGasMeter {
 	fn new(limit: Gas) -> Self {
 		Self { limit, consumed: 0 }
 	}
