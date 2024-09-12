@@ -60,8 +60,8 @@ pub mod pallet {
 	use frame_system::WeightInfo;
 	use np_cosmos::traits::ChainInfo;
 	use pallet_cosmos_types::{
-		context::traits::Context, events::CosmosEvent, gas::Gas, handler::AnteDecorator,
-		msgservice::MsgServiceRouter,
+		context::traits::Context, errors::CosmosError, events::CosmosEvent, gas::Gas,
+		handler::AnteDecorator, msgservice::MsgServiceRouter,
 	};
 	use pallet_cosmos_x_auth_signing::{
 		sign_mode_handler::traits::SignModeHandler, sign_verifiable_tx::traits::SigVerifiableTx,
@@ -76,6 +76,11 @@ pub mod pallet {
 	pub enum Event {
 		AnteHandled(Vec<CosmosEvent>),
 		Executed { gas_wanted: u64, gas_used: u64, events: Vec<CosmosEvent> },
+	}
+
+	#[pallet::error]
+	pub enum Error<T> {
+		CosmosError(CosmosError),
 	}
 
 	#[pallet::config(with_default)]
