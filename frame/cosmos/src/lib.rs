@@ -25,7 +25,7 @@ pub use self::pallet::*;
 use crate::weights::WeightInfo;
 use cosmos_sdk_proto::{cosmos::tx::v1beta1::Tx, traits::Message};
 use frame_support::{
-	dispatch::{DispatchErrorWithPostInfo, DispatchInfo, PostDispatchInfo},
+	dispatch::{DispatchInfo, PostDispatchInfo, WithPostDispatchInfo},
 	pallet_prelude::*,
 };
 use frame_system::{pallet_prelude::*, CheckWeight};
@@ -72,16 +72,14 @@ where
 	pub fn check_self_contained(&self) -> Option<Result<H160, TransactionValidityError>> {
 		if let Call::transact { tx_bytes } = self {
 			let check = || {
-				let tx = Tx::decode(&mut &tx_bytes[..])
-					.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Call))?;
-				let fee_payer = T::SigVerifiableTx::fee_payer(&tx)
-					.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Call))?;
-				let (_hrp, address_raw) = acc_address_from_bech32(&fee_payer).map_err(|_| {
-					TransactionValidityError::Invalid(InvalidTransaction::BadSigner)
-				})?;
+				let tx = Tx::decode(&mut &tx_bytes[..]).map_err(|_| InvalidTransaction::Call)?;
+				let fee_payer =
+					T::SigVerifiableTx::fee_payer(&tx).map_err(|_| InvalidTransaction::Call)?;
+				let (_hrp, address_raw) = acc_address_from_bech32(&fee_payer)
+					.map_err(|_| InvalidTransaction::BadSigner)?;
 
 				if address_raw.len() != 20 {
-					return Err(TransactionValidityError::Invalid(InvalidTransaction::BadSigner));
+					return Err(InvalidTransaction::BadSigner.into());
 				}
 
 				Ok(H160::from_slice(&address_raw))
@@ -135,10 +133,13 @@ pub trait AddressMapping<A> {
 pub mod pallet {
 	use super::*;
 	use cosmos_sdk_proto::Any;
-	use frame_support::traits::{
-		fungibles,
-		tokens::{AssetId, Balance},
-		Contains, Currency,
+	use frame_support::{
+		dispatch::WithPostDispatchInfo,
+		traits::{
+			fungibles,
+			tokens::{AssetId, Balance},
+			Contains, Currency,
+		},
 	};
 	use np_cosmos::traits::ChainInfo;
 	use pallet_cosmos_types::{errors::CosmosError, events::CosmosEvent, gas::Gas};
@@ -252,12 +253,9 @@ pub mod pallet {
 		pub fn transact(origin: OriginFor<T>, tx_bytes: Vec<u8>) -> DispatchResultWithPostInfo {
 			let _source = ensure_cosmos_transaction(origin)?;
 
-			let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| DispatchErrorWithPostInfo {
-				post_info: PostDispatchInfo {
-					actual_weight: Some(T::WeightInfo::default_weight()),
-					pays_fee: Pays::Yes,
-				},
-				error: Error::<T>::CosmosError(RootError::TxDecodeError.into()).into(),
+			let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| {
+				Error::<T>::CosmosError(RootError::TxDecodeError.into())
+					.with_weight(T::WeightInfo::default_weight())
 			})?;
 
 			Self::apply_validated_transaction(tx)
@@ -267,13 +265,12 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn validate_transaction_in_pool(origin: H160, tx_bytes: &[u8]) -> TransactionValidity {
-		let tx = Tx::decode(&mut &*tx_bytes)
-			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Call))?;
+		let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| InvalidTransaction::Call)?;
 
 		T::AnteHandler::ante_handle(&tx, true)?;
 
-		let transaction_nonce = T::SigVerifiableTx::sequence(&tx)
-			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Call))?;
+		let transaction_nonce =
+			T::SigVerifiableTx::sequence(&tx).map_err(|_| InvalidTransaction::Call)?;
 
 		let mut builder =
 			ValidTransactionBuilder::default().and_provides((origin, transaction_nonce));
@@ -291,8 +288,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn validate_transaction_in_block(tx_bytes: &[u8]) -> Result<(), TransactionValidityError> {
-		let tx = Tx::decode(&mut &*tx_bytes)
-			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Call))?;
+		let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| InvalidTransaction::Call)?;
 
 		T::AnteHandler::ante_handle(&tx, false)?;
 
@@ -300,66 +296,48 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn apply_validated_transaction(tx: Tx) -> DispatchResultWithPostInfo {
-		let body = tx.body.ok_or(DispatchErrorWithPostInfo {
-			post_info: PostDispatchInfo {
-				actual_weight: Some(T::WeightInfo::default_weight()),
-				pays_fee: Pays::Yes,
-			},
-			error: Error::<T>::CosmosError(RootError::TxDecodeError.into()).into(),
-		})?;
 		let gas_limit = tx
 			.auth_info
 			.as_ref()
 			.and_then(|auth_info| auth_info.fee.as_ref())
-			.ok_or(DispatchErrorWithPostInfo {
-				post_info: PostDispatchInfo {
-					actual_weight: Some(T::WeightInfo::default_weight()),
-					pays_fee: Pays::Yes,
-				},
-				error: Error::<T>::CosmosError(RootError::TxDecodeError.into()).into(),
-			})?
+			.ok_or(
+				Error::<T>::CosmosError(RootError::TxDecodeError.into())
+					.with_weight(T::WeightInfo::default_weight()),
+			)?
 			.gas_limit;
 
 		let mut ctx = T::Context::new(gas_limit);
 		ctx.gas_meter()
 			.consume_gas(T::WeightInfo::default_weight().ref_time(), "")
-			.map_err(|_| DispatchErrorWithPostInfo {
-				post_info: PostDispatchInfo {
-					actual_weight: Some(Weight::from_parts(ctx.gas_meter().consumed_gas(), 0)),
-					pays_fee: Pays::Yes,
-				},
-				error: Error::<T>::CosmosError(RootError::OutOfGas.into()).into(),
+			.map_err(|_| {
+				Error::<T>::CosmosError(RootError::OutOfGas.into())
+					.with_weight(T::WeightInfo::default_weight())
 			})?;
 
+		let body = tx.body.ok_or(
+			Error::<T>::CosmosError(RootError::TxDecodeError.into())
+				.with_weight(T::WeightInfo::default_weight()),
+		)?;
 		for msg in body.messages.iter() {
-			let handler = T::MsgServiceRouter::route(msg).ok_or(DispatchErrorWithPostInfo {
-				post_info: PostDispatchInfo {
-					actual_weight: Some(Weight::from_parts(ctx.gas_meter().consumed_gas(), 0)),
-					pays_fee: Pays::Yes,
-				},
-				error: Error::<T>::CosmosError(RootError::UnknownRequest.into()).into(),
-			})?;
+			let handler = T::MsgServiceRouter::route(msg).ok_or(
+				Error::<T>::CosmosError(RootError::UnknownRequest.into())
+					.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas())),
+			)?;
 
-			handler.handle(msg, &mut ctx).map_err(|e| DispatchErrorWithPostInfo {
-				post_info: PostDispatchInfo {
-					actual_weight: Some(Weight::from_parts(ctx.gas_meter().consumed_gas(), 0)),
-					pays_fee: Pays::Yes,
-				},
-				error: Error::<T>::CosmosError(e).into(),
+			handler.handle(msg, &mut ctx).map_err(|e| {
+				Error::<T>::CosmosError(e)
+					.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
 			})?;
 		}
 
 		Self::deposit_event(Event::Executed {
 			gas_wanted: gas_limit,
-			gas_used: T::WeightToGas::convert(Weight::from_parts(
-				ctx.gas_meter().consumed_gas(),
-				0,
-			)),
+			gas_used: ctx.gas_meter().consumed_gas(),
 			events: ctx.event_manager().events(),
 		});
 
 		Ok(PostDispatchInfo {
-			actual_weight: Some(Weight::from_parts(ctx.gas_meter().consumed_gas(), 0)),
+			actual_weight: Some(T::WeightToGas::convert(ctx.gas_meter().consumed_gas())),
 			pays_fee: Pays::Yes,
 		})
 	}
