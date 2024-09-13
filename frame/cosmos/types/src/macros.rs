@@ -38,13 +38,12 @@ mod tests {
 		cosmos::bank::v1beta1::MsgSend,
 		cosmwasm::wasm::v1::{MsgExecuteContract, MsgStoreCode},
 		prost::Name,
-		traits::Message,
 		Any,
 	};
 
 	#[test]
 	fn any_match_test() {
-		let any = Any { type_url: MsgSend::type_url(), value: MsgSend::default().encode_to_vec() };
+		let any = Any::from_msg(&MsgSend::default()).unwrap();
 		let result = any_match!(
 			any, {
 				MsgSend => any.type_url,
@@ -54,10 +53,7 @@ mod tests {
 		);
 		assert_eq!(result, MsgSend::type_url());
 
-		let any = Any {
-			type_url: MsgExecuteContract::type_url(),
-			value: MsgExecuteContract::default().encode_to_vec(),
-		};
+		let any = Any::from_msg(&MsgExecuteContract::default()).unwrap();
 		let result = any_match!(
 			any, {
 				MsgSend => any.type_url,
