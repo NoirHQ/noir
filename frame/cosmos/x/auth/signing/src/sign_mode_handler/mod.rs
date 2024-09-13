@@ -24,9 +24,12 @@ use alloc::{
 use cosmos_sdk_proto::{
 	cosmos::{
 		bank,
-		tx::v1beta1::{
-			mode_info::{Single, Sum},
-			ModeInfo, SignDoc, Tx, TxRaw,
+		tx::{
+			signing::v1beta1::SignMode,
+			v1beta1::{
+				mode_info::{Single, Sum},
+				ModeInfo, SignDoc, Tx, TxRaw,
+			},
 		},
 	},
 	cosmwasm::wasm,
@@ -63,6 +66,9 @@ pub enum SignModeHandlerError {
 	UnsupportedMode,
 }
 
+const SIGN_MODE_DIRECT: i32 = SignMode::Direct as i32;
+const SIGN_MODE_LEGACY_AMINO_JSON: i32 = SignMode::LegacyAminoJson as i32;
+
 pub struct SignModeHandler;
 impl traits::SignModeHandler for SignModeHandler {
 	fn get_sign_bytes(
@@ -72,17 +78,19 @@ impl traits::SignModeHandler for SignModeHandler {
 	) -> Result<Vec<u8>, SignModeHandlerError> {
 		let sum = mode.sum.as_ref().ok_or(SignModeHandlerError::EmptyModeInfo)?;
 		let sign_bytes = match sum {
-			Sum::Single(Single { mode }) => match mode {
-				1 /* SIGN_MODE_DIRECT */ => {
-					let tx_raw = TxRaw::decode(&mut &*tx.encode_to_vec()).map_err(|_| SignModeHandlerError::DecodeTxError)?;
+			Sum::Single(Single { mode }) => match *mode {
+				SIGN_MODE_DIRECT => {
+					let tx_raw = TxRaw::decode(&mut &*tx.encode_to_vec())
+						.map_err(|_| SignModeHandlerError::DecodeTxError)?;
 					SignDoc {
 						body_bytes: tx_raw.body_bytes,
 						auth_info_bytes: tx_raw.auth_info_bytes,
 						chain_id: data.chain_id.clone(),
 						account_number: data.account_number,
-					}.encode_to_vec()
+					}
+					.encode_to_vec()
 				},
-				127 /* SIGN_MODE_LEGACY_AMINO_JSON */ => {
+				SIGN_MODE_LEGACY_AMINO_JSON => {
 					let body = tx.body.as_ref().ok_or(SignModeHandlerError::EmptyTxBody)?;
 					let mut msgs = Vec::<Value>::new();
 					for msg in body.messages.iter() {
@@ -99,7 +107,11 @@ impl traits::SignModeHandler for SignModeHandler {
 
 						msgs.push(legacy_msg);
 					}
-					let fee = tx.auth_info.as_ref().and_then(|auth_info| auth_info.fee.as_ref()).ok_or(SignModeHandlerError::EmptyFee)?;
+					let fee = tx
+						.auth_info
+						.as_ref()
+						.and_then(|auth_info| auth_info.fee.as_ref())
+						.ok_or(SignModeHandlerError::EmptyFee)?;
 					let sign_doc = StdSignDoc {
 						account_number: data.account_number.to_string(),
 						chain_id: data.chain_id.clone(),
@@ -109,7 +121,8 @@ impl traits::SignModeHandler for SignModeHandler {
 						sequence: data.sequence.to_string(),
 					};
 
-					serde_json::to_vec(&sign_doc).map_err(|_| SignModeHandlerError::SerializeError)?
+					serde_json::to_vec(&sign_doc)
+						.map_err(|_| SignModeHandlerError::SerializeError)?
 				},
 				_ => return Err(SignModeHandlerError::UnsupportedMode),
 			},
