@@ -182,6 +182,10 @@ pub mod pallet {
 			> + fungibles::Mutate<Self::AccountId, Balance = Self::Balance, AssetId = Self::AssetId>
 			+ fungibles::Balanced<Self::AccountId, Balance = Self::Balance, AssetId = Self::AssetId>;
 
+		type NativeDenom: Get<&'static str>;
+
+		type NativeAssetId: Get<Self::AssetId>;
+
 		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
