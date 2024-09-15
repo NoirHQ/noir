@@ -21,21 +21,25 @@ extern crate alloc;
 
 use core::marker::PhantomData;
 use cosmos_sdk_proto::{cosmos::bank::v1beta1::MsgSend, prost::Message, Any};
-use frame_support::traits::{
-	fungibles::Mutate,
-	tokens::{currency::Currency, Preservation},
-	ExistenceRequirement,
+use frame_support::{
+	ensure,
+	traits::{
+		fungibles::Mutate,
+		tokens::{currency::Currency, Preservation},
+		ExistenceRequirement,
+	},
 };
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,
 	coin::amount_to_string,
 	context,
-	errors::RootError,
+	errors::{CosmosError, RootError},
 	events::{
 		traits::EventManager, CosmosEvent, EventAttribute, ATTRIBUTE_KEY_AMOUNT,
 		ATTRIBUTE_KEY_SENDER,
 	},
+	msgservice::MsgHandler,
 };
 use pallet_cosmos_x_bank_types::events::{ATTRIBUTE_KEY_RECIPIENT, EVENT_TYPE_TRANSFER};
 use sp_core::{Get, H160};
@@ -49,32 +53,26 @@ impl<T> Default for MsgSendHandler<T> {
 	}
 }
 
-impl<T, Context> pallet_cosmos_types::msgservice::MsgHandler<Context> for MsgSendHandler<T>
+impl<T, Context> MsgHandler<Context> for MsgSendHandler<T>
 where
 	T: pallet_cosmos::Config,
 	Context: context::traits::Context,
 {
-	fn handle(
-		&self,
-		msg: &Any,
-		ctx: &mut Context,
-	) -> Result<(), pallet_cosmos_types::errors::CosmosError> {
+	fn handle(&self, msg: &Any, ctx: &mut Context) -> Result<(), CosmosError> {
 		// TODO: Add gas metering
 		let MsgSend { from_address, to_address, amount } =
 			MsgSend::decode(&mut &*msg.value).map_err(|_| RootError::UnpackAnyError)?;
 
 		let (_hrp, from_address_raw) =
 			acc_address_from_bech32(&from_address).map_err(|_| RootError::InvalidAddress)?;
-		if from_address_raw.len() != 20 {
-			return Err(RootError::InvalidAddress.into());
-		}
+
+		ensure!(from_address_raw.len() == 20, RootError::InvalidAddress);
 		let from_account = T::AddressMapping::into_account_id(H160::from_slice(&from_address_raw));
 
 		let (_hrp, to_address_raw) =
 			acc_address_from_bech32(&to_address).map_err(|_| RootError::InvalidAddress)?;
-		if to_address_raw.len() != 20 {
-			return Err(RootError::InvalidAddress.into());
-		}
+
+		ensure!(to_address_raw.len() == 20, RootError::InvalidAddress);
 		let to_account = T::AddressMapping::into_account_id(H160::from_slice(&to_address_raw));
 
 		for amt in amount.iter() {
