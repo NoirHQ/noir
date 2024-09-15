@@ -15,20 +15,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// Chain information trait.
-pub trait ChainInfo {
-	fn bech32_prefix() -> &'static str;
-	fn chain_id() -> &'static str;
-}
+use core::marker::PhantomData;
+use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
+use frame_support::{
+	ensure,
+	pallet_prelude::{InvalidTransaction, TransactionValidity, ValidTransaction},
+	traits::Contains,
+};
+use pallet_cosmos_types::handler::AnteDecorator;
 
-/// Cosmos Hub chain information.
-pub struct CosmosHub;
+pub struct KnownMsgDecorator<T>(PhantomData<T>);
 
-impl ChainInfo for CosmosHub {
-	fn bech32_prefix() -> &'static str {
-		"cosmos"
-	}
-	fn chain_id() -> &'static str {
-		"dev"
+impl<T> AnteDecorator for KnownMsgDecorator<T>
+where
+	T: pallet_cosmos::Config,
+{
+	fn ante_handle(tx: &Tx, _simulate: bool) -> TransactionValidity {
+		let body = tx.body.as_ref().ok_or(InvalidTransaction::Call)?;
+
+		ensure!(body.messages.iter().all(T::MsgFilter::contains), InvalidTransaction::Call);
+
+		Ok(ValidTransaction::default())
 	}
 }

@@ -15,20 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// Chain information trait.
-pub trait ChainInfo {
-	fn bech32_prefix() -> &'static str;
-	fn chain_id() -> &'static str;
-}
+#![cfg_attr(not(feature = "std"), no_std)]
 
-/// Cosmos Hub chain information.
-pub struct CosmosHub;
+extern crate alloc;
 
-impl ChainInfo for CosmosHub {
-	fn bech32_prefix() -> &'static str {
-		"cosmos"
-	}
-	fn chain_id() -> &'static str {
-		"dev"
-	}
-}
+pub mod basic;
+pub mod fee;
+pub mod msg;
+pub mod sigverify;
