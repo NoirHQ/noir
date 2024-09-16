@@ -70,8 +70,7 @@ where
 				Ordering::Equal => Ok(()),
 			}?;
 
-			let public_key =
-				signer_info.public_key.as_ref().ok_or(InvalidTransaction::Call)?;
+			let public_key = signer_info.public_key.as_ref().ok_or(InvalidTransaction::Call)?;
 			let chain_id = T::ChainInfo::chain_id().to_string();
 			let signer_data = SignerData {
 				address: signer.clone(),

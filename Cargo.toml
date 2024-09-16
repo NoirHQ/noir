@@ -17,6 +17,7 @@ members = [
 	"frame/cosmos/x/bank",
 	"frame/cosmos/x/bank/types",
 	"frame/cosmos/x/wasm/types",
+	"frame/cosmwasm/runtime-api",
 	"frame/multimap",
 	"primitives/cosmos",
 	"primitives/ethereum",
@@ -30,6 +31,7 @@ members = [
 composable-support = { path = "composable/composable-support", default-features = false }
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
+cosmwasm-runtime-api = { path = "frame/cosmwasm/runtime-api", default-features = false }
 cosmwasm-std = { path = "cosmwasm/std", default-features = false }
 cosmwasm-vm = { path = "composable/vm", default-features = false }
 cosmwasm-vm-wasmi = { path = "composable/vm-wasmi", default-features = false }
