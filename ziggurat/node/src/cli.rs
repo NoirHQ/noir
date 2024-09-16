@@ -66,6 +66,9 @@ pub struct Cli {
 	#[command(flatten)]
 	pub run: cumulus_client_cli::RunCmd,
 
+	#[command(flatten)]
+	pub eth_config: crate::eth::Configuration,
+
 	/// Disable automatic hardware benchmarks.
 	///
 	/// By default these benchmarks are automatically ran at startup and measure

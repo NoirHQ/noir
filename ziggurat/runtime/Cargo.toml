@@ -17,8 +17,16 @@ scale-info = { version = "2.11", default-features = false, features = ["derive"]
 smallvec = "1.13"
 
 frame-babel = { workspace = true, features = ["ethereum"] }
+np-ethereum = { workspace = true }
 np-runtime = { workspace = true, features = ["serde"] }
 pallet-multimap = { workspace = true }
+
+fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+fp-rpc = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+fp-self-contained = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+pallet-base-fee = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+pallet-ethereum = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
 
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, optional = true }
 frame-executive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
@@ -83,6 +91,9 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-storage-weight-reclaim/std",
 	"cumulus-primitives-utility/std",
+	"fp-evm/std",
+	"fp-rpc/std",
+	"fp-self-contained/std",
 	"frame-babel/std",
 	"frame-benchmarking?/std",
 	"frame-executive/std",
@@ -93,11 +104,15 @@ std = [
 	"frame-system/std",
 	"frame-try-runtime?/std",
 	"log/std",
+	"np-ethereum/std",
 	"np-runtime/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+	"pallet-base-fee/std",
 	"pallet-collator-selection/std",
+	"pallet-ethereum/std",
+	"pallet-evm/std",
 	"pallet-multimap/std",
 	"pallet-message-queue/std",
 	"pallet-session/std",
@@ -141,6 +156,8 @@ runtime-benchmarks = [
 	"hex-literal",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
@@ -165,7 +182,10 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
+	"pallet-base-fee/try-runtime",
 	"pallet-collator-selection/try-runtime",
+	"pallet-ethereum/try-runtime",
+	"pallet-evm/try-runtime",
 	"pallet-message-queue/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",

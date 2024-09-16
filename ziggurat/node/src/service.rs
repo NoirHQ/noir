@@ -10,6 +10,10 @@ use ziggurat_runtime::{
 	opaque::{Block, Hash},
 };
 
+// Frontier Imports
+use crate::eth;
+use fc_rpc::StorageOverrideHandler;
+
 // Cumulus Imports
 use cumulus_client_collator::service::CollatorService;
 #[docify::export(lookahead_collator)]
@@ -45,7 +49,7 @@ type ParachainExecutor = WasmExecutor<ParachainHostFunctions>;
 
 type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 
-type ParachainBackend = TFullBackend<Block>;
+pub type ParachainBackend = TFullBackend<Block>;
 
 type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, ParachainBackend>;
 
@@ -227,6 +231,7 @@ fn start_consensus(
 pub async fn start_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
+	eth_config: eth::Configuration,
 	collator_options: CollatorOptions,
 	para_id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
@@ -299,6 +304,78 @@ pub async fn start_parachain_node(
 			.boxed(),
 		);
 	}
+
+	let eth::PartialComponents { filter_pool, fee_history_cache, fee_history_cache_limit } =
+		eth::new_partial(&eth_config)?;
+
+	let frontier_backend =
+		Arc::new(eth::open_frontier_backend(client.clone(), &parachain_config, &eth_config)?);
+	let storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
+	let pubsub_notification_sinks = Arc::new(fc_mapping_sync::EthereumBlockNotificationSinks::<
+		fc_mapping_sync::EthereumBlockNotification<Block>,
+	>::default());
+
+	let eth_rpc_builder = {
+		let client = client.clone();
+		let pool = transaction_pool.clone();
+		let network = network.clone();
+		let sync_service = sync_service.clone();
+		let subscription_task_executor = Arc::new(task_manager.spawn_handle());
+		let is_authority = validator;
+		let max_past_logs = eth_config.max_past_logs;
+		let filter_pool = filter_pool.clone();
+		let frontier_backend = frontier_backend.clone();
+		let pubsub_notificatino_sinks = pubsub_notification_sinks.clone();
+		let storage_override = storage_override.clone();
+		let fee_history_cache = fee_history_cache.clone();
+		let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+			task_manager.spawn_handle(),
+			storage_override.clone(),
+			eth_config.eth_log_block_cache,
+			eth_config.eth_statuses_cache,
+			prometheus_registry.clone(),
+		));
+
+		Box::new(move |_deny_unsafe| {
+			eth::rpc::create_full(eth::rpc::FullDeps {
+				client: client.clone(),
+				pool: pool.clone(),
+				graph: pool.pool().clone(),
+				is_authority,
+				network: network.clone(),
+				sync: sync_service.clone(),
+				frontier_backend: match *frontier_backend {
+					fc_db::Backend::KeyValue(ref b) => b.clone(),
+					fc_db::Backend::Sql(ref b) => b.clone(),
+				},
+				storage_override: storage_override.clone(),
+				block_data_cache: block_data_cache.clone(),
+				filter_pool: filter_pool.clone(),
+				max_past_logs,
+				fee_history_cache: fee_history_cache.clone(),
+				fee_history_cache_limit,
+				forced_parent_hashes: None,
+				subscription_task_executor: subscription_task_executor.clone(),
+				pubsub_notification_sinks: pubsub_notificatino_sinks.clone(),
+			})
+			.map_err(Into::into)
+		})
+	};
+
+	let parachain_config = eth::spawn_tasks(eth::SpawnTasksParams {
+		config: parachain_config,
+		rpc_builder: eth_rpc_builder,
+		task_manager: &mut task_manager,
+		client: client.clone(),
+		substrate_backend: backend.clone(),
+		frontier_backend,
+		filter_pool,
+		storage_override,
+		fee_history_cache,
+		fee_history_cache_limit,
+		sync: sync_service.clone(),
+		pubsub_notification_sinks,
+	})?;
 
 	let rpc_builder = {
 		let client = client.clone();

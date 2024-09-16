@@ -25,6 +25,14 @@ serde_json = "1.0"
 
 ziggurat-runtime = { path = "../runtime", default-features = true }
 
+fc-api = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407" }
+fc-db = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407" }
+fc-mapping-sync = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", features = ["sql"] }
+fc-rpc = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", features = ["txpool"] }
+fc-rpc-core = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407" }
+fp-rpc = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407" }
+pallet-ethereum = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407" }
+
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
@@ -37,6 +45,7 @@ sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "s
 sc-executor = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 sc-network = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 sc-network-sync = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
+sc-rpc-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 sc-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 sc-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 sc-sysinfo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
@@ -67,8 +76,10 @@ cumulus-client-service = { git = "https://github.com/paritytech/polkadot-sdk", b
 cumulus-primitives-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 cumulus-relay-chain-interface = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
+cumulus-test-relay-sproof-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 
 [build-dependencies]
+docify = "0.2"
 substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 
 [features]

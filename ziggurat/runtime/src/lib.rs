@@ -9,12 +9,13 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod apis;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarks;
+mod call;
 mod configs;
 mod weights;
 
 extern crate alloc;
 use alloc::vec::Vec;
-use np_runtime::MultiSignature;
+use np_runtime::{self_contained, MultiSignature};
 use smallvec::smallvec;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -92,7 +93,7 @@ pub type SignedExtra = (
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-	np_runtime::generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+	self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -299,6 +300,14 @@ mod runtime {
 	pub type CumulusXcm = cumulus_pallet_xcm;
 	#[runtime::pallet_index(33)]
 	pub type MessageQueue = pallet_message_queue;
+
+	// Ethereum compatibility.
+	#[runtime::pallet_index(60)]
+	pub type Ethereum = pallet_ethereum;
+	#[runtime::pallet_index(61)]
+	pub type Evm = pallet_evm;
+	#[runtime::pallet_index(62)]
+	pub type BaseFee = pallet_base_fee;
 
 	#[runtime::pallet_index(128)]
 	pub type AddressMap = pallet_multimap<Instance1>;

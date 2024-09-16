@@ -246,6 +246,7 @@ pub fn run() -> Result<()> {
 				crate::service::start_parachain_node(
 					config,
 					polkadot_config,
+					cli.eth_config,
 					collator_options,
 					id,
 					hwbench,
