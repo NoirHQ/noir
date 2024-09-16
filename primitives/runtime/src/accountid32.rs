@@ -59,6 +59,12 @@ impl<T: Clone> From<crypto::AccountId32> for AccountId32<T> {
 	}
 }
 
+impl<T: Clone> From<AccountId32<T>> for crypto::AccountId32 {
+	fn from(acc: AccountId32<T>) -> Self {
+		Self::from(acc.0)
+	}
+}
+
 #[cfg(feature = "std")]
 impl<T: Clone> std::fmt::Display for AccountId32<T> {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
