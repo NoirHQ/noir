@@ -16,6 +16,7 @@ members = [
 	"frame/cosmos/x/auth/signing",
 	"frame/cosmos/x/bank",
 	"frame/cosmos/x/bank/types",
+	"frame/cosmos/x/wasm",
 	"frame/cosmos/x/wasm/types",
 	"frame/cosmwasm",
 	"frame/cosmwasm/rpc",
@@ -51,6 +52,7 @@ pallet-cosmos-x-auth-migrations = { path = "frame/cosmos/x/auth/migrations", def
 pallet-cosmos-x-auth-signing = { path = "frame/cosmos/x/auth/signing", default-features = false }
 pallet-cosmos-x-bank = { path = "frame/cosmos/x/bank", default-features = false }
 pallet-cosmos-x-bank-types = { path = "frame/cosmos/x/bank/types", default-features = false }
+pallet-cosmos-x-wasm = { path = "frame/cosmos/x/wasm", default-features = false }
 pallet-cosmos-x-wasm-types = { path = "frame/cosmos/x/wasm/types", default-features = false }
 pallet-cosmwasm = { path = "frame/cosmwasm", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
