@@ -4,19 +4,16 @@ members = [
 	"core-primitives",
 	"frame/babel",
 	"frame/multimap",
-	"node",
 	"primitives/cosmos",
 	"primitives/ethereum",
 	"primitives/runtime",
 	"runtime/common",
-	"runtime/solochain",
 ]
 
 [workspace.dependencies]
 frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }
-noir-solochain-runtime = { path = "runtime/solochain", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
