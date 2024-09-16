@@ -48,15 +48,14 @@ where
 	fn ante_handle(tx: &Tx, _simulate: bool) -> TransactionValidity {
 		let signatures = &tx.signatures;
 		let signers = T::SigVerifiableTx::get_signers(tx).map_err(|_| InvalidTransaction::Call)?;
-
-		let auth_info = tx.auth_info.as_ref().ok_or(InvalidTransaction::Call)?;
+		let signer_infos = &tx.auth_info.as_ref().ok_or(InvalidTransaction::Call)?.signer_infos;
 
 		ensure!(signatures.len() == signers.len(), InvalidTransaction::Call);
-		ensure!(signatures.len() == auth_info.signer_infos.len(), InvalidTransaction::Call);
+		ensure!(signatures.len() == signer_infos.len(), InvalidTransaction::Call);
 
 		for (i, sig) in signatures.iter().enumerate() {
 			let signer = signers.get(i).ok_or(InvalidTransaction::Call)?;
-			let signer_info = auth_info.signer_infos.get(i).ok_or(InvalidTransaction::Call)?;
+			let signer_info = signer_infos.get(i).ok_or(InvalidTransaction::Call)?;
 
 			let (_hrp, signer_addr_raw) =
 				acc_address_from_bech32(signer).map_err(|_| InvalidTransaction::BadSigner)?;
@@ -72,7 +71,7 @@ where
 			}?;
 
 			let public_key =
-				signer_info.public_key.as_ref().ok_or(InvalidTransaction::BadSigner)?;
+				signer_info.public_key.as_ref().ok_or(InvalidTransaction::Call)?;
 			let chain_id = T::ChainInfo::chain_id().to_string();
 			let signer_data = SignerData {
 				address: signer.clone(),
@@ -81,7 +80,7 @@ where
 				sequence: signer_info.sequence,
 				pub_key: public_key.clone(),
 			};
-			let sign_mode = signer_info.mode_info.as_ref().ok_or(InvalidTransaction::BadSigner)?;
+			let sign_mode = signer_info.mode_info.as_ref().ok_or(InvalidTransaction::Call)?;
 
 			Self::verify_signature(public_key, &signer_data, sign_mode, sig, tx)?;
 		}
@@ -117,14 +116,14 @@ where
 						acc_address_from_bech32(&signer_data.address).map_err(|_| {
 							InvalidTransaction::BadSigner
 						})?;
-
 					ensure!(signer_addr_raw.len() == 20, InvalidTransaction::BadSigner);
+
 					ensure!(H160::from_slice(&signer_addr_raw) == address, InvalidTransaction::BadSigner);
 
 					let sign_bytes = T::SignModeHandler::get_sign_bytes(sign_mode, signer_data, tx)
 						.map_err(|_| InvalidTransaction::Call)?;
 
-					if !ecdsa_verify(signature, &sign_bytes, &public_key.key) {
+					if !ecdsa_verify_prehashed(signature, &sign_bytes, &public_key.key) {
 						return Err(InvalidTransaction::BadProof.into());
 					}
 
@@ -136,32 +135,24 @@ where
 	}
 }
 
-pub fn ecdsa_verify(signature: &[u8], message: &[u8], public_key: &[u8]) -> bool {
+pub fn ecdsa_verify_prehashed(signature: &[u8], message: &[u8], public_key: &[u8]) -> bool {
 	let pub_key = match ecdsa::Public::from_slice(public_key) {
 		Ok(pub_key) => pub_key,
 		Err(_) => return false,
 	};
 	let msg = sha2_256(message);
 
-	if signature.len() == 64 {
-		for rec_id in 0..=3 {
+	match signature.len() {
+		64 => (0..=3).any(|rec_id| {
 			let mut rec_sig = [0u8; 65];
-			rec_sig[0..signature.len()].copy_from_slice(signature);
+			rec_sig[..64].copy_from_slice(signature);
 			rec_sig[64] = rec_id;
 			let sig = ecdsa::Signature::from(rec_sig);
-
-			if sp_io::crypto::ecdsa_verify_prehashed(&sig, &msg, &pub_key) {
-				return true;
-			}
-		}
-		false
-	} else if signature.len() == 65 {
-		match ecdsa::Signature::try_from(signature) {
-			Ok(sig) => sp_io::crypto::ecdsa_verify_prehashed(&sig, &msg, &pub_key),
-			Err(_) => false,
-		}
-	} else {
-		false
+			sp_io::crypto::ecdsa_verify_prehashed(&sig, &msg, &pub_key)
+		}),
+		65 => ecdsa::Signature::try_from(signature)
+			.map_or(false, |sig| sp_io::crypto::ecdsa_verify_prehashed(&sig, &msg, &pub_key)),
+		_ => false,
 	}
 }
 
@@ -177,7 +168,7 @@ pub mod tests {
 			hex::decode("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1")
 				.unwrap();
 
-		assert!(ecdsa_verify(&sig, &message, &public_key));
+		assert!(ecdsa_verify_prehashed(&sig, &message, &public_key));
 	}
 }
 
