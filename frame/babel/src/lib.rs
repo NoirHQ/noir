@@ -22,9 +22,9 @@ extern crate alloc;
 
 #[cfg(feature = "ethereum")]
 pub mod ethereum;
-mod extensions;
+pub mod extensions;
 
-pub use extensions::UnifyAccount;
+pub use extensions::unify_account::UnifyAccount;
 
 #[cfg(feature = "cosmos")]
 pub use np_cosmos::Address as CosmosAddress;
@@ -34,10 +34,6 @@ use pallet_multimap::traits::UniqueMultimap;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::ecdsa;
-
-pub trait Config: frame_system::Config<AccountId: TryInto<ecdsa::Public>> {
-	type AddressMap: UniqueMultimap<Self::AccountId, Address>;
-}
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum Address {

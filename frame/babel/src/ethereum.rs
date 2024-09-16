@@ -18,6 +18,7 @@
 
 use crate::*;
 
+use crate::extensions::unify_account;
 use core::marker::PhantomData;
 use frame_support::dispatch::RawOrigin;
 use np_ethereum::Address as EthereumAddress;
@@ -31,7 +32,7 @@ use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
-use sp_core::{ecdsa, H160, H256};
+use sp_core::{ecdsa, H160};
 use sp_runtime::traits::AccountIdConversion;
 
 pub struct EnsureAddress<AccountId>(PhantomData<AccountId>);
@@ -63,9 +64,9 @@ where
 
 pub struct AddressMapping<T>(PhantomData<T>);
 
-impl<T: Config> pallet_evm::AddressMapping<T::AccountId> for AddressMapping<T>
+impl<T> pallet_evm::AddressMapping<T::AccountId> for AddressMapping<T>
 where
-	T::AccountId: From<H256>,
+	T: unify_account::Config,
 {
 	fn into_account_id(who: H160) -> T::AccountId {
 		let address = EthereumAddress::from(who);

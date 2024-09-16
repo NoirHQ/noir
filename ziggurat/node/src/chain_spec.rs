@@ -1,9 +1,9 @@
 use cumulus_primitives_core::ParaId;
-use runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
+use runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, UNIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{ecdsa, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use ziggurat_runtime as runtime;
 
@@ -65,8 +65,8 @@ pub fn template_session_keys(keys: AuraId) -> runtime::SessionKeys {
 pub fn development_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
-	properties.insert("tokenDecimals".into(), 12.into());
+	properties.insert("tokenSymbol".into(), "ZIG".into());
+	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("ss58Format".into(), 42.into());
 
 	ChainSpec::builder(
@@ -74,7 +74,7 @@ pub fn development_config() -> ChainSpec {
 		Extensions {
 			relay_chain: "paseo-local".into(),
 			// You MUST set this to the correct network!
-			para_id: 1000,
+			para_id: 2000,
 		},
 	)
 	.with_name("Development")
@@ -105,9 +105,10 @@ pub fn development_config() -> ChainSpec {
 			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+			get_account_id_from_seed::<ecdsa::Public>("Alice"),
 		],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		1000.into(),
+		2000.into(),
 	))
 	.build()
 }
@@ -115,8 +116,8 @@ pub fn development_config() -> ChainSpec {
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
-	properties.insert("tokenDecimals".into(), 12.into());
+	properties.insert("tokenSymbol".into(), "ZIG".into());
+	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("ss58Format".into(), 42.into());
 
 	#[allow(deprecated)]
@@ -125,7 +126,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		Extensions {
 			relay_chain: "paseo-local".into(),
 			// You MUST set this to the correct network!
-			para_id: 1000,
+			para_id: 2000,
 		},
 	)
 	.with_name("Local Testnet")
@@ -156,11 +157,12 @@ pub fn local_testnet_config() -> ChainSpec {
 			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+			get_account_id_from_seed::<ecdsa::Public>("Alice"),
 		],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
-		1000.into(),
+		2000.into(),
 	))
-	.with_protocol_id("template-local")
+	.with_protocol_id("ziggurat-local")
 	.with_properties(properties)
 	.build()
 }
@@ -173,7 +175,7 @@ fn testnet_genesis(
 ) -> serde_json::Value {
 	serde_json::json!({
 		"balances": {
-			"balances": endowed_accounts.iter().cloned().map(|k| (k, 1u64 << 60)).collect::<Vec<_>>(),
+			"balances": endowed_accounts.iter().cloned().map(|k| (k, 1_000_000 * UNIT)).collect::<Vec<_>>(),
 		},
 		"parachainInfo": {
 			"parachainId": id,

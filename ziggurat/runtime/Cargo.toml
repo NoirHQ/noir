@@ -16,6 +16,10 @@ log = { version = "0.4", default-features = false }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
 smallvec = "1.13"
 
+frame-babel = { workspace = true, features = ["ethereum"] }
+np-runtime = { workspace = true, features = ["serde"] }
+pallet-multimap = { workspace = true }
+
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, optional = true }
 frame-executive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-metadata-hash-extension = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
@@ -79,6 +83,7 @@ std = [
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-storage-weight-reclaim/std",
 	"cumulus-primitives-utility/std",
+	"frame-babel/std",
 	"frame-benchmarking?/std",
 	"frame-executive/std",
 	"frame-metadata-hash-extension/std",
@@ -88,10 +93,12 @@ std = [
 	"frame-system/std",
 	"frame-try-runtime?/std",
 	"log/std",
+	"np-runtime/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
+	"pallet-multimap/std",
 	"pallet-message-queue/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
