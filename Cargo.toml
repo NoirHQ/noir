@@ -8,6 +8,8 @@ members = [
 	"primitives/ethereum",
 	"primitives/runtime",
 	"runtime/common",
+	"ziggurat/node",
+	"ziggurat/runtime",
 ]
 
 [workspace.dependencies]
