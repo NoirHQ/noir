@@ -23,3 +23,14 @@ pub mod basic;
 pub mod fee;
 pub mod msg;
 pub mod sigverify;
+
+pub type AnteDecorators<T> = (
+	basic::ValidateBasicDecorator<T>,
+	basic::TxTimeoutHeightDecorator<T>,
+	basic::ValidateMemoDecorator<T>,
+	sigverify::ValidateSigCountDecorator<T>,
+	msg::KnownMsgDecorator<T>,
+	sigverify::SigVerificationDecorator<T>,
+	fee::DeductFeeDecorator<T>,
+	sigverify::IncrementSequenceDecorator<T>,
+);
