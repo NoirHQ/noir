@@ -12,9 +12,9 @@ cosmos-sdk-proto = { version = "0.24.0", default-features = false }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 np-cosmos = { workspace = true, default-features = false }
-pallet-cosmos-x-auth-signing = { workspace = true, default-features = false }
 pallet-cosmos = { workspace = true, default-features = false }
 pallet-cosmos-types = { workspace = true, default-features = false }
+pallet-cosmos-x-auth-signing = { workspace = true, default-features = false }
 ripemd = { version = "0.1.3", default-features = false }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
@@ -30,9 +30,9 @@ std = [
     "frame-support/std",
     "frame-system/std",
     "np-cosmos/std",
-    "pallet-cosmos-x-auth-signing/std",
     "pallet-cosmos/std",
     "pallet-cosmos-types/std",
+    "pallet-cosmos-x-auth-signing/std",
     "ripemd/std",
     "sp-core/std",
     "sp-io/std",
