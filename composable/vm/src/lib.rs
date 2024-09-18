@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(trait_alias)]
+#![allow(deprecated)]
 
 extern crate alloc;
 
