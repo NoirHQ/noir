@@ -766,11 +766,11 @@ where
 			(Ok((data, events)), ReplyOn::Always | ReplyOn::Success) => {
 				log::debug!("Commit & Reply");
 				vm.transaction_commit()?;
-				// TODO: Handle msg_response
+				// If your chain is running on CosmWasm 2.0 or higher, msg_responses will be filled.
 				SubCallContinuation::Reply(SubMsgResult::Ok(SubMsgResponse {
 					events,
 					data,
-					msg_responses: Vec::new(),
+					msg_responses: vec![],
 				}))
 			},
 			// If the submessage failed and a reply is required, rollback the
