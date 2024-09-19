@@ -240,6 +240,67 @@ pub mod pallet {
 		type MaxDenomLimit: Get<u32>;
 	}
 
+	pub mod config_preludes {
+		use super::*;
+		use cosmos_sdk_proto::{
+			cosmos::bank::v1beta1::MsgSend,
+			cosmwasm::wasm::v1::{
+				MsgExecuteContract, MsgInstantiateContract2, MsgMigrateContract, MsgStoreCode,
+				MsgUpdateAdmin,
+			},
+		};
+		use frame_support::parameter_types;
+		use pallet_cosmos_types::any_match;
+
+		pub struct MsgFilter;
+		impl Contains<Any> for MsgFilter {
+			fn contains(msg: &Any) -> bool {
+				any_match!(
+					msg, {
+						MsgSend => true,
+						MsgStoreCode => true,
+						MsgInstantiateContract2 => true,
+						MsgExecuteContract => true,
+						MsgMigrateContract => true,
+						MsgUpdateAdmin => true,
+					},
+					false
+				)
+			}
+		}
+
+		pub struct WeightToGas;
+		impl Convert<Weight, Gas> for WeightToGas {
+			fn convert(weight: Weight) -> Gas {
+				weight.ref_time()
+			}
+		}
+
+		impl Convert<Gas, Weight> for WeightToGas {
+			fn convert(gas: Gas) -> Weight {
+				Weight::from_parts(gas, 0)
+			}
+		}
+
+		parameter_types! {
+			pub const MaxMemoCharacters: u64 = 256;
+			pub NativeDenom: &'static str = "azig";
+			pub const TxSigLimit: u64 = 7;
+			pub const MaxDenomLimit: u32 = 128;
+			pub const NativeAssetId: u32 = 0;
+		}
+	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn denom_to_asset)]
+	pub type DenomAssetRouter<T: Config> =
+		StorageMap<_, Twox64Concat, BoundedVec<u8, T::MaxDenomLimit>, T::AssetId, OptionQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn asset_to_denom)]
+	pub type AssetDenomRouter<T: Config> =
+		StorageMap<_, Twox64Concat, T::AssetId, BoundedVec<u8, T::MaxDenomLimit>, OptionQuery>;
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
