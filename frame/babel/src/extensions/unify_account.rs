@@ -62,7 +62,7 @@ impl<T: Config> UnifyAccount<T> {
 			{
 				let address = EthereumAddress::from(public.clone());
 				let interim = address.clone().into_account_truncating();
-				T::DrainBalance::drain_balance(&interim, &who)?;
+				T::DrainBalance::drain_balance(&interim, who)?;
 				T::AddressMap::try_insert(who.clone(), Address::Ethereum(address))
 					.map_err(|_| "account unification failed: ethereum")?;
 			}
@@ -153,8 +153,8 @@ where
 	type Output = T::Balance;
 
 	fn drain_balance(src: &AccountId, dest: &AccountId) -> Result<Self::Output, &'static str> {
-		let amount = T::reducible_balance(&src, Preservation::Expendable, Fortitude::Polite);
-		T::transfer(&src, &dest, amount, Preservation::Expendable)
+		let amount = T::reducible_balance(src, Preservation::Expendable, Fortitude::Polite);
+		T::transfer(src, dest, amount, Preservation::Expendable)
 			.map_err(|_| "account draining failed")
 			.map(|_| amount)
 	}
