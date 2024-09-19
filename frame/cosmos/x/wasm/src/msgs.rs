@@ -207,7 +207,7 @@ where
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
 		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
-		
+
 		let gas = ctx.gas_meter().gas_remaining();
 		let mut shared = pallet_cosmwasm::Pallet::<T>::do_create_vm_shared(
 			gas,

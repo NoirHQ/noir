@@ -147,7 +147,7 @@ where
 				T::AddressMap::find_key(Address::Cosmos(address)).ok_or(())
 			},
 			32 => Ok(H256::from_slice(&address).into()),
-			_ => return Err(()),
+			_ => Err(()),
 		}
 	}
 }

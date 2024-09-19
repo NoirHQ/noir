@@ -61,7 +61,7 @@ where
 				acc_address_from_bech32(signer).map_err(|_| InvalidTransaction::BadSigner)?;
 			ensure!(signer_addr_raw.len() == 20, InvalidTransaction::BadSigner);
 			let who = T::AddressMapping::into_account_id(H160::from_slice(&signer_addr_raw));
-			
+
 			let sequence = frame_system::Pallet::<T>::account_nonce(&who).saturated_into();
 
 			match signer_info.sequence.cmp(&sequence) {
