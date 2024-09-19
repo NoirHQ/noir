@@ -333,7 +333,7 @@ pub async fn start_parachain_node(
 			storage_override.clone(),
 			eth_config.eth_log_block_cache,
 			eth_config.eth_statuses_cache,
-			prometheus_registry.clone(),
+			None,
 		));
 
 		Box::new(move |_deny_unsafe| {

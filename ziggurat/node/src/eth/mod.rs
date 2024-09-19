@@ -97,9 +97,11 @@ where
 		pubsub_notification_sinks,
 	} = params;
 
-	let rpc_port = config.rpc_port;
+	let rpc_port = config.rpc_addr.map(|addr| addr.port()).unwrap_or(config.rpc_port);
+	let prometheus_config = config.prometheus_config.take();
+
 	// TODO: Make the Ethereum RPC port configurable.
-	config.rpc_port = 8545;
+	config.rpc_addr.as_mut().map(|addr| addr.set_port(8545));
 
 	let rpc = sc_service::start_rpc_servers(
 		&config,
@@ -179,7 +181,8 @@ where
 		),
 	);
 
-	config.rpc_port = rpc_port;
+	config.rpc_addr.as_mut().map(|addr| addr.set_port(rpc_port));
+	config.prometheus_config = prometheus_config;
 
 	Ok(config)
 }
