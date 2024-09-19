@@ -20,6 +20,8 @@
 
 extern crate alloc;
 
+#[cfg(feature = "cosmos")]
+pub mod cosmos;
 #[cfg(feature = "ethereum")]
 pub mod ethereum;
 pub mod extensions;

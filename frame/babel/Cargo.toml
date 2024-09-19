@@ -14,6 +14,7 @@ frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "s
 np-cosmos = { workspace = true, optional = true }
 np-ethereum = { workspace = true, optional = true }
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-cosmos = { workspace = true, default-features = false, optional = true }
 pallet-ethereum = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-blake2 = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
@@ -41,6 +42,7 @@ std = [
 	"np-cosmos?/std",
 	"np-ethereum?/std",
 	"pallet-balances/std",
+	"pallet-cosmos?/std",
 	"pallet-ethereum?/std",
 	"pallet-evm?/std",
 	"pallet-evm-precompile-blake2?/std",
@@ -56,6 +58,7 @@ std = [
 ]
 cosmos = [
 	"np-cosmos",
+	"pallet-cosmos",
 ]
 ethereum = [
 	"dep:ethereum",

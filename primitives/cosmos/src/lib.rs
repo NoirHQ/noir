@@ -30,9 +30,11 @@ use crate::traits::CosmosHub;
 use bech32::{Bech32, Hrp};
 use buidl::FixedBytes;
 use core::marker::PhantomData;
+use parity_scale_codec::{Decode, Encode};
 use ripemd::{Digest, Ripemd160};
-use sp_core::{ecdsa, H160};
-use sp_io::hashing::sha2_256;
+use sp_core::{ecdsa, H160, H256};
+use sp_io::hashing::{blake2_256, sha2_256};
+use sp_runtime::traits::AccountIdConversion;
 
 /// Cosmos address.
 #[derive(FixedBytes)]
@@ -70,6 +72,27 @@ impl<T: ChainInfo> std::fmt::Display for Address<T> {
 impl<T> core::fmt::Debug for Address<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "{}", sp_core::hexdisplay::HexDisplay::from(&self.0))
+	}
+}
+
+impl<AccountId: From<H256>> AccountIdConversion<AccountId> for Address {
+	fn into_account_truncating(&self) -> AccountId {
+		let mut data = [0u8; 25];
+		data[0..5].copy_from_slice(b"cosm:");
+		data[5..25].copy_from_slice(&self.0);
+		H256(blake2_256(&data)).into()
+	}
+
+	fn into_sub_account_truncating<S: Encode>(&self, _: S) -> AccountId {
+		unimplemented!()
+	}
+
+	fn try_into_sub_account<S: Encode>(&self, _: S) -> Option<AccountId> {
+		unimplemented!()
+	}
+
+	fn try_from_sub_account<S: Decode>(_: &AccountId) -> Option<(Self, S)> {
+		unimplemented!()
 	}
 }
 

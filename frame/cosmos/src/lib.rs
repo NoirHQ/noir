@@ -132,6 +132,7 @@ pub trait AddressMapping<A> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use alloc::{string::String, vec::Vec};
 	use cosmos_sdk_proto::Any;
 	use frame_support::{
 		dispatch::WithPostDispatchInfo,
