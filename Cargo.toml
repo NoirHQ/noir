@@ -2,10 +2,6 @@
 resolver = "2"
 members = [
 	"core-primitives",
-	"composable/composable-support",
-	"composable/vm",
-	"composable/vm-wasmi",
-	"cosmwasm/std",
 	"frame/babel",
 	"frame/cosmos",
 	"frame/cosmos/types",
@@ -18,27 +14,31 @@ members = [
 	"frame/cosmos/x/bank/types",
 	"frame/cosmos/x/wasm",
 	"frame/cosmos/x/wasm/types",
-	"frame/cosmwasm",
-	"frame/cosmwasm/rpc",
-	"frame/cosmwasm/runtime-api",
 	"frame/multimap",
 	"primitives/cosmos",
 	"primitives/ethereum",
 	"primitives/runtime",
 	"runtime/common",
+	"vendor/composable/composable-support",
+	"vendor/composable/vm",
+	"vendor/composable/vm-wasmi",
+	"vendor/cosmwasm/std",
+	"vendor/composable/cosmwasm",
+	"vendor/composable/cosmwasm/rpc",
+	"vendor/composable/cosmwasm/runtime-api",
 	"ziggurat/node",
 	"ziggurat/runtime",
 ]
 
 [workspace.dependencies]
-composable-support = { path = "composable/composable-support", default-features = false }
+composable-support = { path = "vendor/composable/composable-support", default-features = false }
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
-cosmwasm-rpc = { path = "frame/cosmwasm/rpc" }
-cosmwasm-runtime-api = { path = "frame/cosmwasm/runtime-api", default-features = false }
-cosmwasm-std = { path = "cosmwasm/std", default-features = false }
-cosmwasm-vm = { path = "composable/vm", default-features = false }
-cosmwasm-vm-wasmi = { path = "composable/vm-wasmi", default-features = false }
+cosmwasm-rpc = { path = "vendor/composable/cosmwasm/rpc" }
+cosmwasm-runtime-api = { path = "vendor/composable/cosmwasm/runtime-api", default-features = false }
+cosmwasm-std = { path = "vendor/cosmwasm/std", default-features = false }
+cosmwasm-vm = { path = "vendor/composable/vm", default-features = false }
+cosmwasm-vm-wasmi = { path = "vendor/composable/vm-wasmi", default-features = false }
 frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }
@@ -54,7 +54,7 @@ pallet-cosmos-x-bank = { path = "frame/cosmos/x/bank", default-features = false 
 pallet-cosmos-x-bank-types = { path = "frame/cosmos/x/bank/types", default-features = false }
 pallet-cosmos-x-wasm = { path = "frame/cosmos/x/wasm", default-features = false }
 pallet-cosmos-x-wasm-types = { path = "frame/cosmos/x/wasm/types", default-features = false }
-pallet-cosmwasm = { path = "frame/cosmwasm", default-features = false }
+pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 
 [profile.release]

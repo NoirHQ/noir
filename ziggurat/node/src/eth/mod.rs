@@ -101,7 +101,7 @@ where
 	let prometheus_config = config.prometheus_config.take();
 
 	// TODO: Make the Ethereum RPC port configurable.
-	config.rpc_addr.as_mut().map(|addr| addr.set_port(8545));
+	let _ = config.rpc_addr.as_mut().map(|addr| addr.set_port(8545));
 
 	let rpc = sc_service::start_rpc_servers(
 		&config,
@@ -181,7 +181,7 @@ where
 		),
 	);
 
-	config.rpc_addr.as_mut().map(|addr| addr.set_port(rpc_port));
+	let _ = config.rpc_addr.as_mut().map(|addr| addr.set_port(rpc_port));
 	config.prometheus_config = prometheus_config;
 
 	Ok(config)
