@@ -30,7 +30,8 @@ use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use fp_evm::weight_per_gas;
 use frame_babel::{
-	ethereum::{AddressMapping, EnsureAddress, FrontierPrecompiles},
+	cosmos::{self, AccountToAddr, AssetToDenom, MsgServiceRouter},
+	ethereum::{self, EnsureAddress, FrontierPrecompiles},
 	extensions::unify_account,
 };
 use frame_support::{
@@ -38,7 +39,8 @@ use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
-		ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, TransformOrigin, VariantCountOf,
+		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
+		TransformOrigin, VariantCountOf,
 	},
 	weights::{ConstantMultiplier, Weight},
 	PalletId,
@@ -47,6 +49,15 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
+use pallet_cosmos::config_preludes::{
+	MaxDenomLimit, MaxMemoCharacters, MsgFilter, NativeAssetId, NativeDenom, TxSigLimit,
+	WeightToGas,
+};
+use pallet_cosmos_types::context::Context;
+use pallet_cosmos_x_auth_signing::{
+	sign_mode_handler::SignModeHandler, sign_verifiable_tx::SigVerifiableTx,
+};
+use pallet_cosmwasm::instrument::CostRules;
 use pallet_ethereum::PostLogContent;
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
@@ -54,7 +65,7 @@ use polkadot_runtime_common::{
 	xcm_sender::NoPriceForMessageDelivery, BlockHashCount, SlowAdjustingFeeUpdate,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::U256;
+use sp_core::{ConstU128, U256};
 use sp_runtime::{Perbill, Permill};
 use sp_version::RuntimeVersion;
 use xcm::latest::prelude::BodyId;
@@ -62,12 +73,12 @@ use xcm::latest::prelude::BodyId;
 // Local module imports
 use super::{
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
-	AccountId, AddressMap, Aura, Balance, Balances, BaseFee, Block, BlockNumber, CollatorSelection,
-	ConsensusHook, Hash, Instance1, MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime,
-	RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask,
-	Session, SessionKeys, System, Timestamp, WeightToFee, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO,
-	EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, MICROUNIT, NORMAL_DISPATCH_RATIO,
-	SLOT_DURATION, VERSION,
+	AccountId, AddressMap, AssetId, Assets, Aura, Balance, Balances, BaseFee, Block, BlockNumber,
+	CollatorSelection, ConsensusHook, Hash, Instance1, MessageQueue, Nonce, PalletInfo,
+	ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
+	RuntimeOrigin, RuntimeTask, Session, SessionKeys, System, Timestamp, WeightToFee, XcmpQueue,
+	AVERAGE_ON_INITIALIZE_RATIO, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, MICROUNIT,
+	NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -345,7 +356,7 @@ impl pallet_evm::Config for Runtime {
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddress<AccountId>;
 	type WithdrawOrigin = EnsureAddress<AccountId>;
-	type AddressMapping = AddressMapping<Self>;
+	type AddressMapping = ethereum::AddressMapping<Self>;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = FrontierPrecompiles<Self>;
@@ -396,4 +407,111 @@ impl pallet_base_fee::Config for Runtime {
 	type Threshold = BaseFeeThreshold;
 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
 	type DefaultElasticity = DefaultElasticity;
+}
+
+impl pallet_assets::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type AssetIdParameter = codec::Compact<AssetId>;
+	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = ConstU128<500>;
+	type AssetAccountDeposit = ConstU128<500>;
+	type MetadataDepositBase = ConstU128<0>;
+	type MetadataDepositPerByte = ConstU128<0>;
+	type ApprovalDeposit = ConstU128<0>;
+	type StringLimit = ConstU32<20>;
+	type Freezer = ();
+	type Extra = ();
+	type CallbackHandle = ();
+	type WeightInfo = ();
+	type RemoveItemsLimit = ConstU32<1000>;
+}
+
+impl pallet_cosmos::Config for Runtime {
+	type AddressMapping = cosmos::AddressMapping<Self>;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type NativeAsset = Balances;
+	type Assets = Assets;
+	type NativeDenom = NativeDenom;
+	type NativeAssetId = NativeAssetId;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_cosmos::weights::CosmosWeight<Self>;
+	type WeightToGas = WeightToGas;
+	type AssetToDenom = AssetToDenom<Self>;
+	type Context = Context;
+	type ChainInfo = np_cosmos::traits::CosmosHub;
+	type AnteHandler = pallet_cosmos_x_auth::AnteDecorators<Self>;
+	type MsgFilter = MsgFilter;
+	type MsgServiceRouter = MsgServiceRouter<Self>;
+	type SigVerifiableTx = SigVerifiableTx;
+	type SignModeHandler = SignModeHandler;
+	type MaxMemoCharacters = MaxMemoCharacters;
+	type TxSigLimit = TxSigLimit;
+	type MaxDenomLimit = MaxDenomLimit;
+}
+
+parameter_types! {
+	pub const CosmwasmPalletId: PalletId = PalletId(*b"cosmwasm");
+	pub const MaxContractLabelSize: u32 = 64;
+	pub const MaxContractTrieIdSize: u32 = Hash::len_bytes() as u32;
+	pub const MaxInstantiateSaltSize: u32 = 128;
+	pub const MaxFundsAssets: u32 = 32;
+	pub const CodeTableSizeLimit: u32 = 4096;
+	pub const CodeGlobalVariableLimit: u32 = 256;
+	pub const CodeParameterLimit: u32 = 128;
+	pub const CodeBranchTableSizeLimit: u32 = 256;
+	pub const CodeStorageByteDeposit: u32 = 1_000_000;
+	pub const ContractStorageByteReadPrice: u32 = 1;
+	pub const ContractStorageByteWritePrice: u32 = 1;
+	pub WasmCostRules: CostRules<Runtime> = Default::default();
+}
+
+impl pallet_cosmwasm::Config for Runtime {
+	const MAX_FRAMES: u8 = 64;
+	type RuntimeEvent = RuntimeEvent;
+	type AccountIdExtended = AccountId;
+	type PalletId = CosmwasmPalletId;
+	type MaxCodeSize = ConstU32<{ 1024 * 1024 }>;
+	type MaxInstrumentedCodeSize = ConstU32<{ 2 * 1024 * 1024 }>;
+	type MaxMessageSize = ConstU32<{ 64 * 1024 }>;
+	type AccountToAddr = AccountToAddr<Runtime>;
+	type AssetToDenom = AssetToDenom<Runtime>;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type Assets = Assets;
+	type NativeAsset = Balances;
+	type ChainInfo = np_cosmos::traits::CosmosHub;
+	type MaxContractLabelSize = MaxContractLabelSize;
+	type MaxContractTrieIdSize = MaxContractTrieIdSize;
+	type MaxInstantiateSaltSize = MaxInstantiateSaltSize;
+	type MaxFundsAssets = MaxFundsAssets;
+
+	type CodeTableSizeLimit = CodeTableSizeLimit;
+	type CodeGlobalVariableLimit = CodeGlobalVariableLimit;
+	type CodeStackLimit = ConstU32<{ u32::MAX }>;
+
+	type CodeParameterLimit = CodeParameterLimit;
+	type CodeBranchTableSizeLimit = CodeBranchTableSizeLimit;
+	type CodeStorageByteDeposit = CodeStorageByteDeposit;
+	type ContractStorageByteReadPrice = ContractStorageByteReadPrice;
+	type ContractStorageByteWritePrice = ContractStorageByteWritePrice;
+
+	type WasmCostRules = WasmCostRules;
+	type UnixTime = Timestamp;
+	type WeightInfo = pallet_cosmwasm::weights::SubstrateWeight<Runtime>;
+
+	// TODO: Precompile to use execute or query pallet
+	type PalletHook = ();
+
+	type UploadWasmOrigin = frame_system::EnsureSigned<Self::AccountId>;
+
+	type ExecuteWasmOrigin = frame_system::EnsureSigned<Self::AccountId>;
+
+	type NativeDenom = NativeDenom;
+
+	type NativeAssetId = NativeAssetId;
 }

@@ -75,6 +75,8 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 
+pub type AssetId = u32;
+
 /// The SignedExtension to the basic transaction logic.
 #[docify::export(template_signed_extra)]
 pub type SignedExtra = (
@@ -300,6 +302,8 @@ mod runtime {
 	pub type CumulusXcm = cumulus_pallet_xcm;
 	#[runtime::pallet_index(33)]
 	pub type MessageQueue = pallet_message_queue;
+	#[runtime::pallet_index(39)]
+	pub type Assets = pallet_assets;
 
 	// Ethereum compatibility.
 	#[runtime::pallet_index(60)]
@@ -311,6 +315,10 @@ mod runtime {
 
 	#[runtime::pallet_index(128)]
 	pub type AddressMap = pallet_multimap<Instance1>;
+	#[runtime::pallet_index(179)]
+	pub type Cosmos = pallet_cosmos;
+	#[runtime::pallet_index(180)]
+	pub type Cosmwasm = pallet_cosmwasm;
 }
 
 #[docify::export(register_validate_block)]

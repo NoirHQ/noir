@@ -60,8 +60,8 @@ where
 			let (_hrp, signer_addr_raw) =
 				acc_address_from_bech32(signer).map_err(|_| InvalidTransaction::BadSigner)?;
 			ensure!(signer_addr_raw.len() == 20, InvalidTransaction::BadSigner);
-
 			let who = T::AddressMapping::into_account_id(H160::from_slice(&signer_addr_raw));
+			
 			let sequence = frame_system::Pallet::<T>::account_nonce(&who).saturated_into();
 
 			match signer_info.sequence.cmp(&sequence) {
@@ -71,7 +71,7 @@ where
 			}?;
 
 			let public_key = signer_info.public_key.as_ref().ok_or(InvalidTransaction::Call)?;
-			let chain_id = T::ChainInfo::chain_id().to_string();
+			let chain_id = T::ChainInfo::chain_id().into();
 			let signer_data = SignerData {
 				address: signer.clone(),
 				chain_id,
@@ -116,7 +116,6 @@ where
 							InvalidTransaction::BadSigner
 						})?;
 					ensure!(signer_addr_raw.len() == 20, InvalidTransaction::BadSigner);
-
 					ensure!(H160::from_slice(&signer_addr_raw) == address, InvalidTransaction::BadSigner);
 
 					let sign_bytes = T::SignModeHandler::get_sign_bytes(sign_mode, signer_data, tx)

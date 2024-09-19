@@ -19,6 +19,7 @@
 
 extern crate alloc;
 
+use alloc::vec;
 use core::marker::PhantomData;
 use cosmos_sdk_proto::{cosmos::bank::v1beta1::MsgSend, prost::Message, Any};
 use frame_support::{
@@ -39,7 +40,7 @@ use pallet_cosmos_types::{
 		traits::EventManager, CosmosEvent, EventAttribute, ATTRIBUTE_KEY_AMOUNT,
 		ATTRIBUTE_KEY_SENDER,
 	},
-	msgservice::MsgHandler,
+	msgservice::traits::MsgHandler,
 };
 use pallet_cosmos_x_bank_types::events::{ATTRIBUTE_KEY_RECIPIENT, EVENT_TYPE_TRANSFER};
 use sp_core::{Get, H160};
@@ -65,13 +66,11 @@ where
 
 		let (_hrp, from_address_raw) =
 			acc_address_from_bech32(&from_address).map_err(|_| RootError::InvalidAddress)?;
-
 		ensure!(from_address_raw.len() == 20, RootError::InvalidAddress);
 		let from_account = T::AddressMapping::into_account_id(H160::from_slice(&from_address_raw));
 
 		let (_hrp, to_address_raw) =
 			acc_address_from_bech32(&to_address).map_err(|_| RootError::InvalidAddress)?;
-
 		ensure!(to_address_raw.len() == 20, RootError::InvalidAddress);
 		let to_account = T::AddressMapping::into_account_id(H160::from_slice(&to_address_raw));
 

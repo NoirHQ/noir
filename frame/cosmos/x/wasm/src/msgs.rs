@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use alloc::{string::ToString, vec, vec::Vec};
 use core::{marker::PhantomData, str::FromStr};
 use core2::io::Read;
 use cosmos_sdk_proto::{
@@ -35,7 +36,7 @@ use pallet_cosmos_types::{
 	errors::{CosmosError, RootError},
 	events::{traits::EventManager, CosmosEvent, EventAttribute},
 	gas::traits::GasMeter,
-	msgservice::MsgHandler,
+	msgservice::traits::MsgHandler,
 };
 use pallet_cosmos_x_wasm_types::{
 	errors::WasmError,
@@ -205,8 +206,8 @@ where
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
 		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
-
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
+		
 		let gas = ctx.gas_meter().gas_remaining();
 		let mut shared = pallet_cosmwasm::Pallet::<T>::do_create_vm_shared(
 			gas,

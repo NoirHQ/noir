@@ -19,6 +19,7 @@
 
 extern crate alloc;
 
+pub mod types;
 pub mod weights;
 
 pub use self::pallet::*;
@@ -32,7 +33,7 @@ use frame_system::{pallet_prelude::*, CheckWeight};
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32, context::traits::Context, errors::RootError,
 	events::traits::EventManager, gas::traits::GasMeter, handler::AnteDecorator,
-	msgservice::MsgServiceRouter,
+	msgservice::traits::MsgServiceRouter,
 };
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -132,6 +133,7 @@ pub trait AddressMapping<A> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::types::DenomOf;
 	use alloc::{string::String, vec::Vec};
 	use cosmos_sdk_proto::Any;
 	use frame_support::{
@@ -294,12 +296,12 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn denom_to_asset)]
 	pub type DenomAssetRouter<T: Config> =
-		StorageMap<_, Twox64Concat, BoundedVec<u8, T::MaxDenomLimit>, T::AssetId, OptionQuery>;
+		StorageMap<_, Twox64Concat, DenomOf<T>, T::AssetId, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn asset_to_denom)]
 	pub type AssetDenomRouter<T: Config> =
-		StorageMap<_, Twox64Concat, T::AssetId, BoundedVec<u8, T::MaxDenomLimit>, OptionQuery>;
+		StorageMap<_, Twox64Concat, T::AssetId, DenomOf<T>, OptionQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>

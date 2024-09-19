@@ -16,7 +16,7 @@ log = { version = "0.4", default-features = false }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
 smallvec = "1.13"
 
-frame-babel = { workspace = true, features = ["ethereum"] }
+frame-babel = { workspace = true, features = ["cosmos", "ethereum"] }
 np-ethereum = { workspace = true }
 np-runtime = { workspace = true, features = ["serde"] }
 pallet-multimap = { workspace = true }
@@ -36,6 +36,7 @@ frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "s
 frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, optional = true }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-try-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, optional = true }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
@@ -75,7 +76,12 @@ pallet-collator-selection = { git = "https://github.com/paritytech/polkadot-sdk"
 parachains-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 parachain-info = { package = "staging-parachain-info", git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
+np-cosmos = { workspace = true, default-features = false }
 pallet-cosmos = { workspace = true, default-features = false }
+pallet-cosmos-types = { workspace = true, default-features = false }
+pallet-cosmos-x-auth = { workspace = true, default-features = false }
+pallet-cosmos-x-auth-signing = { workspace = true, default-features = false }
+pallet-cosmwasm = { workspace = true, default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", optional = true }
@@ -106,14 +112,20 @@ std = [
 	"frame-system/std",
 	"frame-try-runtime?/std",
 	"log/std",
+	"np-cosmos/std",
 	"np-ethereum/std",
 	"np-runtime/std",
+	"pallet-assets/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
 	"pallet-base-fee/std",
 	"pallet-collator-selection/std",
 	"pallet-cosmos/std",
+	"pallet-cosmos-types/std",
+	"pallet-cosmos-x-auth/std",
+	"pallet-cosmos-x-auth-signing/std",
+	"pallet-cosmwasm/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
 	"pallet-multimap/std",

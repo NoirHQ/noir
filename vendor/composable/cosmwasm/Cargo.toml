@@ -55,6 +55,8 @@ cosmwasm-vm-wasmi = { workspace = true, default-features = false, features = [
     "stargate",
 ] }
 
+np-cosmos = { workspace = true, default-features = false }
+
 [features]
 default = ["std"]
 std = [
@@ -85,5 +87,6 @@ std = [
     "cosmwasm-std/std",
     "cosmwasm-vm/std",
     "cosmwasm-vm-wasmi/std",
+    "np-cosmos/std",
 ]
 try-runtime = []

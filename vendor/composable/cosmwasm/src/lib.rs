@@ -101,6 +101,7 @@ use frame_support::{
 	},
 	ReversibleStorageHasher, StorageHasher,
 };
+use np_cosmos::traits::ChainInfo;
 use sp_runtime::traits::SaturatedConversion;
 use wasmi::AsContext;
 use wasmi_validation::PlainValidator;
@@ -119,6 +120,7 @@ pub mod pallet {
 	};
 	use core::fmt::Debug;
 	use cosmwasm_vm::system::CosmwasmCodeId;
+	use np_cosmos::traits::ChainInfo;
 
 	use frame_support::{
 		dispatch::DispatchResultWithPostInfo,
@@ -131,7 +133,6 @@ pub mod pallet {
 		transactional, PalletId, Twox64Concat,
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
-	use sp_core::crypto::UncheckedFrom;
 	use sp_runtime::traits::{Convert, MaybeDisplay};
 
 	#[pallet::event]
@@ -214,16 +215,13 @@ pub mod pallet {
 			+ MaybeDisplay
 			+ Ord
 			+ MaxEncodedLen
-			+ UncheckedFrom<Self::Hash>
 			+ AsRef<[u8]>;
 
 		/// Pallet unique ID.
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
 
-		/// Current chain ID. Provided to the contract via the [`Env`].
-		#[pallet::constant]
-		type ChainId: Get<&'static str>;
+		type ChainInfo: ChainInfo;
 
 		/// Max accepted code size in bytes.
 		#[pallet::constant]
@@ -1044,7 +1042,7 @@ impl<T: Config> Pallet<T> {
 		BlockInfo {
 			height: frame_system::Pallet::<T>::block_number().saturated_into(),
 			time: Timestamp::from_seconds(T::UnixTime::now().as_secs()),
-			chain_id: T::ChainId::get().into(),
+			chain_id: T::ChainInfo::chain_id().into(),
 		}
 	}
 
