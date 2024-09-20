@@ -42,6 +42,7 @@ use pallet_cosmos_x_wasm::msgs::{
 	MsgStoreCodeHandler, MsgUpdateAdminHandler,
 };
 use pallet_multimap::traits::UniqueMultimap;
+use scale_info::TypeInfo;
 use sp_core::{Get, H160, H256};
 use sp_runtime::traits::{AccountIdConversion, Convert};
 

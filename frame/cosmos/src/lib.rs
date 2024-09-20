@@ -339,7 +339,7 @@ impl<T: Config> Pallet<T> {
 	fn validate_transaction_in_pool(origin: H160, tx_bytes: &[u8]) -> TransactionValidity {
 		let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| InvalidTransaction::Call)?;
 
-		T::AnteHandler::ante_handle(&tx, true)?;
+		Self::ante_handle(&tx, true)?;
 
 		let transaction_nonce =
 			T::SigVerifiableTx::sequence(&tx).map_err(|_| InvalidTransaction::Call)?;
@@ -362,7 +362,7 @@ impl<T: Config> Pallet<T> {
 	pub fn validate_transaction_in_block(tx_bytes: &[u8]) -> Result<(), TransactionValidityError> {
 		let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| InvalidTransaction::Call)?;
 
-		T::AnteHandler::ante_handle(&tx, false)?;
+		Self::ante_handle(&tx, false)?;
 
 		Ok(())
 	}
@@ -395,6 +395,10 @@ impl<T: Config> Pallet<T> {
 			actual_weight: Some(T::WeightToGas::convert(ctx.gas_meter().consumed_gas())),
 			pays_fee: Pays::Yes,
 		})
+	}
+
+	pub fn ante_handle(tx: &Tx, simulate: bool) -> TransactionValidity {
+		T::AnteHandler::ante_handle(tx, simulate)
 	}
 
 	fn run_tx(ctx: &mut T::Context, tx: &Tx) -> Result<(), CosmosError> {

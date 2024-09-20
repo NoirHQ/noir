@@ -24,8 +24,10 @@
 // For more information, please refer to <http://unlicense.org>
 
 // External crates imports
-use alloc::vec::Vec;
+use alloc::{format, string::String, vec::Vec};
 use codec::Encode;
+use cosmos_runtime_api::{GasInfo, SimulateError, SimulateResponse, SimulateResult};
+use cosmos_sdk_proto::{cosmos::tx::v1beta1::Tx, traits::Message};
 use frame_support::{
 	genesis_builder_helper::{build_state, get_preset},
 	traits::OnFinalize,
@@ -47,7 +49,7 @@ use sp_version::RuntimeVersion;
 // Local module imports
 use super::{
 	AccountId, Balance, Block, ConsensusHook, Ethereum, Executive, InherentDataExt, Nonce,
-	ParachainSystem, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, System,
+	ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeGenesisConfig, SessionKeys, System,
 	TransactionPayment, UncheckedExtrinsic, SLOT_DURATION, VERSION,
 };
 
@@ -558,6 +560,50 @@ impl_runtime_apis! {
 
 		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
 			Default::default()
+		}
+	}
+
+	impl cosmos_runtime_api::CosmosRuntimeApi<Block> for Runtime {
+		fn convert_tx(tx_bytes: Vec<u8>) -> <Block as BlockT>::Extrinsic {
+			UncheckedExtrinsic::new_unsigned(
+				pallet_cosmos::Call::<Runtime>::transact { tx_bytes }.into(),
+			)
+		}
+
+		fn simulate(tx_bytes: Vec<u8>) -> SimulateResult {
+			let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| SimulateError::InvalidTx)?;
+
+			pallet_cosmos::Pallet::<Runtime>::ante_handle(&tx, true)
+				.map_err(|e| SimulateError::InternalError(format!("Failed to ante handle cosmos tx. error: {:?}", e).into()))?;
+			pallet_cosmos::Pallet::<Runtime>::apply_validated_transaction(tx)
+				.map_err(|e| SimulateError::InternalError(format!("Failed to simulate cosmos tx. error: {:?}", e).into()))?;
+
+			System::read_events_no_consensus()
+				.find_map(|record| {
+					if let RuntimeEvent::Cosmos(pallet_cosmos::Event::Executed { gas_wanted, gas_used, events }) = record.event {
+						Some(SimulateResponse{gas_info: GasInfo { gas_wanted, gas_used }, events})
+					} else {
+						None
+					}
+				}).ok_or(SimulateError::InternalError("Cosmos events does not exist".into()))
+		}
+	}
+
+	impl cosmwasm_runtime_api::CosmwasmRuntimeApi<Block, Vec<u8>> for Runtime {
+		fn query(
+			contract: String,
+			gas: u64,
+			query_request: Vec<u8>,
+		) -> Result<Vec<u8>, Vec<u8>>{
+			let contract = pallet_cosmwasm::contract_account_of::<Runtime>(contract.clone()).ok_or("Not exist contract".as_bytes().to_vec())?;
+			match pallet_cosmwasm::query::<Runtime>(
+				contract,
+				gas,
+				query_request,
+			) {
+				Ok(response) => Ok(response.into()),
+				Err(err) => Err(format!("{:?}", err).into_bytes())
+			}
 		}
 	}
 }
