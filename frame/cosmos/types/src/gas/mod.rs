@@ -21,8 +21,8 @@ pub type Gas = u64;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Error {
-	GasOverflow,
-	OutOfGas,
+	GasOverflow(&'static str),
+	OutOfGas(&'static str),
 }
 
 #[derive(Clone, Debug)]
@@ -48,11 +48,10 @@ impl traits::GasMeter for BasicGasMeter {
 		self.limit
 	}
 
-	// TODO: Handle or remove descriptor
-	fn consume_gas(&mut self, amount: Gas, _descriptor: &str) -> Result<Gas, Error> {
-		let consumed = self.consumed.checked_add(amount).ok_or(Error::GasOverflow)?;
+	fn consume_gas(&mut self, amount: Gas, descriptor: &'static str) -> Result<Gas, Error> {
+		let consumed = self.consumed.checked_add(amount).ok_or(Error::GasOverflow(descriptor))?;
 		if consumed > self.limit {
-			return Err(Error::OutOfGas);
+			return Err(Error::OutOfGas(descriptor));
 		}
 
 		self.consumed = consumed;

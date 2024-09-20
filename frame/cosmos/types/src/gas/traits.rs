@@ -22,5 +22,5 @@ pub trait GasMeter {
 	fn consumed_gas(&self) -> Gas;
 	fn gas_remaining(&self) -> Gas;
 	fn limit(&self) -> Gas;
-	fn consume_gas(&mut self, amount: Gas, descriptor: &str) -> Result<Gas, Error>;
+	fn consume_gas(&mut self, amount: Gas, descriptor: &'static str) -> Result<Gas, Error>;
 }
