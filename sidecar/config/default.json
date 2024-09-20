@@ -1,0 +1,18 @@
+{
+  "db": {
+    "path": "db"
+  },
+  "server": {
+    "endpoint": "http://localhost:1317",
+    "port": 1317,
+    "logger": true
+  },
+  "chain": {
+    "endpoint": "ws://127.0.0.1:59954",
+    "network": "dev",
+    "moniker": "cosmos",
+    "name": "noir",
+    "version": "1",
+    "denom": "azig"
+  }
+}
