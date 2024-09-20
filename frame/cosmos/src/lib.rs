@@ -402,8 +402,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn run_tx(ctx: &mut T::Context, tx: &Tx) -> Result<(), CosmosError> {
+		let base_gas = T::WeightToGas::convert(T::WeightInfo::default_weight());
 		ctx.gas_meter()
-			.consume_gas(T::WeightToGas::convert(T::WeightInfo::default_weight()), "decode tx")
+			.consume_gas(base_gas, "base gas")
 			.map_err(|_| RootError::OutOfGas)?;
 
 		let body = tx.body.as_ref().ok_or(RootError::TxDecodeError)?;
