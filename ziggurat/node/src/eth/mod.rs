@@ -109,7 +109,10 @@ where
 		Some(Box::new(fc_rpc::EthereumSubIdProvider)),
 	);
 	if rpc.is_ok() {
-		log::info!("Ethereum RPC started: {}", config.rpc_port);
+		log::info!(
+			"Ethereum RPC started: {}",
+			config.rpc_addr.as_ref().map(|addr| addr.port()).unwrap_or(0)
+		);
 	} else {
 		log::warn!("Ethereum RPC not started");
 	}

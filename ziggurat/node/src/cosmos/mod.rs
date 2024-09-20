@@ -44,8 +44,12 @@ pub fn spawn_tasks(
 		rpc_builder,
 		Some(Box::new(RandomIntegerIdProvider)),
 	);
+
 	if rpc.is_ok() {
-		log::info!("Cosmos RPC started: {}", config.rpc_port);
+		log::info!(
+			"Cosmos RPC started: {}",
+			config.rpc_addr.as_ref().map(|addr| addr.port()).unwrap_or(0)
+		);
 	} else {
 		log::warn!("Cosmos RPC not started");
 	}
