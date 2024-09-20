@@ -10,8 +10,7 @@ use ziggurat_runtime::{
 	opaque::{Block, Hash},
 };
 
-// Frontier Imports
-use crate::eth;
+use crate::{cosmos, eth};
 use fc_rpc::StorageOverrideHandler;
 
 // Cumulus Imports
@@ -375,6 +374,25 @@ pub async fn start_parachain_node(
 		fee_history_cache_limit,
 		sync: sync_service.clone(),
 		pubsub_notification_sinks,
+	})?;
+
+	let cosmos_rpc_builder = {
+		let client = client.clone();
+		let pool = transaction_pool.clone();
+
+		Box::new(move |_deny_unsafe| {
+			cosmos::rpc::create_full(cosmos::rpc::FullDeps {
+				client: client.clone(),
+				pool: pool.clone(),
+			})
+			.map_err(Into::into)
+		})
+	};
+
+	let parachain_config = cosmos::spawn_tasks(cosmos::SpawnTasksParams {
+		config: parachain_config,
+		rpc_builder: cosmos_rpc_builder,
+		task_manager: &mut task_manager,
 	})?;
 
 	let rpc_builder = {
