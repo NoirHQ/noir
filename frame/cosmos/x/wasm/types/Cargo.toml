@@ -8,7 +8,7 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
-cosmos-sdk-proto = { version = "0.24.0", default-features = false, features = [
+cosmos-sdk-proto = { version = "0.24", default-features = false, features = [
 	"cosmwasm",
 ] }
 pallet-cosmos-types = { workspace = true, default-features = false }

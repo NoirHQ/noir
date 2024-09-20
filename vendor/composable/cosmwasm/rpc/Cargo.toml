@@ -25,4 +25,4 @@ codec = { package = "parity-scale-codec", version = "3.6", default-features = fa
 ] }
 
 # rpc
-jsonrpsee = { version = "0.22.5", features = ["client", "server", "macros"] }
+jsonrpsee = { version = "0.23", features = ["client", "server", "macros"] }

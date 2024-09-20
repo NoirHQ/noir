@@ -11,7 +11,7 @@ publish = false
 cosmos-runtime-api = { workspace = true, features = ["std"] }
 futures = { version = "0.3" }
 hex = { version = "0.4.3" }
-jsonrpsee = { version = "0.23", features = ["server", "macros"] }
+jsonrpsee = { version = "0.23", features = ["client", "server", "macros"] }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }

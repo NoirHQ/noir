@@ -8,7 +8,7 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
-cosmos-sdk-proto = { version = "0.24.0", default-features = false }
+cosmos-sdk-proto = { version = "0.24", default-features = false }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 np-cosmos = { workspace = true, default-features = false }

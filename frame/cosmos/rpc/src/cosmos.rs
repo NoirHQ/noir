@@ -29,7 +29,7 @@ use sp_core::{sha2_256, Bytes, H256};
 use sp_runtime::{traits::Block as BlockT, transaction_validity::TransactionSource};
 use std::sync::Arc;
 
-#[rpc(server)]
+#[rpc(client, server)]
 #[async_trait]
 pub trait CosmosApi {
 	#[method(name = "cosmos_broadcastTx")]
