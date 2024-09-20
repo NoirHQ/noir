@@ -59,7 +59,7 @@ where
 	T: pallet_cosmos::Config,
 	Context: context::traits::Context,
 {
-	fn handle(&self, msg: &Any, ctx: &mut Context) -> Result<(), CosmosError> {
+	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError> {
 		// TODO: Add gas metering
 		let MsgSend { from_address, to_address, amount } =
 			MsgSend::decode(&mut &*msg.value).map_err(|_| RootError::UnpackAnyError)?;

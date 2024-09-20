@@ -20,7 +20,7 @@ use alloc::boxed::Box;
 use cosmos_sdk_proto::Any;
 
 pub trait MsgHandler<Context> {
-	fn handle(&self, msg: &Any, ctx: &mut Context) -> Result<(), CosmosError>;
+	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError>;
 }
 
 pub trait MsgServiceRouter<Context> {

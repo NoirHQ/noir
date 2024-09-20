@@ -9,11 +9,15 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = [
+	"derive",
+] }
 docify = "0.2"
 hex-literal = { version = "0.4", optional = true }
 log = { version = "0.4", default-features = false }
-scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false, features = [
+	"derive",
+] }
 smallvec = "1.13"
 
 frame-babel = { workspace = true, features = ["cosmos", "ethereum"] }
@@ -31,7 +35,9 @@ pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stabl
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, optional = true }
 frame-executive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-metadata-hash-extension = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, features = ["experimental"] }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, features = [
+	"experimental",
+] }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, optional = true }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
@@ -76,6 +82,7 @@ pallet-collator-selection = { git = "https://github.com/paritytech/polkadot-sdk"
 parachains-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 parachain-info = { package = "staging-parachain-info", git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
+cosmos-sdk-proto = { version = "0.24.0", default-features = false }
 np-cosmos = { workspace = true, default-features = false }
 pallet-cosmos = { workspace = true, default-features = false }
 pallet-cosmos-types = { workspace = true, default-features = false }
@@ -90,6 +97,7 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", b
 default = ["std"]
 std = [
 	"codec/std",
+	"cosmos-sdk-proto/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-session-benchmarking/std",

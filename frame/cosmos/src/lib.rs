@@ -31,8 +31,12 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::*, CheckWeight};
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32, context::traits::Context, errors::RootError,
-	events::traits::EventManager, gas::traits::GasMeter, handler::AnteDecorator,
+	address::acc_address_from_bech32,
+	context::traits::Context,
+	errors::{CosmosError, RootError},
+	events::traits::EventManager,
+	gas::traits::GasMeter,
+	handler::AnteDecorator,
 	msgservice::traits::MsgServiceRouter,
 };
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
@@ -74,14 +78,12 @@ where
 		if let Call::transact { tx_bytes } = self {
 			let check = || {
 				let tx = Tx::decode(&mut &tx_bytes[..]).map_err(|_| InvalidTransaction::Call)?;
+
 				let fee_payer =
 					T::SigVerifiableTx::fee_payer(&tx).map_err(|_| InvalidTransaction::Call)?;
 				let (_hrp, address_raw) = acc_address_from_bech32(&fee_payer)
 					.map_err(|_| InvalidTransaction::BadSigner)?;
-
-				if address_raw.len() != 20 {
-					return Err(InvalidTransaction::BadSigner.into());
-				}
+				ensure!(address_raw.len() == 20, InvalidTransaction::BadSigner);
 
 				Ok(H160::from_slice(&address_raw))
 			};
@@ -277,7 +279,6 @@ pub mod pallet {
 				weight.ref_time()
 			}
 		}
-
 		impl Convert<Gas, Weight> for WeightToGas {
 			fn convert(gas: Gas) -> Weight {
 				Weight::from_parts(gas, 0)
@@ -378,28 +379,11 @@ impl<T: Config> Pallet<T> {
 			.gas_limit;
 
 		let mut ctx = T::Context::new(gas_limit);
-		ctx.gas_meter()
-			.consume_gas(T::WeightInfo::default_weight().ref_time(), "")
-			.map_err(|_| {
-				Error::<T>::CosmosError(RootError::OutOfGas.into())
-					.with_weight(T::WeightInfo::default_weight())
-			})?;
 
-		let body = tx.body.ok_or(
-			Error::<T>::CosmosError(RootError::TxDecodeError.into())
-				.with_weight(T::WeightInfo::default_weight()),
-		)?;
-		for msg in body.messages.iter() {
-			let handler = T::MsgServiceRouter::route(msg).ok_or(
-				Error::<T>::CosmosError(RootError::UnknownRequest.into())
-					.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas())),
-			)?;
-
-			handler.handle(msg, &mut ctx).map_err(|e| {
-				Error::<T>::CosmosError(e)
-					.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
-			})?;
-		}
+		Self::run_tx(&mut ctx, &tx).map_err(|e| {
+			Error::<T>::CosmosError(e)
+				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
+		})?;
 
 		Self::deposit_event(Event::Executed {
 			gas_wanted: gas_limit,
@@ -411,5 +395,20 @@ impl<T: Config> Pallet<T> {
 			actual_weight: Some(T::WeightToGas::convert(ctx.gas_meter().consumed_gas())),
 			pays_fee: Pays::Yes,
 		})
+	}
+
+	fn run_tx(ctx: &mut T::Context, tx: &Tx) -> Result<(), CosmosError> {
+		ctx.gas_meter()
+			.consume_gas(T::WeightToGas::convert(T::WeightInfo::default_weight()), "")
+			.map_err(|_| RootError::OutOfGas)?;
+
+		let body = tx.body.as_ref().ok_or(RootError::TxDecodeError)?;
+
+		for msg in body.messages.iter() {
+			let handler = T::MsgServiceRouter::route(msg).ok_or(RootError::UnknownRequest)?;
+			handler.handle(ctx, msg)?;
+		}
+
+		Ok(())
 	}
 }

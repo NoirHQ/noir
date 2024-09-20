@@ -66,6 +66,14 @@ impl<T: Config> UnifyAccount<T> {
 				T::AddressMap::try_insert(who.clone(), Address::Ethereum(address))
 					.map_err(|_| "account unification failed: ethereum")?;
 			}
+			#[cfg(feature = "cosmos")]
+			{
+				let address = CosmosAddress::from(public);
+				let interim = address.clone().into_account_truncating();
+				T::DrainBalance::drain_balance(&interim, who)?;
+				T::AddressMap::try_insert(who.clone(), Address::Cosmos(address))
+					.map_err(|_| "account unification failed: cosmos")?;
+			}
 		}
 		Ok(())
 	}

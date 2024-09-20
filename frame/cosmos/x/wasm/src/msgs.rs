@@ -68,7 +68,7 @@ where
 	T: pallet_cosmos::Config + pallet_cosmwasm::Config,
 	Context: context::traits::Context,
 {
-	fn handle(&self, msg: &Any, ctx: &mut Context) -> Result<(), CosmosError> {
+	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError> {
 		// TODO: Add gas metering
 		let MsgStoreCode { sender, wasm_byte_code, instantiate_permission: _ } =
 			MsgStoreCode::decode(&mut &*msg.value).map_err(|_| RootError::TxDecodeError)?;
@@ -121,7 +121,7 @@ where
 	T: pallet_cosmos::Config + pallet_cosmwasm::Config,
 	Context: context::traits::Context,
 {
-	fn handle(&self, msg: &Any, ctx: &mut Context) -> Result<(), CosmosError> {
+	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError> {
 		// TODO: Add gas metering
 		let MsgInstantiateContract2 { sender, admin, code_id, label, msg, funds, salt, fix_msg: _ } =
 			MsgInstantiateContract2::decode(&mut &*msg.value)
@@ -197,7 +197,7 @@ where
 	T: pallet_cosmos::Config + pallet_cosmwasm::Config,
 	Context: context::traits::Context,
 {
-	fn handle(&self, msg: &Any, ctx: &mut Context) -> Result<(), CosmosError> {
+	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError> {
 		// TODO: Add gas metering
 		let MsgExecuteContract { sender, contract, msg, funds } =
 			MsgExecuteContract::decode(&mut &*msg.value).map_err(|_| RootError::TxDecodeError)?;
@@ -270,7 +270,7 @@ where
 	T: pallet_cosmos::Config + pallet_cosmwasm::Config,
 	Context: context::traits::Context,
 {
-	fn handle(&self, msg: &Any, ctx: &mut Context) -> Result<(), CosmosError> {
+	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError> {
 		// TODO: Add gas metering
 		let MsgMigrateContract { sender, contract, code_id, msg } =
 			MsgMigrateContract::decode(&mut &*msg.value).map_err(|_| RootError::TxDecodeError)?;
@@ -331,7 +331,7 @@ where
 	T: pallet_cosmos::Config + pallet_cosmwasm::Config,
 	Context: context::traits::Context,
 {
-	fn handle(&self, msg: &Any, ctx: &mut Context) -> Result<(), CosmosError> {
+	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError> {
 		// TODO: Add gas metering
 		let MsgUpdateAdmin { sender, new_admin, contract } =
 			MsgUpdateAdmin::decode(&mut &*msg.value).map_err(|_| RootError::TxDecodeError)?;
