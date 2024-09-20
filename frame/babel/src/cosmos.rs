@@ -80,8 +80,8 @@ where
 			T::NativeDenom::get().to_string()
 		} else {
 			// TODO: Handle option
-			let denom = pallet_cosmos::AssetDenomRouter::<T>::get(asset_id).unwrap().to_vec();
-			String::from_utf8(denom).unwrap()
+			let denom = pallet_cosmos::AssetDenomRouter::<T>::get(asset_id).unwrap();
+			String::from_utf8(denom.into()).unwrap()
 		}
 	}
 }

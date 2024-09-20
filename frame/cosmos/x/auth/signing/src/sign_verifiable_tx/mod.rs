@@ -102,20 +102,13 @@ impl traits::SigVerifiableTx for SigVerifiableTx {
 		let auth_info = tx.auth_info.as_ref().ok_or(SigVerifiableTxError::EmptyAuthInfo)?;
 		let fee = auth_info.fee.as_ref().ok_or(SigVerifiableTxError::EmptyFee)?;
 
-		let sequence = if !fee.payer.is_empty() {
-			// TODO: Verify that the last signer is the fee payer.
-			auth_info
-				.signer_infos
-				.last()
-				.ok_or(SigVerifiableTxError::EmptySigners)?
-				.sequence
+		let sequence = if fee.payer.is_empty() {
+			auth_info.signer_infos.first()
 		} else {
-			auth_info
-				.signer_infos
-				.first()
-				.ok_or(SigVerifiableTxError::EmptySigners)?
-				.sequence
-		};
+			auth_info.signer_infos.last()
+		}
+		.ok_or(SigVerifiableTxError::EmptySigners)?
+		.sequence;
 
 		Ok(sequence)
 	}
