@@ -2,12 +2,12 @@ import { QueryDelegationTotalRewardsResponse } from "cosmjs-types/cosmos/distrib
 import { ApiService } from "./service";
 
 export class DistributionService implements ApiService {
-  public rewards(
-    delegatorAddress: string
-  ): QueryDelegationTotalRewardsResponse {
-    return {
-      rewards: [],
-      total: [],
-    };
-  }
+	public rewards(
+		delegatorAddress: string
+	): QueryDelegationTotalRewardsResponse {
+		return {
+			rewards: [],
+			total: [],
+		};
+	}
 }

@@ -50,6 +50,7 @@
 		"@fastify/static": "^6.10.2",
 		"@fastify/websocket": "^8.1.0",
 		"@polkadot/api": "^13.1.1",
+		"@polkadot/types": "^13.1.1",
 		"config": "^3.3.9",
 		"cosmjs-types": "^0.8.0",
 		"ethereum-cryptography": "^2.0.0",
