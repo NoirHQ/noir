@@ -34,13 +34,14 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_aura::Authorities;
+use pallet_cosmos_types::handler::AnteDecorator;
 use pallet_ethereum::{Transaction as EthereumTransaction, TransactionStatus};
 use pallet_evm::{Account as EVMAccount, FeeCalculator, Runner};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
-	traits::Block as BlockT,
+	traits::{Block as BlockT, Convert},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, Permill, SaturatedConversion,
 };
@@ -573,7 +574,7 @@ impl_runtime_apis! {
 		fn simulate(tx_bytes: Vec<u8>) -> SimulateResult {
 			let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| SimulateError::InvalidTx)?;
 
-			pallet_cosmos::Pallet::<Runtime>::ante_handle(&tx, true)
+			<Runtime as pallet_cosmos::Config>::AnteHandler::ante_handle(&tx, true)
 				.map_err(|e| SimulateError::InternalError(format!("Failed to ante handle cosmos tx. error: {:?}", e).into()))?;
 			pallet_cosmos::Pallet::<Runtime>::apply_validated_transaction(tx)
 				.map_err(|e| SimulateError::InternalError(format!("Failed to simulate cosmos tx. error: {:?}", e).into()))?;
@@ -595,7 +596,7 @@ impl_runtime_apis! {
 			gas: u64,
 			query_request: Vec<u8>,
 		) -> Result<Vec<u8>, Vec<u8>>{
-			let contract = pallet_cosmwasm::contract_account_of::<Runtime>(contract.clone()).ok_or("Not exist contract".as_bytes().to_vec())?;
+			let contract = <Runtime as pallet_cosmwasm::Config>::AccountToAddr::convert(contract.clone()).map_err(|_| "Not exist contract".as_bytes().to_vec())?;
 			match pallet_cosmwasm::query::<Runtime>(
 				contract,
 				gas,

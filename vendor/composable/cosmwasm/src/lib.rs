@@ -102,7 +102,7 @@ use frame_support::{
 	ReversibleStorageHasher, StorageHasher,
 };
 use np_cosmos::traits::ChainInfo;
-use sp_runtime::traits::{Convert, SaturatedConversion};
+use sp_runtime::traits::SaturatedConversion;
 use wasmi::AsContext;
 use wasmi_validation::PlainValidator;
 
@@ -594,10 +594,6 @@ pub fn query<T: Config>(
 				.map_err(|e| CosmwasmVMError::<T>::Rpc(e))
 		},
 	)
-}
-
-pub fn contract_account_of<T: Config>(contract: String) -> Option<AccountIdOf<T>> {
-	T::AccountToAddr::convert(contract).ok()
 }
 
 #[allow(clippy::too_many_arguments)]
