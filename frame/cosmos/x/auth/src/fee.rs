@@ -20,7 +20,6 @@ use core::marker::PhantomData;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{Fee, Tx};
 use frame_support::{
 	ensure,
-	pallet_prelude::{InvalidTransaction, TransactionValidity, ValidTransaction},
 	traits::{
 		fungibles::Balanced,
 		tokens::{Fortitude, Precision, Preservation},
@@ -31,6 +30,7 @@ use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,
 	coin::amount_to_string,
+	errors::{CosmosError, RootError},
 	events::{
 		CosmosEvent, EventAttribute, ATTRIBUTE_KEY_FEE, ATTRIBUTE_KEY_FEE_PAYER, EVENT_TYPE_TX,
 	},
@@ -44,27 +44,28 @@ use sp_runtime::{
 };
 
 pub struct DeductFeeDecorator<T>(PhantomData<T>);
-
 impl<T> AnteDecorator for DeductFeeDecorator<T>
 where
 	T: frame_system::Config + pallet_cosmos::Config,
 {
-	fn ante_handle(tx: &Tx, simulate: bool) -> TransactionValidity {
+	fn ante_handle(tx: &Tx, simulate: bool) -> Result<(), CosmosError> {
 		let fee = tx
 			.auth_info
 			.as_ref()
 			.and_then(|auth_info| auth_info.fee.as_ref())
-			.ok_or(InvalidTransaction::Call)?;
+			.ok_or(RootError::TxDecodeError)?;
 
 		if !simulate && !frame_system::Pallet::<T>::block_number().is_zero() && fee.gas_limit == 0 {
-			return Err(InvalidTransaction::Call.into());
+			return Err(RootError::InvalidGasLimit.into());
 		}
 
-		// TODO: Implements txFeeChecker
+		if !simulate {
+			// TODO: Implements txFeeChecker
+		}
 
 		Self::check_deduct_fee(tx)?;
 
-		Ok(ValidTransaction::default())
+		Ok(())
 	}
 }
 
@@ -72,24 +73,23 @@ impl<T> DeductFeeDecorator<T>
 where
 	T: pallet_cosmos::Config,
 {
-	fn check_deduct_fee(tx: &Tx) -> TransactionValidity {
-		let fee_payer = T::SigVerifiableTx::fee_payer(tx).map_err(|_| InvalidTransaction::Call)?;
+	fn check_deduct_fee(tx: &Tx) -> Result<(), CosmosError> {
+		let fee_payer = T::SigVerifiableTx::fee_payer(tx).map_err(|_| RootError::TxDecodeError)?;
 
 		let fee = tx
 			.auth_info
 			.as_ref()
 			.and_then(|auth_info| auth_info.fee.as_ref())
-			.ok_or(InvalidTransaction::Call)?;
+			.ok_or(RootError::TxDecodeError)?;
 
-		// TODO: Fee granter support
-		ensure!(fee.granter.is_empty(), InvalidTransaction::Call);
+		// Fee granter not supported
+		ensure!(fee.granter.is_empty(), RootError::InvalidRequest);
 
 		let (_hrp, address_raw) =
-			acc_address_from_bech32(&fee_payer).map_err(|_| InvalidTransaction::BadSigner)?;
-		ensure!(address_raw.len() == 20, InvalidTransaction::BadSigner);
+			acc_address_from_bech32(&fee_payer).map_err(|_| RootError::InvalidAddress)?;
+		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
 		let deduct_fees_from = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
-		// TODO: Check fee is zero
 		if !fee.amount.is_empty() {
 			Self::deduct_fees(&deduct_fees_from, fee)?;
 		}
@@ -107,12 +107,12 @@ where
 			},
 		]));
 
-		Ok(ValidTransaction::default())
+		Ok(())
 	}
 
-	fn deduct_fees(acc: &T::AccountId, fee: &Fee) -> TransactionValidity {
+	fn deduct_fees(acc: &T::AccountId, fee: &Fee) -> Result<(), CosmosError> {
 		for amt in fee.amount.iter() {
-			let amount = amt.amount.parse::<u128>().map_err(|_| InvalidTransaction::Call)?;
+			let amount = amt.amount.parse::<u128>().map_err(|_| RootError::InsufficientFee)?;
 
 			if amt.denom == T::NativeDenom::get() {
 				let _imbalance = T::NativeAsset::withdraw(
@@ -121,12 +121,12 @@ where
 					WithdrawReasons::TRANSACTION_PAYMENT,
 					ExistenceRequirement::KeepAlive,
 				)
-				.map_err(|_| InvalidTransaction::Payment)?;
+				.map_err(|_| RootError::InsufficientFunds)?;
 
 				// TODO: Resolve imbalance
 			} else {
 				let asset_id = T::AssetToDenom::convert(amt.denom.clone())
-					.map_err(|_| InvalidTransaction::Call)?;
+					.map_err(|_| RootError::InsufficientFunds)?;
 				let _imbalance = T::Assets::withdraw(
 					asset_id,
 					acc,
@@ -135,12 +135,12 @@ where
 					Preservation::Preserve,
 					Fortitude::Polite,
 				)
-				.map_err(|_| InvalidTransaction::Payment)?;
+				.map_err(|_| RootError::InsufficientFunds)?;
 
 				// TODO: Resolve imbalance
 			}
 		}
 
-		Ok(ValidTransaction::default())
+		Ok(())
 	}
 }

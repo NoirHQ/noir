@@ -26,16 +26,16 @@ hex = { version = "0.4.3", default-features = false }
 [features]
 default = ["std"]
 std = [
-    "cosmos-sdk-proto/std",
-    "frame-support/std",
-    "frame-system/std",
-    "np-cosmos/std",
-    "pallet-cosmos/std",
-    "pallet-cosmos-types/std",
-    "pallet-cosmos-x-auth-signing/std",
-    "ripemd/std",
-    "sp-core/std",
-    "sp-io/std",
-    "sp-runtime/std",
-    "hex/std",
+	"cosmos-sdk-proto/std",
+	"frame-support/std",
+	"frame-system/std",
+	"np-cosmos/std",
+	"pallet-cosmos/std",
+	"pallet-cosmos-types/std",
+	"pallet-cosmos-x-auth-signing/std",
+	"ripemd/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"hex/std",
 ]

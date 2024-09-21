@@ -17,24 +17,22 @@
 
 use core::marker::PhantomData;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
-use frame_support::{
-	ensure,
-	pallet_prelude::{InvalidTransaction, TransactionValidity, ValidTransaction},
-	traits::Contains,
+use frame_support::{ensure, traits::Contains};
+use pallet_cosmos_types::{
+	errors::{CosmosError, RootError},
+	handler::AnteDecorator,
 };
-use pallet_cosmos_types::handler::AnteDecorator;
 
 pub struct KnownMsgDecorator<T>(PhantomData<T>);
-
 impl<T> AnteDecorator for KnownMsgDecorator<T>
 where
 	T: pallet_cosmos::Config,
 {
-	fn ante_handle(tx: &Tx, _simulate: bool) -> TransactionValidity {
-		let body = tx.body.as_ref().ok_or(InvalidTransaction::Call)?;
+	fn ante_handle(tx: &Tx, _simulate: bool) -> Result<(), CosmosError> {
+		let body = tx.body.as_ref().ok_or(RootError::TxDecodeError)?;
 
-		ensure!(body.messages.iter().all(T::MsgFilter::contains), InvalidTransaction::Call);
+		ensure!(body.messages.iter().all(T::MsgFilter::contains), RootError::TxDecodeError);
 
-		Ok(ValidTransaction::default())
+		Ok(())
 	}
 }

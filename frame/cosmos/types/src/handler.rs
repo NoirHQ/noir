@@ -15,24 +15,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::errors::CosmosError;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
-use sp_runtime::transaction_validity::{TransactionValidity, ValidTransaction};
 
 pub trait AnteDecorator {
-	fn ante_handle(tx: &Tx, simulate: bool) -> TransactionValidity;
+	fn ante_handle(tx: &Tx, simulate: bool) -> Result<(), CosmosError>;
 }
 
 impl AnteDecorator for () {
-	fn ante_handle(_tx: &Tx, _simulate: bool) -> TransactionValidity {
-		Ok(ValidTransaction::default())
+	fn ante_handle(_tx: &Tx, _simulate: bool) -> Result<(), CosmosError> {
+		Ok(())
 	}
 }
 
 #[impl_trait_for_tuples::impl_for_tuples(1, 12)]
 impl AnteDecorator for Tuple {
-	fn ante_handle(tx: &Tx, simulate: bool) -> TransactionValidity {
-		let valid = ValidTransaction::default();
-		for_tuples!( #( let valid = valid.combine_with(Tuple::ante_handle(tx, simulate)?); )* );
-		Ok(valid)
+	fn ante_handle(tx: &Tx, simulate: bool) -> Result<(), CosmosError> {
+		for_tuples!( #( Tuple::ante_handle(tx, simulate)?; )* );
+		Ok(())
 	}
 }

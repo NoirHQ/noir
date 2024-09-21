@@ -5,10 +5,10 @@
   "server": {
     "endpoint": "http://localhost:1317",
     "port": 1317,
-    "logger": true
+    "logger": false
   },
   "chain": {
-    "endpoint": "ws://127.0.0.1:59954",
+    "endpoint": "ws://127.0.0.1:49544",
     "network": "dev",
     "moniker": "cosmos",
     "name": "noir",
