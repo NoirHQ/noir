@@ -15,18 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg_attr(not(feature = "std"), no_std)]
+use crate::gas::Gas;
+use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
 
-extern crate alloc;
-
-pub mod address;
-pub mod coin;
-pub mod context;
-pub mod errors;
-pub mod events;
-pub mod gas;
-pub mod handler;
-pub mod macros;
-pub mod msgservice;
-pub mod tx;
-pub mod tx_msgs;
+pub fn get_gas_limit(tx: &Tx) -> Option<Gas> {
+	tx.auth_info
+		.as_ref()
+		.and_then(|auth_info| auth_info.fee.as_ref())
+		.map(|fee| fee.gas_limit)
+}

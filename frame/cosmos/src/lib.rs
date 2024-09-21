@@ -38,6 +38,7 @@ use pallet_cosmos_types::{
 	gas::traits::GasMeter,
 	handler::AnteDecorator,
 	msgservice::traits::MsgServiceRouter,
+	tx::get_gas_limit,
 };
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -368,18 +369,12 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn apply_validated_transaction(tx: Tx) -> DispatchResultWithPostInfo {
-		let gas_limit = tx
-			.auth_info
-			.as_ref()
-			.and_then(|auth_info| auth_info.fee.as_ref())
-			.ok_or(
-				Error::<T>::CosmosError(RootError::TxDecodeError.into())
-					.with_weight(T::WeightInfo::default_weight()),
-			)?
-			.gas_limit;
+		let gas_limit = get_gas_limit(&tx).ok_or(
+			Error::<T>::CosmosError(RootError::TxDecodeError.into())
+				.with_weight(T::WeightInfo::default_weight()),
+		)?;
 
 		let mut ctx = T::Context::new(gas_limit);
-
 		Self::run_tx(&mut ctx, &tx).map_err(|e| {
 			Error::<T>::CosmosError(e)
 				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
@@ -397,7 +392,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	fn run_tx(ctx: &mut T::Context, tx: &Tx) -> Result<(), CosmosError> {
+	pub fn run_tx(ctx: &mut T::Context, tx: &Tx) -> Result<(), CosmosError> {
 		let base_gas = T::WeightToGas::convert(T::WeightInfo::default_weight());
 		ctx.gas_meter()
 			.consume_gas(base_gas, "base gas")

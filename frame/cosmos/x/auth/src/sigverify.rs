@@ -15,11 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use alloc::vec::Vec;
 use core::{cmp::Ordering, marker::PhantomData};
 use cosmos_sdk_proto::{
 	cosmos::{
 		crypto::{multisig::LegacyAminoPubKey, secp256k1},
-		tx::v1beta1::{ModeInfo, SignerInfo, Tx},
+		tx::v1beta1::{ModeInfo, Tx},
 	},
 	prost::Message,
 	Any,
@@ -161,8 +162,12 @@ where
 		let mut sig_count = 0u64;
 
 		let auth_info = tx.auth_info.as_ref().ok_or(RootError::TxDecodeError)?;
-		for SignerInfo { public_key, .. } in auth_info.signer_infos.iter() {
-			let public_key = public_key.as_ref().ok_or(RootError::TxDecodeError)?;
+		let public_keys = auth_info
+			.signer_infos
+			.iter()
+			.filter_map(|signer_info| signer_info.public_key.clone())
+			.collect::<Vec<Any>>();
+		for public_key in public_keys.iter() {
 			sig_count = sig_count.saturating_add(Self::count_sub_keys(public_key)?);
 
 			ensure!(sig_count <= T::TxSigLimit::get(), RootError::TooManySignatures);

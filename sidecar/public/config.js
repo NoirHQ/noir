@@ -13,5 +13,5 @@ const config = {
 		low: "0.8",
 		tiny: "0.6",
 	},
-	sendGas: "400000000"
+	sendGas: "130000000"
 };

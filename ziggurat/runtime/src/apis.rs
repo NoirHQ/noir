@@ -34,7 +34,7 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_aura::Authorities;
-use pallet_cosmos_types::handler::AnteDecorator;
+use pallet_cosmos_types::{context::traits::Context, handler::AnteDecorator, tx::get_gas_limit};
 use pallet_ethereum::{Transaction as EthereumTransaction, TransactionStatus};
 use pallet_evm::{Account as EVMAccount, FeeCalculator, Runner};
 use sp_api::impl_runtime_apis;
@@ -576,7 +576,10 @@ impl_runtime_apis! {
 
 			<Runtime as pallet_cosmos::Config>::AnteHandler::ante_handle(&tx, true)
 				.map_err(|e| SimulateError::InternalError(format!("Failed to ante handle cosmos tx. error: {:?}", e).into()))?;
-			pallet_cosmos::Pallet::<Runtime>::apply_validated_transaction(tx)
+
+			let gas_limit = get_gas_limit(&tx).ok_or(SimulateError::InternalError("Empty gas limit".into()))?;
+			let mut context = <Runtime as pallet_cosmos::Config>::Context::new(gas_limit);
+			pallet_cosmos::Pallet::<Runtime>::run_tx(&mut context, &tx)
 				.map_err(|e| SimulateError::InternalError(format!("Failed to simulate cosmos tx. error: {:?}", e).into()))?;
 
 			System::read_events_no_consensus()

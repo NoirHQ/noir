@@ -21,16 +21,9 @@ export class NoirAccountService implements IAccountService {
 
 	public async accounts(address: string): Promise<AccountResponse> {
 		let sequence = '0';
-		let key: string | null = null;
 
 		const originRaw = await this.origin(address);
-		let origin = originRaw.toString();
-		if (origin) {
-			key = Buffer.from(originRaw.toU8a(true).slice(2)).toString("base64");
-		} else {
-			origin = this.interim(address);
-			key = Dummy.Secp256k1PublicKey;
-		}
+		const origin = originRaw.toString();
 		const account = await this.chainApi.query["system"]["account"](origin);
 		if (account) {
 			const { nonce } = account.toJSON() as any;
@@ -38,10 +31,10 @@ export class NoirAccountService implements IAccountService {
 		}
 		return new AccountResponse({
 			"@type": "/cosmos.auth.v1beta1.BaseAccount",
-			address: address,
+			address,
 			pub_key: {
 				"@type": "/cosmos.crypto.secp256k1.PubKey",
-				key,
+				key: Dummy.Secp256k1PublicKey,
 			},
 			account_number: "0",
 			sequence,
