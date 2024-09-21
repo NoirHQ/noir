@@ -57,10 +57,9 @@ export class NoirAccountService implements IAccountService {
 
 	public interim(address: string): string {
 		const { data } = fromBech32(address);
-		const addressRaw = Buffer.concat([
-			Buffer.from([0xa0, 0xe4, 0x02, 0x20]),
+		const addressRaw = Buffer.from(
 			blake2b(Buffer.concat([Buffer.from("cosm:", "utf8"), data]), 32),
-		]);
+		);
 		return `0x${addressRaw.toString("hex")}`;
 	}
 }
