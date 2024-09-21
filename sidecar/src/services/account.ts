@@ -2,7 +2,8 @@ import { ApiPromise } from "@polkadot/api";
 import { AccountResponse } from "../types";
 import { fromBech32 } from "@cosmjs/encoding";
 import { Codec } from "@polkadot/types/types/index.js";
-import { blake2b } from "ethereum-cryptography/blake2b.js";
+import { stringToU8a, u8aConcat, u8aToHex } from "@polkadot/util";
+import { blake2AsU8a } from "@polkadot/util-crypto";
 import { ApiService } from "./service";
 import Dummy from "../constants/dummy";
 
@@ -50,9 +51,7 @@ export class NoirAccountService implements IAccountService {
 
 	public interim(address: string): string {
 		const { data } = fromBech32(address);
-		const addressRaw = Buffer.from(
-			blake2b(Buffer.concat([Buffer.from("cosm:", "utf8"), data]), 32),
-		);
-		return `0x${addressRaw.toString("hex")}`;
+		const addressRaw = blake2AsU8a(u8aConcat(stringToU8a("cosm:"), data));
+		return u8aToHex(addressRaw);
 	}
 }
