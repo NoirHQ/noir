@@ -369,7 +369,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn apply_validated_transaction(tx: Tx) -> DispatchResultWithPostInfo {
-		let gas_limit = tx.gas_limit().ok_or(
+		let gas_limit = tx.gas().ok_or(
 			Error::<T>::CosmosError(RootError::TxDecodeError.into())
 				.with_weight(T::WeightInfo::default_weight()),
 		)?;

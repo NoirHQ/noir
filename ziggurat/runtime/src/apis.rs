@@ -577,7 +577,7 @@ impl_runtime_apis! {
 			<Runtime as pallet_cosmos::Config>::AnteHandler::ante_handle(&tx, true)
 				.map_err(|e| SimulateError::InternalError(format!("Failed to ante handle cosmos tx. error: {:?}", e).into()))?;
 
-			let gas_limit = tx.gas_limit().ok_or(SimulateError::InternalError("Empty gas limit".into()))?;
+			let gas_limit = tx.gas().ok_or(SimulateError::InternalError("Empty gas limit".into()))?;
 			let mut context = <Runtime as pallet_cosmos::Config>::Context::new(gas_limit);
 			pallet_cosmos::Pallet::<Runtime>::run_tx(&mut context, &tx)
 				.map_err(|e| SimulateError::InternalError(format!("Failed to simulate cosmos tx. error: {:?}", e).into()))?;
