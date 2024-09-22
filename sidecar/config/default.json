@@ -8,7 +8,7 @@
     "logger": false
   },
   "chain": {
-    "endpoint": "ws://127.0.0.1:49544",
+    "endpoint": "ws://127.0.0.1:57875",
     "network": "dev",
     "moniker": "cosmos",
     "name": "noir",

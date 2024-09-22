@@ -38,7 +38,7 @@ use pallet_cosmos_types::{
 	gas::traits::GasMeter,
 	handler::AnteDecorator,
 	msgservice::traits::MsgServiceRouter,
-	tx::get_gas_limit,
+	tx_msgs::FeeTx,
 };
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -369,7 +369,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn apply_validated_transaction(tx: Tx) -> DispatchResultWithPostInfo {
-		let gas_limit = get_gas_limit(&tx).ok_or(
+		let gas_limit = tx.gas_limit().ok_or(
 			Error::<T>::CosmosError(RootError::TxDecodeError.into())
 				.with_weight(T::WeightInfo::default_weight()),
 		)?;

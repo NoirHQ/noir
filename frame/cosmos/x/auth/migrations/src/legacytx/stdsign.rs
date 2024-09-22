@@ -40,8 +40,8 @@ pub struct StdFee {
 	pub gas: String,
 }
 
-impl From<&Fee> for StdFee {
-	fn from(fee: &Fee) -> Self {
+impl From<Fee> for StdFee {
+	fn from(fee: Fee) -> Self {
 		Self { amount: fee.amount.iter().map(Into::into).collect(), gas: fee.gas_limit.to_string() }
 	}
 }

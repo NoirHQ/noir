@@ -35,6 +35,7 @@ use pallet_cosmos_types::{
 		CosmosEvent, EventAttribute, ATTRIBUTE_KEY_FEE, ATTRIBUTE_KEY_FEE_PAYER, EVENT_TYPE_TX,
 	},
 	handler::AnteDecorator,
+	tx_msgs::FeeTx,
 };
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 use sp_core::{Get, H160};
@@ -49,11 +50,7 @@ where
 	T: frame_system::Config + pallet_cosmos::Config,
 {
 	fn ante_handle(tx: &Tx, simulate: bool) -> Result<(), CosmosError> {
-		let fee = tx
-			.auth_info
-			.as_ref()
-			.and_then(|auth_info| auth_info.fee.as_ref())
-			.ok_or(RootError::TxDecodeError)?;
+		let fee = tx.fee().ok_or(RootError::TxDecodeError)?;
 
 		if !simulate && !frame_system::Pallet::<T>::block_number().is_zero() && fee.gas_limit == 0 {
 			return Err(RootError::InvalidGasLimit.into());
@@ -76,11 +73,7 @@ where
 	fn check_deduct_fee(tx: &Tx) -> Result<(), CosmosError> {
 		let fee_payer = T::SigVerifiableTx::fee_payer(tx).map_err(|_| RootError::TxDecodeError)?;
 
-		let fee = tx
-			.auth_info
-			.as_ref()
-			.and_then(|auth_info| auth_info.fee.as_ref())
-			.ok_or(RootError::TxDecodeError)?;
+		let fee = tx.fee().ok_or(RootError::TxDecodeError)?;
 
 		// Fee granter not supported
 		ensure!(fee.granter.is_empty(), RootError::InvalidRequest);
@@ -91,7 +84,7 @@ where
 		let deduct_fees_from = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		if !fee.amount.is_empty() {
-			Self::deduct_fees(&deduct_fees_from, fee)?;
+			Self::deduct_fees(&deduct_fees_from, &fee)?;
 		}
 
 		pallet_cosmos::Pallet::<T>::deposit_event(pallet_cosmos::Event::AnteHandled(vec![

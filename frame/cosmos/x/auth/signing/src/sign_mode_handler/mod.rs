@@ -36,7 +36,7 @@ use cosmos_sdk_proto::{
 	traits::Message,
 	Any,
 };
-use pallet_cosmos_types::any_match;
+use pallet_cosmos_types::{any_match, tx_msgs::FeeTx};
 use pallet_cosmos_x_auth_migrations::legacytx::stdsign::{LegacyMsg, StdSignDoc};
 use pallet_cosmos_x_bank_types::msgs::msg_send::MsgSend;
 use pallet_cosmos_x_wasm_types::tx::{
@@ -107,11 +107,7 @@ impl traits::SignModeHandler for SignModeHandler {
 
 						msgs.push(legacy_msg);
 					}
-					let fee = tx
-						.auth_info
-						.as_ref()
-						.and_then(|auth_info| auth_info.fee.as_ref())
-						.ok_or(SignModeHandlerError::EmptyFee)?;
+					let fee = tx.fee().ok_or(SignModeHandlerError::EmptyFee)?;
 					let sign_doc = StdSignDoc {
 						account_number: data.account_number.to_string(),
 						chain_id: data.chain_id.clone(),

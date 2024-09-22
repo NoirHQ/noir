@@ -15,9 +15,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::gas::Gas;
 use alloc::{string::String, vec::Vec};
+use cosmos_sdk_proto::cosmos::tx::v1beta1::{Fee, Tx};
 
 pub trait Msg {
 	// get_signers returns the addresses of signers that must sign.
 	fn get_signers(self) -> Vec<String>;
+}
+
+pub trait FeeTx {
+	fn fee(&self) -> Option<Fee>;
+	fn gas_limit(&self) -> Option<Gas>;
+}
+
+impl FeeTx for Tx {
+	fn fee(&self) -> Option<Fee> {
+		self.auth_info.as_ref().and_then(|auth_info| auth_info.fee.clone())
+	}
+	fn gas_limit(&self) -> Option<Gas> {
+		self.fee().map(|fee| fee.gas_limit)
+	}
 }

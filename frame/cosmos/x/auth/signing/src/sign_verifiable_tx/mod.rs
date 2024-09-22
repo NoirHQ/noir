@@ -22,7 +22,10 @@ use cosmos_sdk_proto::{
 	cosmos::{bank, tx::v1beta1::Tx},
 	cosmwasm::wasm,
 };
-use pallet_cosmos_types::{any_match, tx_msgs::Msg};
+use pallet_cosmos_types::{
+	any_match,
+	tx_msgs::{FeeTx, Msg},
+};
 use pallet_cosmos_x_bank_types::msgs::msg_send::MsgSend;
 use pallet_cosmos_x_wasm_types::tx::{
 	msg_execute_contract::MsgExecuteContract, msg_instantiate_contract2::MsgInstantiateContract2,
@@ -80,11 +83,7 @@ impl traits::SigVerifiableTx for SigVerifiableTx {
 	}
 
 	fn fee_payer(tx: &Tx) -> Result<String, SigVerifiableTxError> {
-		let fee = tx
-			.auth_info
-			.as_ref()
-			.and_then(|auth_info| auth_info.fee.as_ref())
-			.ok_or(SigVerifiableTxError::EmptyFee)?;
+		let fee = tx.fee().ok_or(SigVerifiableTxError::EmptyFee)?;
 
 		let fee_payer = if !fee.payer.is_empty() {
 			fee.payer.clone()
