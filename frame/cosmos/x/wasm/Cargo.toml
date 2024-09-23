@@ -15,6 +15,7 @@ cosmos-sdk-proto = { version = "0.24", default-features = false, features = [
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 hex = { version = "0.4.3", default-features = false }
 libflate = { version = "2.1.0", default-features = false }
+log = { version = "0.4.21", default-features = false }
 pallet-cosmos = { workspace = true, default-features = false }
 pallet-cosmos-types = { workspace = true, default-features = false }
 pallet-cosmos-x-wasm-types = { workspace = true, default-features = false }
@@ -30,6 +31,7 @@ std = [
 	"frame-support/std",
 	"hex/std",
 	"libflate/std",
+	"log/std",
 	"pallet-cosmos/std",
 	"pallet-cosmos-types/std",
 	"pallet-cosmos-x-wasm-types/std",

@@ -36,7 +36,8 @@ pub trait CosmosApi<BlockHash> {
 	async fn broadcast_tx(&self, tx_bytes: Bytes) -> RpcResult<H256>;
 
 	#[method(name = "cosmos_simulate")]
-	async fn simulate(&self, tx_bytes: Bytes, at: Option<BlockHash>) -> RpcResult<SimulateResponse>;
+	async fn simulate(&self, tx_bytes: Bytes, at: Option<BlockHash>)
+		-> RpcResult<SimulateResponse>;
 }
 
 pub struct Cosmos<C, P> {
