@@ -31,12 +31,12 @@ use std::sync::Arc;
 
 #[rpc(client, server)]
 #[async_trait]
-pub trait CosmosApi {
+pub trait CosmosApi<BlockHash> {
 	#[method(name = "cosmos_broadcastTx")]
 	async fn broadcast_tx(&self, tx_bytes: Bytes) -> RpcResult<H256>;
 
 	#[method(name = "cosmos_simulate")]
-	async fn simulate(&self, tx_bytes: Bytes) -> RpcResult<SimulateResponse>;
+	async fn simulate(&self, tx_bytes: Bytes, at: Option<BlockHash>) -> RpcResult<SimulateResponse>;
 }
 
 pub struct Cosmos<C, P> {
@@ -51,7 +51,7 @@ impl<C, P> Cosmos<C, P> {
 }
 
 #[async_trait]
-impl<Block, C, P> CosmosApiServer for Cosmos<C, P>
+impl<Block, C, P> CosmosApiServer<<Block as BlockT>::Hash> for Cosmos<C, P>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static,
@@ -75,12 +75,15 @@ where
 			.await
 	}
 
-	async fn simulate(&self, tx_bytes: Bytes) -> RpcResult<SimulateResponse> {
-		let best_hash = self.client.info().best_hash;
-
+	async fn simulate(
+		&self,
+		tx_bytes: Bytes,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> RpcResult<SimulateResponse> {
+		let at = at.unwrap_or(self.client.info().best_hash);
 		self.client
 			.runtime_api()
-			.simulate(best_hash, tx_bytes.to_vec())
+			.simulate(at, tx_bytes.to_vec())
 			.map_err(internal_error)?
 			.map_err(|e| match e {
 				SimulateError::InvalidTx => request_error("Invalid tx"),

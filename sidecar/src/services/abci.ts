@@ -12,6 +12,7 @@ import { ABCIQueryResponse } from "cosmjs-types/cosmos/base/tendermint/v1beta1/q
 import { SimulateRequest, SimulateResponse } from "cosmjs-types/cosmos/tx/v1beta1/service.js";
 import { TxService } from "./tx";
 import { QuerySmartContractStateRequest, QuerySmartContractStateResponse } from 'cosmjs-types/cosmwasm/wasm/v1/query.js'
+import { convertToCodespace } from "../constants/codespace";
 
 export class AbciService implements ApiService {
 	chainApi: ApiPromise;
@@ -65,23 +66,39 @@ export class AbciService implements ApiService {
 				codespace: '',
 			};
 		} else if (path === '/cosmos.tx.v1beta1.Service/Simulate') {
-			// TODO: Check simulate tx fields
-			const request = SimulateRequest.decode(Buffer.from(data, 'hex'));
-			const response = SimulateResponse.encode(await this.txService.simulate(Buffer.from(request.txBytes).toString('base64'))).finish();
-			// TODO: Get actual height
-			const height = (await this.chainApi.query.system.number()).toString();
-
-			return {
-				code: 0,
-				log: '',
-				info: '',
-				index: Long.ZERO,
-				key: undefined,
-				value: response,
-				proofOps: undefined,
-				height: Long.fromString(height),
-				codespace: "",
-			};
+			const height = await this.chainApi.query.system.number();
+			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+			try {
+				const req = SimulateRequest.decode(Buffer.from(data, 'hex'));
+				const res = await this.txService.simulate(Buffer.from(req.txBytes).toString('base64'), blockHash.toString());
+				const resBytes = SimulateResponse.encode(res).finish();
+				return {
+					code: 0,
+					log: '',
+					info: '',
+					index: Long.ZERO,
+					key: undefined,
+					value: resBytes,
+					proofOps: undefined,
+					height: Long.fromString(height.toString()),
+					codespace: '',
+				};
+			} catch (e: any) {
+				const message = e.toString();
+				const codespace = message.slice(message.indexOf('codespace:') + 'codespace:'.length, message.indexOf('code:')).trim();
+				const code = message.slice(message.indexOf('code:') + 'code:'.length, message.indexOf('}')).trim();
+				return {
+					code: parseInt(code),
+					log: message,
+					info: '',
+					index: Long.ZERO,
+					key: undefined,
+					value: new Uint8Array(),
+					proofOps: undefined,
+					height: Long.fromString(height.toString()),
+					codespace: convertToCodespace(parseInt(codespace)),
+				};
+			}
 		} else if (path === '/cosmwasm.wasm.v1.Query/SmartContractState') {
 			const { address, queryData } = QuerySmartContractStateRequest.decode(Uint8Array.from(Buffer.from(data, 'hex')));
 			const gas = 10000000000;

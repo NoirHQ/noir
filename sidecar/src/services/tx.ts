@@ -9,6 +9,7 @@ import {
 import Long from "long";
 import { createHash } from "crypto";
 import { Tx } from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
+import { convertToCodespace } from "../constants/codespace";
 
 type TransactResult = { codespace: string, code: number; gasUsed: number, events: any[] };
 
@@ -150,8 +151,7 @@ export class TxService implements ApiService {
 					const errors = Uint8Array.from(Buffer.from(error.startsWith('0x') ? error.slice(2) : error, 'hex'));
 					const weight = info.weight.refTime;
 
-					// TODO: codespace and gasUsed will be transformed proper values
-					return { codespace: codespace(errors[1]), code: errors[2], gasUsed: weight, events: [] };
+					return { codespace: convertToCodespace(errors[1]), code: errors[2], gasUsed: weight, events: [] };
 				}
 			});
 		return result[0];
@@ -164,11 +164,9 @@ export class TxService implements ApiService {
 		return Buffer.from(str, from).toString(to);
 	}
 
-	public async simulate(txBytes: string): Promise<SimulateResponse> {
+	public async simulate(txBytes: string, blockHash?: string): Promise<SimulateResponse> {
 		const txRaw = `0x${this.convert(txBytes, 'base64', 'hex')}`;
-
-		const { gas_info, events } = (await this.chainApi.rpc['cosmos']['simulate'](txRaw)).toJSON();
-
+		const { gas_info, events } = (await this.chainApi.rpc['cosmos']['simulate'](txRaw, blockHash)).toJSON();
 		const cosmosEvents = this.encodeEvents(events, 'hex', 'utf8');
 
 		console.debug(`gasInfo: ${JSON.stringify(gas_info)}`);
@@ -207,13 +205,5 @@ export class TxService implements ApiService {
 				value: eventValue,
 			}
 		});
-	}
-}
-
-const codespace = (codespace: number): string => {
-	switch (codespace) {
-		case 0: return 'sdk';
-		case 1: return 'wasm';
-		default: return 'unknown';
 	}
 }

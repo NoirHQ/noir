@@ -17,6 +17,10 @@ const rpc = {
 					name: 'tx_bytes',
 					type: 'Bytes',
 				},
+				{
+					name: 'at',
+					type: 'Option<Bytes>',
+				},
 			],
 			type: 'SimulateResponse',
 		},
