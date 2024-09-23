@@ -148,13 +148,10 @@ export class TxService implements ApiService {
 					const [{ module: { index, error } }, info] = JSON.parse(data);
 
 					const errors = Uint8Array.from(Buffer.from(error.startsWith('0x') ? error.slice(2) : error, 'hex'));
-					const codespace = errors[1];
-					const code = errors[2];
-
 					const weight = info.weight.refTime;
 
 					// TODO: codespace and gasUsed will be transformed proper values
-					return { codespace: 'sdk', code, gasUsed: weight, events: [] };
+					return { codespace: codespace(errors[1]), code: errors[2], gasUsed: weight, events: [] };
 				}
 			});
 		return result[0];
@@ -210,5 +207,13 @@ export class TxService implements ApiService {
 				value: eventValue,
 			}
 		});
+	}
+}
+
+const codespace = (codespace: number): string => {
+	switch (codespace) {
+		case 0: return 'sdk';
+		case 1: return 'wasm';
+		default: return 'unknown';
 	}
 }
