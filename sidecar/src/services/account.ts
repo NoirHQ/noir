@@ -8,7 +8,7 @@ import { ApiService } from "./service";
 import Dummy from "../constants/dummy";
 
 export interface IAccountService extends ApiService {
-	accounts(address: string): Promise<AccountResponse>;
+	accounts(address: string, blockHash: string): Promise<AccountResponse>;
 	origin(address: string): Promise<Codec>;
 	interim(address: string): string;
 }
@@ -20,12 +20,12 @@ export class NoirAccountService implements IAccountService {
 		this.chainApi = chainApi;
 	}
 
-	public async accounts(address: string): Promise<AccountResponse> {
+	public async accounts(address: string, blockHash?: string): Promise<AccountResponse> {
 		let sequence = '0';
 
 		const originRaw = await this.origin(address);
 		const origin = originRaw.toString();
-		const account = await this.chainApi.query["system"]["account"](origin);
+		const account = await (await (blockHash ? this.chainApi : this.chainApi.at(blockHash))).query["system"]["account"](origin);
 		if (account) {
 			const { nonce } = account.toJSON() as any;
 			sequence = nonce.toString();

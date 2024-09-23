@@ -32,7 +32,11 @@ export class AbciService implements ApiService {
 			const address = QueryAccountRequest.decode(
 				Buffer.from(data, 'hex')
 			).address;
-			const { account } = await this.accountService.accounts(address);
+
+			const height = await this.chainApi.query.system.number();
+			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+
+			const { account } = await this.accountService.accounts(address, blockHash.toString());
 			const pubkey: PubKey = {
 				key: Buffer.from(account.pub_key.key, 'base64'),
 			};
@@ -53,7 +57,6 @@ export class AbciService implements ApiService {
 				},
 			};
 			const value = QueryAccountResponse.encode(queryAccountResponse).finish();
-			const height = (await this.chainApi.query.system.number()).toString();
 			return {
 				code: 0,
 				log: '',
@@ -62,7 +65,7 @@ export class AbciService implements ApiService {
 				key: undefined,
 				value,
 				proofOps: undefined,
-				height: Long.fromString(height),
+				height: Long.fromString(height.toString()),
 				codespace: '',
 			};
 		} else if (path === '/cosmos.tx.v1beta1.Service/Simulate') {
