@@ -8,7 +8,7 @@ import { ApiService } from "./service";
 import Dummy from "../constants/dummy";
 
 export interface IAccountService extends ApiService {
-	accounts(address: string, blockHash: string): Promise<AccountResponse>;
+	accounts(address: string, blockHash?: string): Promise<AccountResponse>;
 	origin(address: string): Promise<Codec>;
 	interim(address: string): string;
 }
