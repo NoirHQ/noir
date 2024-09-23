@@ -3,7 +3,7 @@ use runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, UNIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{ecdsa, sr25519, Pair, Public};
+use sp_core::{crypto::Ss58Codec, ecdsa, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use ziggurat_runtime as runtime;
 
@@ -106,6 +106,7 @@ pub fn development_config() -> ChainSpec {
 			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 			get_account_id_from_seed::<ecdsa::Public>("Alice"),
+			AccountId::from_string("5HSVzaktLBoAFZ89RQHEWrJizmSuXrbpGm7favc99p5qt6UM").unwrap(),
 		],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
 		2000.into(),
@@ -158,6 +159,7 @@ pub fn local_testnet_config() -> ChainSpec {
 			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 			get_account_id_from_seed::<ecdsa::Public>("Alice"),
+			AccountId::from_string("5HSVzaktLBoAFZ89RQHEWrJizmSuXrbpGm7favc99p5qt6UM").unwrap(),
 		],
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
 		2000.into(),
