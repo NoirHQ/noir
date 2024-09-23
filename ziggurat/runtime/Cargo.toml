@@ -93,6 +93,7 @@ pallet-cosmos-x-auth-signing = { workspace = true, default-features = false }
 pallet-cosmwasm = { workspace = true, default-features = false }
 
 [build-dependencies]
+docify = "0.2"
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", optional = true }
 
 [features]
