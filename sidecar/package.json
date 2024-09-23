@@ -8,8 +8,7 @@
 		"lint": "npx eslint ./src",
 		"test": "jest",
 		"dev": "nodemon --exec ts-node ./src/main.ts",
-		"start": "node --es-module-specifier-resolution=node ./dist/main.js",
-		"fmt": "eslint ./src --ext .ts --fix"
+		"start": "node --es-module-specifier-resolution=node ./dist/main.js"
 	},
 	"keywords": [],
 	"author": "code0xff <ian.jungyong.um@gmail.com>",
