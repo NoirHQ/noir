@@ -15,3 +15,4 @@ default_command = "./target/release/ziggurat"
 
 [[parachains.collators]]
 name = "collator-01"
+rpc_port=9944
