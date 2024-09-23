@@ -11,9 +11,9 @@ import { createHash } from "crypto";
 import { convertToCodespace } from "../constants/codespace";
 import { encodeTo } from "../utils";
 import { Event as CosmosEvent } from "cosmjs-types/tendermint/abci/types";
-import { EventRecord, Header } from "@polkadot/types/interfaces";
+import { Header } from "@polkadot/types/interfaces";
 
-type TransactResult = { codespace: string, code: number, gasWanted: number, gasUsed: number, events: CosmosEvent[] };
+export type TransactResult = { codespace: string, code: number, gasWanted: number, gasUsed: number, events: CosmosEvent[] };
 
 export class TxService implements ApiService {
 	chainApi: ApiPromise;
@@ -114,9 +114,10 @@ export class TxService implements ApiService {
 		header: Header,
 		extrinsicIndex: number
 	): Promise<TransactResult> {
+		/* eslint-disable @typescript-eslint/no-explicit-any */
 		const events = (await (
 			await this.chainApi.at(header.hash)
-		).query.system.events()).toJSON() as unknown as EventRecord[];
+		).query.system.events()) as any;
 
 		const result = events
 			.filter(({ event: { section, method }, phase }) => {
@@ -138,7 +139,6 @@ export class TxService implements ApiService {
 					const cosmosEvents = this.encodeEvents(events, 'hex', 'utf8');
 
 					console.debug(`cosmosEvents: ${JSON.stringify(cosmosEvents)}`)
-
 					return { codespace: '', code: 0, gasWanted: gas_wanted, gasUsed: gas_used, events: cosmosEvents };
 				} else {
 					const [{ module: { error } }, info] = JSON.parse(data.toString());
@@ -148,6 +148,7 @@ export class TxService implements ApiService {
 					return { codespace: convertToCodespace(errors[1]), code: errors[2], gasWanted: 0, gasUsed: weight, events: [] };
 				}
 			});
+
 		return result[0];
 	}
 
