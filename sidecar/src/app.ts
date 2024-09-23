@@ -369,8 +369,6 @@ export class App {
 					async ({ method: { args, method, section } }, index) => {
 						if (section === 'cosmos' && method === 'transact') {
 							const txBytes = args.toString().split(',')[0];
-							console.debug(`txBytes: ${txBytes}`);
-
 							await this.services
 								.get<TxService>('tx')
 								.saveTransactResult(txBytes, index, header);

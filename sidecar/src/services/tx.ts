@@ -25,7 +25,7 @@ export class TxService implements ApiService {
 	}
 
 	public async broadcastTx(txBytes: string): Promise<BroadcastTxResponse> {
-		console.debug(`broadcastTx(${txBytes})`);
+		console.debug(`broadcastTx`);
 
 		let txHash = (await this.chainApi.rpc['cosmos']['broadcastTx'](`0x${encodeTo(txBytes, 'base64', 'hex')}`)).toString();
 		txHash = txHash.startsWith('0x') ? txHash.slice(2) : txHash;
@@ -83,7 +83,7 @@ export class TxService implements ApiService {
 		extrinsicIndex: number,
 		header: Header
 	): Promise<void> {
-		console.debug(`saveTransactResult(${txBytes}, ${extrinsicIndex}, ${header})`);
+		console.debug(`saveTransactResult`);
 
 		txBytes = txBytes.startsWith('0x') ? txBytes.slice(2) : txBytes;
 
@@ -131,14 +131,12 @@ export class TxService implements ApiService {
 			.map(({ event: { data, section, method } }) => {
 				if (`${section}::${method}` === 'cosmos::Executed') {
 					const [gas_wanted, gas_used, events] = JSON.parse(data.toString());
-
 					console.debug(`gasWanted: ${gas_wanted}`);
 					console.debug(`gasUsed: ${gas_used}`);
-					console.debug(`events: ${JSON.stringify(events)}`);
 
 					const cosmosEvents = this.encodeEvents(events, 'hex', 'utf8');
-
 					console.debug(`cosmosEvents: ${JSON.stringify(cosmosEvents)}`)
+
 					return { codespace: '', code: 0, gasWanted: gas_wanted, gasUsed: gas_used, events: cosmosEvents };
 				} else {
 					const [{ module: { error } }, info] = JSON.parse(data.toString());
@@ -153,7 +151,7 @@ export class TxService implements ApiService {
 	}
 
 	public async simulate(txBytes: string, blockHash?: string): Promise<SimulateResponse> {
-		console.debug(`simulate(${txBytes}, ${blockHash})`);
+		console.debug(`simulate`);
 
 		const txRaw = `0x${encodeTo(txBytes, 'base64', 'hex')}`;
 		const { gas_info, events } = (await this.chainApi.rpc['cosmos']['simulate'](txRaw, blockHash)).toJSON();

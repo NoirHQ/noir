@@ -16,7 +16,7 @@ export class AccountService implements ApiService {
 	}
 
 	public async accounts(address: string, blockHash?: string): Promise<AccountResponse> {
-		console.debug(`accounts(${address}, ${blockHash})`);
+		console.debug(`accounts`);
 
 		let sequence = '0';
 		let origin = (await this.origin(address)).toString();
