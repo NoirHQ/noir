@@ -2,6 +2,7 @@ import { QueryDelegationTotalRewardsResponse } from "cosmjs-types/cosmos/distrib
 import { ApiService } from "./service";
 
 export class DistributionService implements ApiService {
+	/* eslint-disable @typescript-eslint/no-unused-vars */
 	public rewards(
 		delegatorAddress: string
 	): QueryDelegationTotalRewardsResponse {

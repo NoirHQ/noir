@@ -1,4 +1,5 @@
-export interface ApiService { }
+export interface ApiService {
+}
 
 export class ApiServices {
 	services: Map<string, ApiService>;
@@ -12,6 +13,9 @@ export class ApiServices {
 	}
 
 	public set(name: string, service: ApiService) {
+		if (this.get(name)) {
+			throw new Error(`Already reserved service name: ${name}`);
+		}
 		this.services.set(name, service);
 	}
 }

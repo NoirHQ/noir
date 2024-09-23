@@ -7,7 +7,7 @@ export class AccountResponse {
 }
 
 export interface BaseAccount {
-	"@type": string;
+	'@type': string;
 	address: string;
 	pub_key: PublicKey | null;
 	account_number: string;
@@ -15,6 +15,6 @@ export interface BaseAccount {
 }
 
 export interface PublicKey {
-	"@type": string;
+	'@type': string;
 	key: string;
 }

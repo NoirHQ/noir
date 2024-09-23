@@ -13,8 +13,7 @@ import {
 	StakingService,
 	StatusService,
 	TxService,
-	IAccountService,
-	NoirAccountService,
+	AccountService,
 } from "./services";
 import {
 	AccountResponse,
@@ -53,6 +52,7 @@ import {
 	BroadcastTxResponse,
 	SimulateResponse,
 } from "cosmjs-types/cosmos/tx/v1beta1/service.js";
+import { Header } from "@polkadot/types/interfaces";
 
 export class App {
 	config: IConfig;
@@ -85,7 +85,7 @@ export class App {
 	}
 
 	async initDatabase() {
-		const path = this.config.get<string>("db.path");
+		const path = this.config.get<string>('db.path');
 		console.debug(`Start to initialize database. path: ${path}`);
 
 		this.db = open({
@@ -127,7 +127,7 @@ export class App {
 			console.error(`Failed to connect with chain RPC`);
 		}
 
-		const accountService = new NoirAccountService(this.chainApi);
+		const accountService = new AccountService(this.chainApi);
 		const txService = new TxService(this.db, this.chainApi);
 		const abciService = new AbciService(this.chainApi, accountService, txService);
 		const balanceService = new BalanceService(
@@ -140,31 +140,31 @@ export class App {
 		const stakingService = new StakingService();
 		const statusService = new StatusService(this.config, this.chainApi);
 
-		this.services.set("abci", abciService);
-		this.services.set("account", accountService);
-		this.services.set("balance", balanceService);
-		this.services.set("distribution", distributionService);
-		this.services.set("nodeInfo", nodeInfoService);
-		this.services.set("staking", stakingService);
-		this.services.set("status", statusService);
-		this.services.set("tx", txService);
+		this.services.set('abci', abciService);
+		this.services.set('account', accountService);
+		this.services.set('balance', balanceService);
+		this.services.set('distribution', distributionService);
+		this.services.set('nodeInfo', nodeInfoService);
+		this.services.set('staking', stakingService);
+		this.services.set('status', statusService);
+		this.services.set('tx', txService);
 	}
 
 	async initApiServer() {
-		const logger = this.config.get<boolean>("server.logger");
+		const logger = this.config.get<boolean>('server.logger');
 		this.server = fastify({ logger });
 		const __dirname = path.resolve();
 		this.server.register(fastifyStatic, {
-			root: path.join(__dirname, "public"),
+			root: path.join(__dirname, 'public'),
 		});
 		await this.server.register(FastifyWebsocket);
 
-		this.server.get("/", (request: FastifyRequest, reply: FastifyReply) => {
-			reply.sendFile("index.html");
+		this.server.get('/', (_request: FastifyRequest, reply: FastifyReply) => {
+			reply.sendFile('index.html');
 		});
 
 		this.server.get(
-			"/cosmos/bank/v1beta1/balances/:address",
+			'/cosmos/bank/v1beta1/balances/:address',
 			async (
 				request: FastifyRequest<{
 					Params: QueryAllBalancesRequest;
@@ -172,14 +172,14 @@ export class App {
 			): Promise<unknown> => {
 				const { address } = request.params;
 				const response = QueryAllBalancesResponse.toJSON(
-					await this.services.get<BalanceService>("balance").balances(address)
+					await this.services.get<BalanceService>('balance').balances(address)
 				);
 				return toSnakeCase(response);
 			}
 		);
 
 		this.server.get(
-			"/cosmos/auth/v1beta1/accounts/:address",
+			'/cosmos/auth/v1beta1/accounts/:address',
 			async (
 				request: FastifyRequest<{
 					Params: QueryAccountRequest;
@@ -187,23 +187,23 @@ export class App {
 			): Promise<AccountResponse> => {
 				const { address } = request.params;
 				return await this.services
-					.get<IAccountService>("account")
+					.get<AccountService>('account')
 					.accounts(address);
 			}
 		);
 
 		this.server.get(
-			"/cosmos/base/tendermint/v1beta1/node_info",
+			'/cosmos/base/tendermint/v1beta1/node_info',
 			(): GetNodeInfoResponse => {
 				const response = GetNodeInfoResponse.toJSON(
-					this.services.get<NodeInfoService>("nodeInfo").nodeInfo()
+					this.services.get<NodeInfoService>('nodeInfo').nodeInfo()
 				);
 				return toSnakeCase(response);
 			}
 		);
 
 		this.server.post(
-			"/cosmos/tx/v1beta1/txs",
+			'/cosmos/tx/v1beta1/txs',
 			async (
 				request: FastifyRequest<{
 					Body: {
@@ -214,14 +214,14 @@ export class App {
 			): Promise<unknown> => {
 				const { tx_bytes } = request.body;
 				const response = BroadcastTxResponse.toJSON(
-					await this.services.get<TxService>("tx").broadcastTx(tx_bytes)
+					await this.services.get<TxService>('tx').broadcastTx(tx_bytes)
 				);
 				return toSnakeCase(response);
 			}
 		);
 
 		this.server.get(
-			"/cosmos/staking/v1beta1/delegations/:delegatorAddr",
+			'/cosmos/staking/v1beta1/delegations/:delegatorAddr',
 			(
 				request: FastifyRequest<{
 					Params: QueryDelegatorDelegationsRequest;
@@ -230,7 +230,7 @@ export class App {
 				const { delegatorAddr } = request.params;
 				const response = QueryDelegatorDelegationsResponse.toJSON(
 					this.services
-						.get<StakingService>("staking")
+						.get<StakingService>('staking')
 						.delegations(delegatorAddr)
 				);
 				return toSnakeCase(response);
@@ -238,7 +238,7 @@ export class App {
 		);
 
 		this.server.get(
-			"/cosmos/distribution/v1beta1/delegators/:delegatorAddress/rewards",
+			'/cosmos/distribution/v1beta1/delegators/:delegatorAddress/rewards',
 			(
 				request: FastifyRequest<{
 					Params: QueryDelegationTotalRewardsRequest;
@@ -247,7 +247,7 @@ export class App {
 				const { delegatorAddress } = request.params;
 				const response = QueryDelegationTotalRewardsResponse.toJSON(
 					this.services
-						.get<DistributionService>("distribution")
+						.get<DistributionService>('distribution')
 						.rewards(delegatorAddress)
 				);
 				return toSnakeCase(response);
@@ -255,7 +255,7 @@ export class App {
 		);
 
 		this.server.get(
-			"/cosmos/staking/v1beta1/delegators/:delegatorAddr/unbonding_delegations",
+			'/cosmos/staking/v1beta1/delegators/:delegatorAddr/unbonding_delegations',
 			(
 				request: FastifyRequest<{
 					Params: QueryDelegatorUnbondingDelegationsRequest;
@@ -264,7 +264,7 @@ export class App {
 				const { delegatorAddr } = request.params;
 				const response = QueryDelegatorUnbondingDelegationsResponse.toJSON(
 					this.services
-						.get<StakingService>("staking")
+						.get<StakingService>('staking')
 						.unbondingDelegations(delegatorAddr)
 				);
 				return toSnakeCase(response);
@@ -272,7 +272,7 @@ export class App {
 		);
 
 		this.server.post(
-			"/cosmos/tx/v1beta1/simulate",
+			'/cosmos/tx/v1beta1/simulate',
 			async (
 				request: FastifyRequest<{
 					Body: { tx_bytes: string };
@@ -280,7 +280,7 @@ export class App {
 			): Promise<unknown> => {
 				const { tx_bytes } = request.body;
 				const response = SimulateResponse.toJSON(
-					await this.services.get<TxService>("tx").simulate(tx_bytes)
+					await this.services.get<TxService>('tx').simulate(tx_bytes)
 				);
 				return toSnakeCase(response);
 			}
@@ -290,17 +290,17 @@ export class App {
 	async initJsonRpcServer() {
 		this.jsonrpc = new JSONRPCServer();
 
-		this.jsonrpc.addMethod("status", async (): Promise<unknown> => {
+		this.jsonrpc.addMethod('status', async (): Promise<unknown> => {
 			return toSnakeCase(
-				await this.services.get<StatusService>("status").status()
+				await this.services.get<StatusService>('status').status()
 			);
 		});
 
 		this.jsonrpc.addMethod(
-			"abci_query",
+			'abci_query',
 			async ({ path, data }): Promise<unknown> => {
 				const result = await this.services
-					.get<AbciService>("abci")
+					.get<AbciService>('abci')
 					.query(path, data);
 				const response = ABCIQueryResponse.toJSON(result);
 				return {
@@ -310,9 +310,9 @@ export class App {
 		);
 
 		this.jsonrpc.addMethod(
-			"broadcast_tx_sync",
+			'broadcast_tx_sync',
 			async ({ tx }): Promise<BroadcastTxSyncResponse> => {
-				const result = await this.services.get<TxService>("tx").broadcastTx(tx);
+				const result = await this.services.get<TxService>('tx').broadcastTx(tx);
 				const { code, txhash, data, rawLog, codespace } = result.txResponse;
 				return {
 					code,
@@ -324,16 +324,16 @@ export class App {
 			}
 		);
 
-		this.jsonrpc.addMethod("tx_search", ({ query }): ResultTxSearch => {
+		this.jsonrpc.addMethod('tx_search', ({ query }): ResultTxSearch => {
 			const args = querystring.parse(query);
-			let hash = args["tx.hash"] as string;
+			let hash = args['tx.hash'] as string;
 			if (hash.includes("'")) {
-				hash = hash.replace(/'/gi, "");
+				hash = hash.replace(/'/gi, '');
 			}
-			const txs = this.services.get<TxService>("tx").searchTx(hash);
+			const txs = this.services.get<TxService>('tx').searchTx(hash);
 			txs.forEach(tx => {
 				tx.tx_result.events.forEach(event => {
-					event.attributes = this.services.get<TxService>("tx").encodeAttributes(event.attributes, 'utf8', 'base64');
+					event.attributes = this.services.get<TxService>('tx').encodeAttributes(event.attributes, 'utf8', 'base64');
 				});
 			});
 
@@ -344,15 +344,15 @@ export class App {
 		});
 
 		this.server.get(
-			"/websocket",
+			'/websocket',
 			{ websocket: true },
 			(connection: SocketStream) => {
-				connection.socket.on("message", async (message) => {
+				connection.socket.on('message', async (message) => {
 					const request = JSON.parse(message.toString());
 					const response = await this.jsonrpc.receive(request);
 					if (response) {
 						connection.socket.send(
-							Buffer.from(JSON.stringify(response), "utf8")
+							Buffer.from(JSON.stringify(response), 'utf8')
 						);
 					}
 				});
@@ -362,16 +362,18 @@ export class App {
 
 	async initSubscribeEvents() {
 		await this.chainApi.rpc.chain.subscribeNewHeads(
-			async (header) => {
+			async (header: Header) => {
 				const signedBlock = await this.chainApi.rpc.chain.getBlock(header.hash);
 
 				signedBlock.block.extrinsics.forEach(
 					async ({ method: { args, method, section } }, index) => {
-						if (section === "cosmos" && method === "transact") {
-							const txRaw = args.toString().split(',')[0];
+						if (section === 'cosmos' && method === 'transact') {
+							const txBytes = args.toString().split(',')[0];
+							console.debug(`txBytes: ${txBytes}`);
+
 							await this.services
-								.get<TxService>("tx")
-								.saveTransactResult(txRaw, index, header);
+								.get<TxService>('tx')
+								.saveTransactResult(txBytes, index, header);
 						}
 					}
 				);

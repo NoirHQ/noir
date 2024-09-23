@@ -3,7 +3,7 @@ import {
 	QueryAccountResponse,
 } from "cosmjs-types/cosmos/auth/v1beta1/query.js";
 import { ApiService } from "./service";
-import { IAccountService } from "./account";
+import { AccountService } from "./account";
 import { PubKey } from "cosmjs-types/cosmos/crypto/secp256k1/keys.js";
 import { BaseAccount } from "cosmjs-types/cosmos/auth/v1beta1/auth.js";
 import Long from "long";
@@ -13,13 +13,14 @@ import { SimulateRequest, SimulateResponse } from "cosmjs-types/cosmos/tx/v1beta
 import { TxService } from "./tx";
 import { QuerySmartContractStateRequest, QuerySmartContractStateResponse } from 'cosmjs-types/cosmwasm/wasm/v1/query.js'
 import { convertToCodespace } from "../constants/codespace";
+import { encodeTo } from "../utils";
 
 export class AbciService implements ApiService {
 	chainApi: ApiPromise;
-	accountService: IAccountService;
+	accountService: AccountService;
 	txService: TxService;
 
-	constructor(chainApi: ApiPromise, accountService: IAccountService, txService: TxService) {
+	constructor(chainApi: ApiPromise, accountService: AccountService, txService: TxService) {
 		this.chainApi = chainApi;
 		this.accountService = accountService;
 		this.txService = txService;
@@ -86,7 +87,7 @@ export class AbciService implements ApiService {
 					height: Long.fromString(height.toString()),
 					codespace: '',
 				};
-			} catch (e: any) {
+			} catch (e: unknown) {
 				const message = e.toString();
 				const codespace = message.slice(message.indexOf('codespace:') + 'codespace:'.length, message.indexOf('code:')).trim();
 				const code = message.slice(message.indexOf('code:') + 'code:'.length, message.indexOf('}')).trim();
@@ -116,22 +117,22 @@ export class AbciService implements ApiService {
 			const height = await this.chainApi.query.system.number();
 			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
 
-			const response = await this.chainApi.rpc['cosmwasm']['query'](address, gas, `0x${Buffer.from(JSON.stringify(msg), 'utf8').toString('hex')}`, blockHash.toString());
+			const response = await this.chainApi.rpc['cosmwasm']['query'](address, gas, `0x${encodeTo(JSON.stringify(msg), 'utf8', 'hex')}`, blockHash.toString());
 			const stateResponse = QuerySmartContractStateResponse.fromPartial({ data: Uint8Array.from(Buffer.from(response, 'hex')) });
 
 			return {
 				code: 0,
-				log: "",
-				info: "",
+				log: '',
+				info: '',
 				index: Long.ZERO,
 				key: undefined,
 				value: QuerySmartContractStateResponse.encode(stateResponse).finish(),
 				proofOps: undefined,
 				height: Long.fromString(height.toString()),
-				codespace: "",
+				codespace: '',
 			};
 		} else {
-			throw new Error("unexpected path");
+			throw new Error('Unexpected path');
 		}
 	}
 }

@@ -1,5 +1,5 @@
 export function toSnakeCase(input: unknown): unknown {
-	if (typeof input !== "object" || input === null) {
+	if (typeof input !== 'object' || input === null) {
 		return input;
 	}
 
@@ -9,14 +9,18 @@ export function toSnakeCase(input: unknown): unknown {
 
 	const result: unknown = {};
 	for (const key in input) {
-		if (input.hasOwnProperty(key)) {
+		if (Object.hasOwn(input, key)) {
 			const snakeCaseKey = key
-				.replace(/([A-Z])/g, "_$1")
+				.replace(/([A-Z])/g, '_$1')
 				.toLowerCase()
-				.replace(/^_/, "");
+				.replace(/^_/, '');
 			result[snakeCaseKey] = toSnakeCase(input[key]);
 		}
 	}
 
 	return result;
+}
+
+export const encodeTo = (value: string, from: BufferEncoding, to: BufferEncoding): string => {
+	return Buffer.from(from === 'hex' && value.startsWith('0x') ? value.slice(2) : value, from).toString(to);
 }

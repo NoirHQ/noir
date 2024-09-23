@@ -1,19 +1,20 @@
 import { ApiPromise } from "@polkadot/api";
-import { IAccountService } from "./account";
+import { AccountService } from "./account";
 import { ApiService } from "./service";
 import { IConfig } from "config";
 import { QueryAllBalancesResponse } from "cosmjs-types/cosmos/bank/v1beta1/query.js";
 import Long from "long";
+import { AccountInfo } from "@polkadot/types/interfaces";
 
 export class BalanceService implements ApiService {
 	config: IConfig;
 	chainApi: ApiPromise;
-	accountService: IAccountService;
+	accountService: AccountService;
 
 	constructor(
 		config: IConfig,
 		chainApi: ApiPromise,
-		accountService: IAccountService
+		accountService: AccountService
 	) {
 		this.config = config;
 		this.chainApi = chainApi;
@@ -21,6 +22,8 @@ export class BalanceService implements ApiService {
 	}
 
 	public async balances(address: string): Promise<QueryAllBalancesResponse> {
+		console.debug(`balance(${address})`);
+
 		const originRaw = await this.accountService.origin(address);
 		let amount = '0';
 		let origin = originRaw.toString();
@@ -29,12 +32,10 @@ export class BalanceService implements ApiService {
 		}
 		const account = await this.chainApi.query.system.account(origin);
 		if (account) {
-			const { data } = account.toJSON() as any;
-			const { free } = data;
-			amount = BigInt(free).toString();
+			const { data } = account.toJSON() as unknown as AccountInfo;
+			amount = data.free.toString();
 		}
-		const denom = this.config.get<string>("chain.denom");
-
+		const denom = this.config.get<string>('chain.denom');
 		const nativeBalance = { denom, amount };
 
 		const assets = [];

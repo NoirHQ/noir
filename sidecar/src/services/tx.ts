@@ -8,10 +8,12 @@ import {
 } from "cosmjs-types/cosmos/tx/v1beta1/service.js";
 import Long from "long";
 import { createHash } from "crypto";
-import { Tx } from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
 import { convertToCodespace } from "../constants/codespace";
+import { encodeTo } from "../utils";
+import { Event as CosmosEvent } from "cosmjs-types/tendermint/abci/types";
+import { EventRecord, Header } from "@polkadot/types/interfaces";
 
-type TransactResult = { codespace: string, code: number; gasUsed: number, events: any[] };
+type TransactResult = { codespace: string, code: number, gasWanted: number, gasUsed: number, events: CosmosEvent[] };
 
 export class TxService implements ApiService {
 	chainApi: ApiPromise;
@@ -23,24 +25,18 @@ export class TxService implements ApiService {
 	}
 
 	public async broadcastTx(txBytes: string): Promise<BroadcastTxResponse> {
-		console.debug(`txBytes: ${txBytes}`);
+		console.debug(`broadcastTx(${txBytes})`);
 
-		const rawTx = `0x${Buffer.from(txBytes, 'base64').toString('hex')}`;
-
-		let txHash = (await this.chainApi.rpc['cosmos']['broadcastTx'](rawTx)).toString();
+		let txHash = (await this.chainApi.rpc['cosmos']['broadcastTx'](`0x${encodeTo(txBytes, 'base64', 'hex')}`)).toString();
 		txHash = txHash.startsWith('0x') ? txHash.slice(2) : txHash;
-
-		console.debug(`txHash: ${txHash.toLowerCase()}`);
+		console.debug(`txHash: ${txHash}`);
 
 		const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 		while (true) {
 			const txs = this.searchTx(txHash);
-			// console.debug(`txs: ${JSON.stringify(txs)}`);
-
 			if (txs.length > 0) {
 				const tx = txs.at(0);
-
 				return {
 					txResponse: {
 						height: Long.fromString(tx.height),
@@ -63,18 +59,16 @@ export class TxService implements ApiService {
 				};
 			} else {
 				console.debug('Waiting for events...');
-
 				await sleep(1000);
 			}
 		}
 	}
 
 	public searchTx(hash: string): ResultTx[] {
-		if (hash.startsWith('0x')) {
-			hash = hash.slice(2);
-		}
+		console.debug('searchTx');
 
-		console.debug(`txHash: ${hash.toLowerCase()}`);
+		hash = hash.startsWith('0x') ? hash.slice(2) : hash;
+		console.debug(`txHash: ${hash}`);
 
 		const resultTx = this.db.get(`tx::result::${hash.toLowerCase()}`);
 		const txs: ResultTx[] = [];
@@ -85,18 +79,19 @@ export class TxService implements ApiService {
 	}
 
 	public async saveTransactResult(
-		txRaw: string,
+		txBytes: string,
 		extrinsicIndex: number,
-		header: any
+		header: Header
 	): Promise<void> {
-		txRaw = txRaw.startsWith('0x') ? txRaw.slice(2) : txRaw;
-		const txBytes = Buffer.from(txRaw, 'hex');
-		const gasLimit = Tx.decode(txBytes).authInfo!.fee!.gasLimit;
+		console.debug(`saveTransactResult(${txBytes}, ${extrinsicIndex}, ${header})`);
 
-		const txHash = createHash('sha256').update(Buffer.from(txRaw, 'hex')).digest('hex');
+		txBytes = txBytes.startsWith('0x') ? txBytes.slice(2) : txBytes;
 
-		const { codespace, code, gasUsed, events } = await this.checkResult(header, extrinsicIndex);
-		const txResult: ResultTx = {
+		const txHash = createHash('sha256').update(Buffer.from(txBytes, 'hex')).digest('hex');
+		console.debug(`txHash: ${txHash}`)
+
+		const { codespace, code, gasWanted, gasUsed, events } = await this.checkResult(header, extrinsicIndex);
+		const result: ResultTx = {
 			hash: `${txHash.toUpperCase()}`,
 			height: header.number.toString(),
 			index: extrinsicIndex,
@@ -105,23 +100,24 @@ export class TxService implements ApiService {
 				data: '',
 				log: '',
 				info: '',
-				gas_wanted: gasLimit.toString(),
+				gas_wanted: gasWanted.toString(),
 				gas_used: gasUsed.toString(),
 				events,
 				codespace,
 			},
-			tx: txBytes.toString('base64'),
+			tx: encodeTo(txBytes, 'hex', 'base64'),
 		};
-		await this.db.put(`tx::result::${txHash.toLowerCase()}`, txResult);
+		await this.db.put(`tx::result::${txHash.toLowerCase()}`, result);
 	}
 
 	async checkResult(
-		header: any,
+		header: Header,
 		extrinsicIndex: number
 	): Promise<TransactResult> {
 		const events = (await (
 			await this.chainApi.at(header.hash)
-		).query.system.events()) as any;
+		).query.system.events()).toJSON() as unknown as EventRecord[];
+
 		const result = events
 			.filter(({ event: { section, method }, phase }) => {
 				const { applyExtrinsic } = JSON.parse(phase.toString());
@@ -133,7 +129,7 @@ export class TxService implements ApiService {
 			})
 			.map(({ event: { data, section, method } }) => {
 				if (`${section}::${method}` === 'cosmos::Executed') {
-					const [gas_wanted, gas_used, events] = JSON.parse(data);
+					const [gas_wanted, gas_used, events] = JSON.parse(data.toString());
 
 					console.debug(`gasWanted: ${gas_wanted}`);
 					console.debug(`gasUsed: ${gas_used}`);
@@ -143,29 +139,22 @@ export class TxService implements ApiService {
 
 					console.debug(`cosmosEvents: ${JSON.stringify(cosmosEvents)}`)
 
-					return { codespace: '', code: 0, gasUsed: gas_used, events: cosmosEvents };
+					return { codespace: '', code: 0, gasWanted: gas_wanted, gasUsed: gas_used, events: cosmosEvents };
 				} else {
-					console.debug(JSON.parse(data));
-					const [{ module: { index, error } }, info] = JSON.parse(data);
-
+					const [{ module: { error } }, info] = JSON.parse(data.toString());
 					const errors = Uint8Array.from(Buffer.from(error.startsWith('0x') ? error.slice(2) : error, 'hex'));
 					const weight = info.weight.refTime;
 
-					return { codespace: convertToCodespace(errors[1]), code: errors[2], gasUsed: weight, events: [] };
+					return { codespace: convertToCodespace(errors[1]), code: errors[2], gasWanted: 0, gasUsed: weight, events: [] };
 				}
 			});
 		return result[0];
 	}
 
-	convert(str: string, from: BufferEncoding, to: BufferEncoding): string {
-		if (from === 'hex') {
-			str = str.startsWith('0x') ? str.slice(2) : str;
-		}
-		return Buffer.from(str, from).toString(to);
-	}
-
 	public async simulate(txBytes: string, blockHash?: string): Promise<SimulateResponse> {
-		const txRaw = `0x${this.convert(txBytes, 'base64', 'hex')}`;
+		console.debug(`simulate(${txBytes}, ${blockHash})`);
+
+		const txRaw = `0x${encodeTo(txBytes, 'base64', 'hex')}`;
 		const { gas_info, events } = (await this.chainApi.rpc['cosmos']['simulate'](txRaw, blockHash)).toJSON();
 		const cosmosEvents = this.encodeEvents(events, 'hex', 'utf8');
 
@@ -189,7 +178,7 @@ export class TxService implements ApiService {
 	public encodeEvents(events, from: BufferEncoding, to: BufferEncoding) {
 		return events.map((event) => {
 			return {
-				type: this.convert(event.type ? event.type : event['r#type'], from, to),
+				type: encodeTo(event.type ? event.type : event['r#type'], from, to),
 				attributes: this.encodeAttributes(event.attributes, from, to),
 			}
 		});
@@ -197,8 +186,8 @@ export class TxService implements ApiService {
 
 	public encodeAttributes(attributes, from: BufferEncoding, to: BufferEncoding) {
 		return attributes.map(({ key, value }) => {
-			const eventKey = this.convert(key, from, to);
-			const eventValue = this.convert(value, from, to);
+			const eventKey = encodeTo(key, from, to);
+			const eventValue = encodeTo(value, from, to);
 
 			return {
 				key: eventKey,
