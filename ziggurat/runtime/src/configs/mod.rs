@@ -30,7 +30,7 @@ use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use fp_evm::weight_per_gas;
 use frame_babel::{
-	cosmos::{self, address::AccountToAddr, asset::AssetToDenom, msg::MsgServiceRouter},
+	cosmos,
 	ethereum::{self, EnsureAddress, FrontierPrecompiles},
 	extensions::unify_account,
 };
@@ -413,6 +413,14 @@ impl pallet_base_fee::Config for Runtime {
 	type DefaultElasticity = DefaultElasticity;
 }
 
+impl pallet_multimap::Config<Instance2> for Runtime {
+	type Key = AssetIdOf<Runtime>;
+	type Value = DenomOf<Runtime>;
+	type CapacityPerKey = ConstU32<{ frame_babel::Address::variant_count() }>;
+	type KeyHasher = Blake2_128Concat;
+	type ValueHasher = Blake2_128Concat;
+}
+
 impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
@@ -429,17 +437,9 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = ConstU32<20>;
 	type Freezer = ();
 	type Extra = ();
-	type CallbackHandle = ();
+	type CallbackHandle = cosmos::asset::AssetsCallback<Self, Instance2>;
 	type WeightInfo = ();
 	type RemoveItemsLimit = ConstU32<1000>;
-}
-
-impl pallet_multimap::Config<Instance2> for Runtime {
-	type Key = AssetIdOf<Runtime>;
-	type Value = DenomOf<Runtime>;
-	type CapacityPerKey = ConstU32<{ frame_babel::Address::variant_count() }>;
-	type KeyHasher = Blake2_128Concat;
-	type ValueHasher = Blake2_128Concat;
 }
 
 impl pallet_cosmos::Config for Runtime {
@@ -453,12 +453,12 @@ impl pallet_cosmos::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_cosmos::weights::CosmosWeight<Self>;
 	type WeightToGas = WeightToGas;
-	type AssetToDenom = AssetToDenom<Self, Instance2>;
+	type AssetToDenom = cosmos::asset::AssetToDenom<Self, Instance2>;
 	type Context = Context;
 	type ChainInfo = np_cosmos::traits::CosmosHub;
 	type AnteHandler = pallet_cosmos_x_auth::AnteDecorators<Self>;
 	type MsgFilter = MsgFilter;
-	type MsgServiceRouter = MsgServiceRouter<Self>;
+	type MsgServiceRouter = cosmos::msg::MsgServiceRouter<Self>;
 	type SigVerifiableTx = SigVerifiableTx;
 	type SignModeHandler = SignModeHandler;
 	type MaxMemoCharacters = MaxMemoCharacters;
@@ -490,8 +490,8 @@ impl pallet_cosmwasm::Config for Runtime {
 	type MaxCodeSize = ConstU32<{ 1024 * 1024 }>;
 	type MaxInstrumentedCodeSize = ConstU32<{ 2 * 1024 * 1024 }>;
 	type MaxMessageSize = ConstU32<{ 64 * 1024 }>;
-	type AccountToAddr = AccountToAddr<Runtime>;
-	type AssetToDenom = AssetToDenom<Runtime, Instance2>;
+	type AccountToAddr = cosmos::address::AccountToAddr<Runtime>;
+	type AssetToDenom = cosmos::asset::AssetToDenom<Runtime, Instance2>;
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type Assets = Assets;

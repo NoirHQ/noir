@@ -18,6 +18,7 @@
 
 use alloc::string::{String, ToString};
 use core::marker::PhantomData;
+use frame_support::{ensure, traits::fungibles::metadata::Inspect};
 use pallet_cosmos::types::{AssetIdOf, DenomOf};
 use pallet_multimap::traits::UniqueMap;
 use sp_core::Get;
@@ -54,5 +55,27 @@ where
 				.unwrap();
 			String::from_utf8(denom.into()).unwrap()
 		}
+	}
+}
+
+pub struct AssetsCallback<T, I>(PhantomData<(T, I)>);
+impl<T, I: 'static> pallet_assets::AssetsCallback<AssetIdOf<T>, T::AccountId>
+	for AssetsCallback<T, I>
+where
+	T: pallet_cosmos::Config + pallet_multimap::Config<I, Key = AssetIdOf<T>, Value = DenomOf<T>>,
+{
+	fn created(id: &AssetIdOf<T>, _owner: &T::AccountId) -> Result<(), ()> {
+		let symbol = T::Assets::symbol(id.clone());
+		ensure!(!symbol.is_empty(), ());
+
+		let denom: DenomOf<T> = symbol.try_into().map_err(|_| ())?;
+		pallet_multimap::Pallet::<T, I>::try_insert(id.clone(), denom).map_err(|_| ())?;
+
+		Ok(())
+	}
+
+	fn destroyed(id: &AssetIdOf<T>) -> Result<(), ()> {
+		pallet_multimap::Pallet::<T, I>::remove(id.clone());
+		Ok(())
 	}
 }
