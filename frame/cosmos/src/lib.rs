@@ -137,7 +137,6 @@ pub trait AddressMapping<A> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::types::DenomOf;
 	use alloc::{string::String, vec::Vec};
 	use cosmos_sdk_proto::Any;
 	use frame_support::{
@@ -295,16 +294,6 @@ pub mod pallet {
 			pub const NativeAssetId: u32 = 0;
 		}
 	}
-
-	#[pallet::storage]
-	#[pallet::getter(fn denom_to_asset)]
-	pub type DenomAssetRouter<T: Config> =
-		StorageMap<_, Twox64Concat, DenomOf<T>, T::AssetId, OptionQuery>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn asset_to_denom)]
-	pub type AssetDenomRouter<T: Config> =
-		StorageMap<_, Twox64Concat, T::AssetId, DenomOf<T>, OptionQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>

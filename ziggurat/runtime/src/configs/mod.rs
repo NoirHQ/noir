@@ -30,7 +30,7 @@ use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use fp_evm::weight_per_gas;
 use frame_babel::{
-	cosmos::{self, AccountToAddr, AssetToDenom, MsgServiceRouter},
+	cosmos::{self, address::AccountToAddr, asset::AssetToDenom, msg::MsgServiceRouter},
 	ethereum::{self, EnsureAddress, FrontierPrecompiles},
 	extensions::unify_account,
 };
@@ -43,15 +43,19 @@ use frame_support::{
 		TransformOrigin, VariantCountOf,
 	},
 	weights::{ConstantMultiplier, Weight},
-	PalletId,
+	Blake2_128Concat, PalletId,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use pallet_cosmos::config_preludes::{
-	MaxDenomLimit, MaxMemoCharacters, MsgFilter, NativeAssetId, NativeDenom, TxSigLimit,
-	WeightToGas,
+use pallet_assets::pallet::Instance2;
+use pallet_cosmos::{
+	config_preludes::{
+		MaxDenomLimit, MaxMemoCharacters, MsgFilter, NativeAssetId, NativeDenom, TxSigLimit,
+		WeightToGas,
+	},
+	types::{AssetIdOf, DenomOf},
 };
 use pallet_cosmos_types::context::Context;
 use pallet_cosmos_x_auth_signing::{
@@ -430,8 +434,16 @@ impl pallet_assets::Config for Runtime {
 	type RemoveItemsLimit = ConstU32<1000>;
 }
 
+impl pallet_multimap::Config<Instance2> for Runtime {
+	type Key = AssetIdOf<Runtime>;
+	type Value = DenomOf<Runtime>;
+	type CapacityPerKey = ConstU32<{ frame_babel::Address::variant_count() }>;
+	type KeyHasher = Blake2_128Concat;
+	type ValueHasher = Blake2_128Concat;
+}
+
 impl pallet_cosmos::Config for Runtime {
-	type AddressMapping = cosmos::AddressMapping<Self>;
+	type AddressMapping = cosmos::address::AddressMapping<Self>;
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type NativeAsset = Balances;
@@ -441,7 +453,7 @@ impl pallet_cosmos::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_cosmos::weights::CosmosWeight<Self>;
 	type WeightToGas = WeightToGas;
-	type AssetToDenom = AssetToDenom<Self>;
+	type AssetToDenom = AssetToDenom<Self, Instance2>;
 	type Context = Context;
 	type ChainInfo = np_cosmos::traits::CosmosHub;
 	type AnteHandler = pallet_cosmos_x_auth::AnteDecorators<Self>;
@@ -479,7 +491,7 @@ impl pallet_cosmwasm::Config for Runtime {
 	type MaxInstrumentedCodeSize = ConstU32<{ 2 * 1024 * 1024 }>;
 	type MaxMessageSize = ConstU32<{ 64 * 1024 }>;
 	type AccountToAddr = AccountToAddr<Runtime>;
-	type AssetToDenom = AssetToDenom<Runtime>;
+	type AssetToDenom = AssetToDenom<Runtime, Instance2>;
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type Assets = Assets;

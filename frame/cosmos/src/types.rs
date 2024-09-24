@@ -18,4 +18,5 @@
 use crate::Config;
 use sp_runtime::BoundedVec;
 
+pub type AssetIdOf<T> = <T as Config>::AssetId;
 pub type DenomOf<T> = BoundedVec<u8, <T as Config>::MaxDenomLimit>;

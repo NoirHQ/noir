@@ -28,7 +28,7 @@ pallet-evm-precompile-bn128 = { git = "https://github.com/polkadot-evm/frontier"
 pallet-evm-precompile-modexp = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-sha3fips = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-simple = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
-pallet-multimap = { workspace = true }
+pallet-multimap = { workspace = true, default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false, features = [
 	"derive",
 ] }

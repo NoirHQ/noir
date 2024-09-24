@@ -17,32 +17,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{extensions::unify_account, Address};
-use alloc::{
-	boxed::Box,
-	string::{String, ToString},
-	vec::Vec,
-};
+use alloc::{string::String, vec::Vec};
 use bech32::{Bech32, Hrp};
 use core::marker::PhantomData;
-use cosmos_sdk_proto::{
-	cosmos::bank::v1beta1::MsgSend,
-	cosmwasm::wasm::v1::{
-		MsgExecuteContract, MsgInstantiateContract2, MsgMigrateContract, MsgStoreCode,
-		MsgUpdateAdmin,
-	},
-	Any,
-};
-use np_cosmos::traits::ChainInfo;
-pub use np_cosmos::Address as CosmosAddress;
-use pallet_cosmos::types::DenomOf;
-use pallet_cosmos_types::{address::acc_address_from_bech32, any_match, context, msgservice};
-use pallet_cosmos_x_bank::MsgSendHandler;
-use pallet_cosmos_x_wasm::msgs::{
-	MsgExecuteContractHandler, MsgInstantiateContract2Handler, MsgMigrateContractHandler,
-	MsgStoreCodeHandler, MsgUpdateAdminHandler,
-};
+use np_cosmos::{traits::ChainInfo, Address as CosmosAddress};
+use pallet_cosmos_types::address::acc_address_from_bech32;
 use pallet_multimap::traits::UniqueMultimap;
-use sp_core::{Get, H160, H256};
+use sp_core::{H160, H256};
 use sp_runtime::traits::{AccountIdConversion, Convert};
 
 pub struct AddressMapping<T>(PhantomData<T>);
@@ -54,56 +35,6 @@ where
 		let address = CosmosAddress::from(who);
 		T::AddressMap::find_key(Address::Cosmos(address.clone()))
 			.unwrap_or_else(|| address.into_account_truncating())
-	}
-}
-
-pub struct AssetToDenom<T>(PhantomData<T>);
-impl<T> Convert<String, Result<T::AssetId, ()>> for AssetToDenom<T>
-where
-	T: pallet_cosmos::Config,
-{
-	fn convert(denom: String) -> Result<T::AssetId, ()> {
-		if denom == T::NativeDenom::get() {
-			Ok(T::NativeAssetId::get())
-		} else {
-			let denom: DenomOf<T> = denom.as_bytes().to_vec().try_into().map_err(|_| ())?;
-			pallet_cosmos::DenomAssetRouter::<T>::get(denom).ok_or(())
-		}
-	}
-}
-impl<T> Convert<T::AssetId, String> for AssetToDenom<T>
-where
-	T: pallet_cosmos::Config,
-{
-	fn convert(asset_id: T::AssetId) -> String {
-		if asset_id == T::NativeAssetId::get() {
-			T::NativeDenom::get().to_string()
-		} else {
-			// TODO: Handle option
-			let denom = pallet_cosmos::AssetDenomRouter::<T>::get(asset_id).unwrap();
-			String::from_utf8(denom.into()).unwrap()
-		}
-	}
-}
-
-pub struct MsgServiceRouter<T>(PhantomData<T>);
-impl<T, Context> msgservice::traits::MsgServiceRouter<Context> for MsgServiceRouter<T>
-where
-	T: frame_system::Config + pallet_cosmos::Config + pallet_cosmwasm::Config,
-	Context: context::traits::Context,
-{
-	fn route(msg: &Any) -> Option<Box<dyn msgservice::traits::MsgHandler<Context>>> {
-		any_match!(
-			msg, {
-				MsgSend => Some(Box::<MsgSendHandler<T>>::default()),
-				MsgStoreCode => Some(Box::<MsgStoreCodeHandler<T>>::default()),
-				MsgInstantiateContract2 => Some(Box::<MsgInstantiateContract2Handler<T>>::default()),
-				MsgExecuteContract => Some(Box::<MsgExecuteContractHandler<T>>::default()),
-				MsgMigrateContract => Some(Box::<MsgMigrateContractHandler<T>>::default()),
-				MsgUpdateAdmin => Some(Box::<MsgUpdateAdminHandler<T>>::default()),
-			},
-			None
-		)
 	}
 }
 
@@ -126,6 +57,7 @@ where
 		bech32::encode::<Bech32>(hrp, address_raw).unwrap()
 	}
 }
+
 impl<T> Convert<String, Result<T::AccountIdExtended, ()>> for AccountToAddr<T>
 where
 	T: pallet_cosmwasm::Config + unify_account::Config,
@@ -135,6 +67,7 @@ where
 		Self::convert(address_raw)
 	}
 }
+
 impl<T> Convert<Vec<u8>, Result<T::AccountIdExtended, ()>> for AccountToAddr<T>
 where
 	T: pallet_cosmwasm::Config + unify_account::Config,
