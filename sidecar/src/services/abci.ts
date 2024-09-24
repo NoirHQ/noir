@@ -27,7 +27,7 @@ export class AbciService implements ApiService {
 	}
 
 	async query(path: string, data: string): Promise<ABCIQueryResponse> {
-		console.debug(`query`);
+		console.debug('query');
 
 		if (path === '/cosmos.auth.v1beta1.Query/Account') {
 			const address = QueryAccountRequest.decode(

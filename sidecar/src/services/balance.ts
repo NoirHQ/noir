@@ -22,7 +22,7 @@ export class BalanceService implements ApiService {
 	}
 
 	public async balances(address: string): Promise<QueryAllBalancesResponse> {
-		console.debug(`balance`);
+		console.debug('balances');
 
 		const originRaw = await this.accountService.origin(address);
 		let amount = '0';

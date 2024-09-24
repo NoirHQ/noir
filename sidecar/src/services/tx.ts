@@ -25,7 +25,7 @@ export class TxService implements ApiService {
 	}
 
 	public async broadcastTx(txBytes: string): Promise<BroadcastTxResponse> {
-		console.debug(`broadcastTx`);
+		console.debug('broadcastTx');
 
 		let txHash = (await this.chainApi.rpc['cosmos']['broadcastTx'](`0x${encodeTo(txBytes, 'base64', 'hex')}`)).toString();
 		txHash = txHash.startsWith('0x') ? txHash.slice(2) : txHash;
@@ -83,7 +83,7 @@ export class TxService implements ApiService {
 		extrinsicIndex: number,
 		header: Header
 	): Promise<void> {
-		console.debug(`saveTransactResult`);
+		console.debug('saveTransactResult');
 
 		txBytes = txBytes.startsWith('0x') ? txBytes.slice(2) : txBytes;
 
@@ -151,7 +151,7 @@ export class TxService implements ApiService {
 	}
 
 	public async simulate(txBytes: string, blockHash?: string): Promise<SimulateResponse> {
-		console.debug(`simulate`);
+		console.debug('simulate');
 
 		const txRaw = `0x${encodeTo(txBytes, 'base64', 'hex')}`;
 		const { gas_info, events } = (await this.chainApi.rpc['cosmos']['simulate'](txRaw, blockHash)).toJSON();

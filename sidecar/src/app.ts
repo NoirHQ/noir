@@ -122,9 +122,9 @@ export class App {
 			rpc
 		});
 		if (this.chainApi.isConnected) {
-			console.debug(`Chain RPC connected`);
+			console.debug('Chain RPC connected');
 		} else {
-			console.error(`Failed to connect with chain RPC`);
+			console.error('Failed to connect with chain RPC');
 		}
 
 		const accountService = new AccountService(this.chainApi);
