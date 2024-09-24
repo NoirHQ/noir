@@ -13,6 +13,7 @@ bech32 = { version = "0.11", default-features = false, features = [
 ], optional = true }
 cosmos-sdk-proto = { version = "0.24", default-features = false, optional = true }
 ethereum = { version = "0.15.0", default-features = false, optional = true }
+fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 np-babel = { workspace = true, default-features = false }
@@ -28,12 +29,12 @@ pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stabl
 pallet-evm-precompile-blake2 = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-bn128 = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-modexp = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
-pallet-evm-precompile-sha3fips = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-simple = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-multimap = { workspace = true, default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false, features = [
 	"derive",
 ] }
+precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 scale-info = { version = "2.11", default-features = false, features = [
 	"derive",
 ] }
@@ -47,6 +48,7 @@ std = [
 	"bech32?/std",
 	"cosmos-sdk-proto?/std",
 	"ethereum?/std",
+	"fp-evm?/std",
 	"frame-support/std",
 	"frame-system/std",
 	"np-babel/std",
@@ -62,10 +64,10 @@ std = [
 	"pallet-evm-precompile-blake2?/std",
 	"pallet-evm-precompile-bn128?/std",
 	"pallet-evm-precompile-modexp?/std",
-	"pallet-evm-precompile-sha3fips?/std",
 	"pallet-evm-precompile-simple?/std",
 	"pallet-multimap/std",
 	"parity-scale-codec/std",
+	"precompile-utils?/std",
 	"scale-info/std",
 	"sp-core/std",
 	"sp-runtime/std",
@@ -82,14 +84,15 @@ cosmos = [
 ]
 ethereum = [
 	"dep:ethereum",
+	"fp-evm",
 	"np-babel/ethereum",
 	"pallet-ethereum",
 	"pallet-evm",
 	"pallet-evm-precompile-blake2",
 	"pallet-evm-precompile-bn128",
 	"pallet-evm-precompile-modexp",
-	"pallet-evm-precompile-sha3fips",
 	"pallet-evm-precompile-simple",
+	"precompile-utils",
 ]
 pallet = [
 	"cosmos",

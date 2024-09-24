@@ -16,11 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+pub mod precompile;
+
 use crate::*;
 
 use crate::extensions::unify_account;
 use core::marker::PhantomData;
-use frame_support::dispatch::RawOrigin;
+use frame_support::dispatch::{GetDispatchInfo, PostDispatchInfo, RawOrigin};
 use np_babel::EthereumAddress;
 use pallet_ethereum::Transaction;
 use pallet_evm::{
@@ -30,11 +32,12 @@ use pallet_evm::{
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_modexp::Modexp;
-use pallet_evm_precompile_sha3fips::Sha3FIPS256;
-use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
+use pallet_evm_precompile_simple::{ECRecover, Identity, Ripemd160, Sha256};
 use pallet_multimap::traits::UniqueMultimap;
+use parity_scale_codec::Decode;
+use precompile::Babel;
 use sp_core::{ecdsa, H160};
-use sp_runtime::traits::AccountIdConversion;
+use sp_runtime::traits::{AccountIdConversion, Dispatchable};
 
 pub struct EnsureAddress<AccountId>(PhantomData<AccountId>);
 
@@ -76,25 +79,23 @@ where
 	}
 }
 
-pub struct FrontierPrecompiles<R>(PhantomData<R>);
+pub struct BabelPrecompiles<T>(PhantomData<T>);
 
-impl<R> Default for FrontierPrecompiles<R>
-where
-	R: pallet_evm::Config,
-{
+impl<T> Default for BabelPrecompiles<T> {
 	fn default() -> Self {
-		Self::new()
+		Self(Default::default())
 	}
 }
 
-impl<R> FrontierPrecompiles<R>
+impl<T> BabelPrecompiles<T>
 where
-	R: pallet_evm::Config,
+	T: precompile::Config,
 {
 	pub fn new() -> Self {
-		Self(Default::default())
+		Self::default()
 	}
-	pub fn used_addresses() -> [H160; 11] {
+
+	pub fn used_addresses() -> [H160; 10] {
 		[
 			hash(1),
 			hash(2),
@@ -105,14 +106,16 @@ where
 			hash(7),
 			hash(8),
 			hash(9),
-			hash(1024),
-			hash(1025),
+			hash(0x400 /* 1024 */),
 		]
 	}
 }
-impl<R> PrecompileSet for FrontierPrecompiles<R>
+
+impl<T> PrecompileSet for BabelPrecompiles<T>
 where
-	R: pallet_evm::Config,
+	T: precompile::Config,
+	T::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
+	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<T::AccountId>>,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {
@@ -126,9 +129,7 @@ where
 			a if a == hash(7) => Some(Bn128Mul::execute(handle)),
 			a if a == hash(8) => Some(Bn128Pairing::execute(handle)),
 			a if a == hash(9) => Some(Blake2F::execute(handle)),
-			// Non-Frontier specific nor Ethereum precompiles :
-			a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
-			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(handle)),
+			a if a == hash(0x400) => Some(Babel::<T>::execute(handle)),
 			_ => None,
 		}
 	}

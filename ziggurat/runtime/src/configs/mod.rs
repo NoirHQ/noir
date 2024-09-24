@@ -32,7 +32,7 @@ use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use fp_evm::weight_per_gas;
 use frame_babel::{
 	cosmos,
-	ethereum::{self, EnsureAddress, FrontierPrecompiles},
+	ethereum::{self, BabelPrecompiles, EnsureAddress},
 	extensions::unify_account,
 };
 use frame_support::{
@@ -349,9 +349,15 @@ parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
 	pub const ChainId: u64 = 1337;
 	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
-	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
+	pub PrecompilesValue: BabelPrecompiles<Runtime> = BabelPrecompiles::<_>::new();
 	pub WeightPerGas: Weight = Weight::from_parts(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK), 0);
 	pub SuicideQuickClearLimit: u32 = 0;
+}
+
+impl frame_babel::ethereum::precompile::Config for Runtime {
+	type DispatchValidator = ();
+	type DecodeLimit = ConstU32<8>;
+	type StorageFilter = ();
 }
 
 impl pallet_evm::Config for Runtime {
@@ -364,7 +370,7 @@ impl pallet_evm::Config for Runtime {
 	type AddressMapping = ethereum::AddressMapping<Self>;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type PrecompilesType = FrontierPrecompiles<Self>;
+	type PrecompilesType = BabelPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
 	type ChainId = ChainId;
 	type BlockGasLimit = BlockGasLimit;
