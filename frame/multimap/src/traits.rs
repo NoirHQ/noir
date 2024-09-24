@@ -82,3 +82,52 @@ impl<T: Config<I>, I: 'static> UniqueMultimap<T::Key, T::Value> for Pallet<T, I>
 		})
 	}
 }
+
+/// Unique map whose the value is unique across all keys.
+pub trait UniqueMap<K, V> {
+	type Error;
+
+	/// Tries to insert a value into the map.
+	fn try_insert(key: K, value: V) -> Result<bool, Self::Error>;
+
+	/// Gets the value for a key.
+	fn get(key: K) -> Option<V>;
+
+	/// Finds the key for a value.
+	fn find_key(value: V) -> Option<K>;
+
+	/// Removes a value from the map.
+	fn remove(key: K);
+}
+
+impl<T: Config<I>, I: 'static> UniqueMap<T::Key, T::Value> for Pallet<T, I> {
+	type Error = Error<T, I>;
+
+	fn try_insert(key: T::Key, value: T::Value) -> Result<bool, Error<T, I>> {
+		Map::<T, I>::try_mutate(&key, |values| {
+			ensure!(
+				Index::<T, I>::get(&value).filter(|k| *k != key).is_none(),
+				Error::<T, I>::DuplicateValue
+			);
+
+			*values = BTreeSet::from([value.clone()])
+				.try_into()
+				.map_err(|_| Error::<T, I>::CapacityOverflow)?;
+			Index::<T, I>::insert(&value, &key);
+
+			Ok(true)
+		})
+	}
+
+	fn get(key: T::Key) -> Option<T::Value> {
+		Map::<T, I>::get(&key).first().cloned()
+	}
+
+	fn find_key(value: T::Value) -> Option<T::Key> {
+		Index::<T, I>::get(&value)
+	}
+
+	fn remove(key: T::Key) {
+		Map::<T, I>::remove(&key);
+	}
+}

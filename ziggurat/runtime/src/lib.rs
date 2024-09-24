@@ -315,6 +315,8 @@ mod runtime {
 
 	#[runtime::pallet_index(128)]
 	pub type AddressMap = pallet_multimap<Instance1>;
+	#[runtime::pallet_index(129)]
+	pub type AssetMap = pallet_multimap<Instance2>;
 	#[runtime::pallet_index(179)]
 	pub type Cosmos = pallet_cosmos;
 	#[runtime::pallet_index(180)]
