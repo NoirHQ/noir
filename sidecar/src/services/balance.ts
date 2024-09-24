@@ -33,7 +33,7 @@ export class BalanceService implements ApiService {
 		const account = await this.chainApi.query.system.account(origin);
 		if (account) {
 			const { data } = account.toJSON() as unknown as AccountInfo;
-			amount = data.free.toString();
+			amount = BigInt(data.free.toString()).toString();
 		}
 		const denom = this.config.get<string>('chain.denom');
 		const nativeBalance = { denom, amount };
