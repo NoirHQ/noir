@@ -26,6 +26,7 @@
 mod xcm_config;
 
 // Substrate and Polkadot dependencies
+use alloc::{string::ToString, vec, vec::Vec};
 use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use fp_evm::weight_per_gas;
@@ -57,7 +58,7 @@ use pallet_cosmos::{
 	},
 	types::{AssetIdOf, DenomOf},
 };
-use pallet_cosmos_types::context::Context;
+use pallet_cosmos_types::{coin::DecCoin, context};
 use pallet_cosmos_x_auth_signing::{
 	sign_mode_handler::SignModeHandler, sign_verifiable_tx::SigVerifiableTx,
 };
@@ -442,6 +443,13 @@ impl pallet_assets::Config for Runtime {
 	type RemoveItemsLimit = ConstU32<1000>;
 }
 
+pub struct MinGasPrices;
+impl context::traits::MinGasPrices for MinGasPrices {
+	fn min_prices() -> Vec<DecCoin> {
+		vec![DecCoin { denom: NativeDenom::get().to_string(), amount: 1 }]
+	}
+}
+
 impl pallet_cosmos::Config for Runtime {
 	type AddressMapping = cosmos::address::AddressMapping<Self>;
 	type Balance = Balance;
@@ -453,8 +461,9 @@ impl pallet_cosmos::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_cosmos::weights::CosmosWeight<Self>;
 	type WeightToGas = WeightToGas;
+	type MinGasPrices = MinGasPrices;
 	type AssetToDenom = cosmos::asset::AssetToDenom<Self, Instance2>;
-	type Context = Context;
+	type Context = context::Context;
 	type ChainInfo = np_cosmos::traits::CosmosHub;
 	type AnteHandler = pallet_cosmos_x_auth::AnteDecorators<Self>;
 	type MsgFilter = MsgFilter;

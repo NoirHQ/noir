@@ -68,14 +68,8 @@ impl traits::SigVerifiableTx for SigVerifiableTx {
 			}
 		}
 
-		let fee_payer = &tx
-			.auth_info
-			.as_ref()
-			.and_then(|auth_info| auth_info.fee.as_ref())
-			.ok_or(SigVerifiableTxError::EmptyFee)?
-			.payer;
-
-		if !fee_payer.is_empty() && !signers.contains(fee_payer) {
+		let fee_payer = tx.fee_payer().ok_or(SigVerifiableTxError::EmptyFee)?;
+		if !fee_payer.is_empty() && !signers.contains(&fee_payer) {
 			signers.push(fee_payer.clone());
 		}
 
@@ -83,18 +77,16 @@ impl traits::SigVerifiableTx for SigVerifiableTx {
 	}
 
 	fn fee_payer(tx: &Tx) -> Result<String, SigVerifiableTxError> {
-		let fee = tx.fee().ok_or(SigVerifiableTxError::EmptyFee)?;
+		let fee_payer = tx.fee_payer().ok_or(SigVerifiableTxError::EmptyFee)?;
 
-		let fee_payer = if !fee.payer.is_empty() {
-			fee.payer.clone()
+		if !fee_payer.is_empty() {
+			Ok(fee_payer)
 		} else {
 			Self::get_signers(tx)?
 				.first()
-				.ok_or(SigVerifiableTxError::EmptySigners)?
-				.clone()
-		};
-
-		Ok(fee_payer)
+				.ok_or(SigVerifiableTxError::EmptySigners)
+				.cloned()
+		}
 	}
 
 	fn sequence(tx: &Tx) -> Result<u64, SigVerifiableTxError> {

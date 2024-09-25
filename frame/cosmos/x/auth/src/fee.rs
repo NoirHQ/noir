@@ -29,7 +29,8 @@ use frame_support::{
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,
-	coin::amount_to_string,
+	coin::traits::Coins,
+	context::traits::MinGasPrices,
 	errors::{CosmosError, RootError},
 	events::{
 		CosmosEvent, EventAttribute, ATTRIBUTE_KEY_FEE, ATTRIBUTE_KEY_FEE_PAYER, EVENT_TYPE_TX,
@@ -50,14 +51,22 @@ where
 	T: frame_system::Config + pallet_cosmos::Config,
 {
 	fn ante_handle(tx: &Tx, simulate: bool) -> Result<(), CosmosError> {
-		let fee = tx.fee().ok_or(RootError::TxDecodeError)?;
-
-		if !simulate && !frame_system::Pallet::<T>::block_number().is_zero() && fee.gas_limit == 0 {
+		let gas_limit = tx.gas().ok_or(RootError::TxDecodeError)?;
+		if !simulate && !frame_system::Pallet::<T>::block_number().is_zero() && gas_limit == 0 {
 			return Err(RootError::InvalidGasLimit.into());
 		}
 
 		if !simulate {
-			// TODO: Implements txFeeChecker
+			let fee_coins = tx.fee().ok_or(RootError::TxDecodeError)?.amount;
+			let min_prices = T::MinGasPrices::min_prices();
+			for gp in min_prices.iter() {
+				let fee =
+					gp.amount.checked_mul(gas_limit.into()).ok_or(RootError::InsufficientFee)?;
+				let amount =
+					fee_coins.amount_of(&gp.denom).map_err(|_| RootError::InsufficientFee)?;
+
+				ensure!(amount >= fee && fee != 0, RootError::InsufficientFee);
+			}
 		}
 
 		Self::check_deduct_fee(tx)?;
@@ -72,7 +81,6 @@ where
 {
 	fn check_deduct_fee(tx: &Tx) -> Result<(), CosmosError> {
 		let fee_payer = T::SigVerifiableTx::fee_payer(tx).map_err(|_| RootError::TxDecodeError)?;
-
 		let fee = tx.fee().ok_or(RootError::TxDecodeError)?;
 
 		// Fee granter not supported
@@ -93,7 +101,7 @@ where
 				attributes: vec![
 					EventAttribute {
 						key: ATTRIBUTE_KEY_FEE.into(),
-						value: amount_to_string(&fee.amount).into(),
+						value: fee.amount.to_string().into(),
 					},
 					EventAttribute { key: ATTRIBUTE_KEY_FEE_PAYER.into(), value: fee_payer.into() },
 				],

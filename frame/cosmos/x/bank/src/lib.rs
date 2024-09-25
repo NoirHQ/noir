@@ -33,7 +33,7 @@ use frame_support::{
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,
-	coin::amount_to_string,
+	coin::traits::Coins,
 	context,
 	errors::{CosmosError, RootError},
 	events::{
@@ -106,7 +106,7 @@ where
 				EventAttribute { key: ATTRIBUTE_KEY_RECIPIENT.into(), value: to_address.into() },
 				EventAttribute {
 					key: ATTRIBUTE_KEY_AMOUNT.into(),
-					value: amount_to_string(&amount).into(),
+					value: amount.to_string().into(),
 				},
 			],
 		};

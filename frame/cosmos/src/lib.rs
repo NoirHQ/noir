@@ -148,7 +148,9 @@ pub mod pallet {
 		},
 	};
 	use np_cosmos::traits::ChainInfo;
-	use pallet_cosmos_types::{errors::CosmosError, events::CosmosEvent, gas::Gas};
+	use pallet_cosmos_types::{
+		context::traits::MinGasPrices, errors::CosmosError, events::CosmosEvent, gas::Gas,
+	};
 	use pallet_cosmos_x_auth_signing::sign_mode_handler::traits::SignModeHandler;
 
 	#[pallet::pallet]
@@ -204,6 +206,8 @@ pub mod pallet {
 
 		/// Converter between Weight and Gas.
 		type WeightToGas: Convert<Weight, Gas> + Convert<Gas, Weight>;
+
+		type MinGasPrices: MinGasPrices;
 
 		/// Converter between AssetId and Denom.
 		#[pallet::no_default]
@@ -369,6 +373,8 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::CosmosError(e)
 				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
 		})?;
+
+		// TODO: Implement PostHandlers for refund functionality
 
 		Self::deposit_event(Event::Executed {
 			gas_wanted: gas_limit,

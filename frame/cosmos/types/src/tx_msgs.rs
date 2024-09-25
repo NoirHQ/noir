@@ -27,6 +27,8 @@ pub trait Msg {
 pub trait FeeTx {
 	fn fee(&self) -> Option<Fee>;
 	fn gas(&self) -> Option<Gas>;
+	fn fee_payer(&self) -> Option<String>;
+	fn fee_granter(&self) -> Option<String>;
 }
 
 impl FeeTx for Tx {
@@ -35,5 +37,11 @@ impl FeeTx for Tx {
 	}
 	fn gas(&self) -> Option<Gas> {
 		self.fee().map(|fee| fee.gas_limit)
+	}
+	fn fee_payer(&self) -> Option<String> {
+		self.fee().map(|fee| fee.payer.clone())
+	}
+	fn fee_granter(&self) -> Option<String> {
+		self.fee().map(|fee| fee.granter.clone())
 	}
 }

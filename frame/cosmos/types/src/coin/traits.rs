@@ -15,22 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-	coin::DecCoin,
-	events::traits::EventManager,
-	gas::{traits::GasMeter, Gas},
-};
-use alloc::vec::Vec;
+use alloc::string::String;
 
-pub trait Context {
-	type GasMeter: GasMeter;
-	type EventManager: EventManager;
+pub trait Coins {
+	type Error;
 
-	fn new(limit: Gas) -> Self;
-	fn gas_meter(&mut self) -> &mut Self::GasMeter;
-	fn event_manager(&mut self) -> &mut Self::EventManager;
-}
-
-pub trait MinGasPrices {
-	fn min_prices() -> Vec<DecCoin>;
+	fn to_string(&self) -> String;
+	fn amount_of(&self, denom: &str) -> Result<u128, Self::Error>;
 }
