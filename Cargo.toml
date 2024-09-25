@@ -15,6 +15,7 @@ members = [
 	"frame/cosmos/x/wasm",
 	"frame/cosmos/x/wasm/types",
 	"frame/multimap",
+	"primitives/babel",
 	"primitives/cosmos",
 	"primitives/ethereum",
 	"primitives/runtime",
@@ -42,6 +43,7 @@ cosmwasm-vm-wasmi = { path = "vendor/composable/vm-wasmi", default-features = fa
 frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }
+np-babel = { path = "primitives/babel", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }

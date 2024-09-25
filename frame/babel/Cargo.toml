@@ -15,8 +15,7 @@ cosmos-sdk-proto = { version = "0.24", default-features = false, optional = true
 ethereum = { version = "0.15.0", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-np-cosmos = { workspace = true, optional = true }
-np-ethereum = { workspace = true, optional = true }
+np-babel = { workspace = true, default-features = false }
 pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-cosmos = { workspace = true, default-features = false, optional = true }
@@ -50,8 +49,7 @@ std = [
 	"ethereum?/std",
 	"frame-support/std",
 	"frame-system/std",
-	"np-cosmos?/std",
-	"np-ethereum?/std",
+	"np-babel/std",
 	"pallet-assets/std",
 	"pallet-balances/std",
 	"pallet-cosmos?/std",
@@ -75,7 +73,7 @@ std = [
 cosmos = [
 	"bech32",
 	"cosmos-sdk-proto",
-	"np-cosmos",
+	"np-babel/cosmos",
 	"pallet-cosmos",
 	"pallet-cosmos-types",
 	"pallet-cosmos-x-bank",
@@ -84,7 +82,7 @@ cosmos = [
 ]
 ethereum = [
 	"dep:ethereum",
-	"np-ethereum",
+	"np-babel/ethereum",
 	"pallet-ethereum",
 	"pallet-evm",
 	"pallet-evm-precompile-blake2",

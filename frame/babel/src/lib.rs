@@ -27,43 +27,4 @@ pub mod ethereum;
 pub mod extensions;
 
 pub use extensions::unify_account::UnifyAccount;
-
-#[cfg(feature = "cosmos")]
-pub use np_cosmos::Address as CosmosAddress;
-#[cfg(feature = "ethereum")]
-pub use np_ethereum::Address as EthereumAddress;
-use pallet_multimap::traits::UniqueMultimap;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
-use scale_info::TypeInfo;
-use sp_core::ecdsa;
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
-pub enum Address {
-	#[cfg(feature = "cosmos")]
-	Cosmos(CosmosAddress),
-	#[cfg(feature = "ethereum")]
-	Ethereum(EthereumAddress),
-}
-
-impl Address {
-	pub const fn variant_count() -> u32 {
-		let mut n = 0;
-		if cfg!(feature = "cosmos") {
-			n += 1;
-		}
-		if cfg!(feature = "ethereum") {
-			n += 1;
-		}
-		n
-	}
-
-	#[cfg(feature = "cosmos")]
-	pub fn cosmos(public: ecdsa::Public) -> Self {
-		Self::Cosmos(CosmosAddress::from(public))
-	}
-
-	#[cfg(feature = "ethereum")]
-	pub fn ethereum(public: ecdsa::Public) -> Self {
-		Self::Ethereum(EthereumAddress::from(public))
-	}
-}
+pub use np_babel::Address;

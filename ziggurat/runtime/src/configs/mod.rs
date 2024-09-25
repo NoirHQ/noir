@@ -417,7 +417,7 @@ impl pallet_base_fee::Config for Runtime {
 impl pallet_multimap::Config<Instance2> for Runtime {
 	type Key = AssetIdOf<Runtime>;
 	type Value = DenomOf<Runtime>;
-	type CapacityPerKey = ConstU32<{ frame_babel::Address::variant_count() }>;
+	type CapacityPerKey = ConstU32<{ frame_babel::Address::variant_count() - 1 }>;
 	type KeyHasher = Blake2_128Concat;
 	type ValueHasher = Blake2_128Concat;
 }

@@ -21,7 +21,7 @@ use crate::*;
 use crate::extensions::unify_account;
 use core::marker::PhantomData;
 use frame_support::dispatch::RawOrigin;
-use np_ethereum::Address as EthereumAddress;
+use np_babel::EthereumAddress;
 use pallet_ethereum::Transaction;
 use pallet_evm::{
 	EnsureAddressOrigin, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult,
@@ -32,6 +32,7 @@ use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
+use pallet_multimap::traits::UniqueMultimap;
 use sp_core::{ecdsa, H160};
 use sp_runtime::traits::AccountIdConversion;
 
