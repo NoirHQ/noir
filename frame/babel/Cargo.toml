@@ -42,7 +42,7 @@ sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable24
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
 [features]
-default = ["std", "cosmos", "ethereum"]
+default = ["std", "pallet"]
 std = [
 	"bech32?/std",
 	"cosmos-sdk-proto?/std",
@@ -90,6 +90,10 @@ ethereum = [
 	"pallet-evm-precompile-modexp",
 	"pallet-evm-precompile-sha3fips",
 	"pallet-evm-precompile-simple",
+]
+pallet = [
+	"cosmos",
+	"ethereum",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",

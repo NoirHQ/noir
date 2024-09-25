@@ -20,7 +20,7 @@ scale-info = { version = "2.11", default-features = false, features = [
 ] }
 smallvec = "1.13"
 
-frame-babel = { workspace = true, features = ["cosmos", "ethereum"] }
+frame-babel = { workspace = true, features = ["pallet"] }
 np-ethereum = { workspace = true }
 np-runtime = { workspace = true, features = ["serde"] }
 pallet-multimap = { workspace = true }
