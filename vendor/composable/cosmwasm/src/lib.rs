@@ -378,7 +378,7 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		pub contracts: Vec<(T::AccountIdExtended, ContractCodeOf<T>)>,
+		pub contracts: Vec<(AccountIdOf<T>, ContractCodeOf<T>)>,
 	}
 
 	impl<T: Config> Default for GenesisConfig<T> {

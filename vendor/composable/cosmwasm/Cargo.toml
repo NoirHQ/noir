@@ -37,7 +37,7 @@ pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-sp-io ={ git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
 composable-support = { workspace = true, default-features = false }
@@ -56,6 +56,7 @@ cosmwasm-vm-wasmi = { workspace = true, default-features = false, features = [
 ] }
 
 np-cosmos = { workspace = true, default-features = false }
+pallet-cosmos-types = { workspace = true, default-features = false }
 
 [features]
 default = ["std"]
@@ -88,5 +89,6 @@ std = [
     "cosmwasm-vm/std",
     "cosmwasm-vm-wasmi/std",
     "np-cosmos/std",
+    "pallet-cosmos-types/std",
 ]
 try-runtime = []

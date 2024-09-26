@@ -22,6 +22,7 @@ use bech32::{Bech32, Hrp};
 use core::marker::PhantomData;
 use np_babel::cosmos::{traits::ChainInfo, Address as CosmosAddress};
 use pallet_cosmos_types::address::acc_address_from_bech32;
+use pallet_cosmwasm::types::AccountIdOf;
 use pallet_multimap::traits::UniqueMultimap;
 use sp_core::{H160, H256};
 use sp_runtime::traits::{AccountIdConversion, Convert};
@@ -39,11 +40,11 @@ where
 }
 
 pub struct AccountToAddr<T>(PhantomData<T>);
-impl<T> Convert<T::AccountIdExtended, String> for AccountToAddr<T>
+impl<T> Convert<AccountIdOf<T>, String> for AccountToAddr<T>
 where
 	T: pallet_cosmwasm::Config + unify_account::Config,
 {
-	fn convert(account: T::AccountIdExtended) -> String {
+	fn convert(account: AccountIdOf<T>) -> String {
 		let addresses = T::AddressMap::get(account.clone());
 		let address: Option<&CosmosAddress> = addresses.iter().find_map(|address| match address {
 			Address::Cosmos(address) => Some(address),
@@ -58,22 +59,21 @@ where
 	}
 }
 
-impl<T> Convert<String, Result<T::AccountIdExtended, ()>> for AccountToAddr<T>
+impl<T> Convert<String, Result<AccountIdOf<T>, ()>> for AccountToAddr<T>
 where
 	T: pallet_cosmwasm::Config + unify_account::Config,
 {
-	fn convert(address: String) -> Result<T::AccountIdExtended, ()> {
+	fn convert(address: String) -> Result<AccountIdOf<T>, ()> {
 		let (_hrp, address_raw) = acc_address_from_bech32(&address).map_err(|_| ())?;
 		Self::convert(address_raw)
 	}
 }
 
-impl<T> Convert<Vec<u8>, Result<T::AccountIdExtended, ()>> for AccountToAddr<T>
+impl<T> Convert<Vec<u8>, Result<AccountIdOf<T>, ()>> for AccountToAddr<T>
 where
 	T: pallet_cosmwasm::Config + unify_account::Config,
-	T::AccountIdExtended: From<H256>,
 {
-	fn convert(address: Vec<u8>) -> Result<T::AccountIdExtended, ()> {
+	fn convert(address: Vec<u8>) -> Result<AccountIdOf<T>, ()> {
 		match address.len() {
 			20 => {
 				let address = CosmosAddress::from(H160::from_slice(&address));

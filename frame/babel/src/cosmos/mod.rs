@@ -19,3 +19,4 @@
 pub mod address;
 pub mod asset;
 pub mod msg;
+pub mod precompile;

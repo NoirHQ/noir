@@ -12,12 +12,17 @@ bech32 = { version = "0.11", default-features = false, features = [
 	"alloc",
 ], optional = true }
 cosmos-sdk-proto = { version = "0.24", default-features = false, optional = true }
+cosmwasm-std = { workspace = true, default-features = false, optional = true }
+cosmwasm-vm = { workspace = true, default-features = false, optional = true }
+cosmwasm-vm-wasmi = { workspace = true, default-features = false, optional = true }
 ethereum = { version = "0.15.0", default-features = false, optional = true }
 fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 np-babel = { workspace = true, default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+np-cosmos = { workspace = true, optional = true }
+np-ethereum = { workspace = true, optional = true }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, optional = true }
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-cosmos = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-types = { workspace = true, default-features = false, optional = true }
@@ -38,6 +43,10 @@ precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = 
 scale-info = { version = "2.11", default-features = false, features = [
 	"derive",
 ] }
+serde = { version = "1.0.210", default-features = false, features = [
+	"derive",
+], optional = true }
+serde-json-wasm = { version = "1.0.1", default-features = false, optional = true }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
@@ -47,12 +56,17 @@ default = ["std", "pallet"]
 std = [
 	"bech32?/std",
 	"cosmos-sdk-proto?/std",
+	"cosmwasm-std?/std",
+	"cosmwasm-vm?/std",
+	"cosmwasm-vm-wasmi?/std",
 	"ethereum?/std",
 	"fp-evm?/std",
 	"frame-support/std",
 	"frame-system/std",
 	"np-babel/std",
-	"pallet-assets/std",
+	"np-cosmos?/std",
+	"np-ethereum?/std",
+	"pallet-assets?/std",
 	"pallet-balances/std",
 	"pallet-cosmos?/std",
 	"pallet-cosmos-types?/std",
@@ -69,18 +83,27 @@ std = [
 	"parity-scale-codec/std",
 	"precompile-utils?/std",
 	"scale-info/std",
+	"serde?/std",
+	"serde-json-wasm?/std",
 	"sp-core/std",
 	"sp-runtime/std",
 ]
 cosmos = [
 	"bech32",
 	"cosmos-sdk-proto",
+	"cosmwasm-std",
+	"cosmwasm-vm",
+	"cosmwasm-vm-wasmi",
 	"np-babel/cosmos",
+	"np-cosmos",
+	"pallet-assets",
 	"pallet-cosmos",
 	"pallet-cosmos-types",
 	"pallet-cosmos-x-bank",
 	"pallet-cosmos-x-wasm",
 	"pallet-cosmwasm",
+	"serde",
+	"serde-json-wasm",
 ]
 ethereum = [
 	"dep:ethereum",

@@ -31,7 +31,7 @@ use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use fp_evm::weight_per_gas;
 use frame_babel::{
-	cosmos,
+	cosmos::{self, precompile::Precompiles},
 	ethereum::{self, BabelPrecompiles, EnsureAddress},
 	extensions::unify_account,
 };
@@ -531,8 +531,7 @@ impl pallet_cosmwasm::Config for Runtime {
 	type UnixTime = Timestamp;
 	type WeightInfo = pallet_cosmwasm::weights::SubstrateWeight<Runtime>;
 
-	// TODO: Precompile to use execute or query pallet
-	type PalletHook = ();
+	type PalletHook = Precompiles<Runtime>;
 
 	type UploadWasmOrigin = frame_system::EnsureSigned<Self::AccountId>;
 
