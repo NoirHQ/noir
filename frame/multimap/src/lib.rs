@@ -33,8 +33,11 @@ mod mock;
 mod tests;
 pub mod traits;
 
+use alloc::vec::Vec;
 use core::{fmt::Debug, marker::PhantomData};
-use frame_support::{BoundedBTreeSet, StorageHasher};
+use frame_support::{
+	sp_runtime::traits::MaybeSerializeDeserialize, BoundedBTreeSet, StorageHasher,
+};
 use parity_scale_codec::{FullCodec, MaxEncodedLen};
 use scale_info::TypeInfo;
 
@@ -50,14 +53,20 @@ pub mod pallet {
 	pub trait Config<I: 'static = ()>: frame_system::Config {
 		/// Type of the keys.
 		#[pallet::no_default]
-		type Key: Clone + Debug + PartialEq + FullCodec + MaxEncodedLen + TypeInfo;
+		type Key: Clone
+			+ Debug
+			+ PartialEq
+			+ FullCodec
+			+ MaxEncodedLen
+			+ TypeInfo
+			+ MaybeSerializeDeserialize;
 
 		/// Storage hasher for the keys.
 		type KeyHasher: StorageHasher;
 
 		/// Type of the values.
 		#[pallet::no_default]
-		type Value: Clone + Ord + FullCodec + MaxEncodedLen + TypeInfo;
+		type Value: Clone + Ord + FullCodec + MaxEncodedLen + TypeInfo + MaybeSerializeDeserialize;
 
 		/// Storage hasher for the values.
 		type ValueHasher: StorageHasher;
@@ -104,4 +113,29 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn find_key)]
 	pub type Index<T: Config<I>, I: 'static = ()> = StorageMap<_, T::ValueHasher, T::Value, T::Key>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		multimap: Vec<(T::Key, Vec<T::Value>)>,
+	}
+
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			GenesisConfig { multimap: Vec::new() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> BuildGenesisConfig for GenesisConfig<T, I> {
+		fn build(&self) {
+			self.multimap.iter().for_each(|(key, values)| {
+				let mut set = BoundedBTreeSet::<T::Value, T::CapacityPerKey>::new();
+				values.iter().for_each(|value| {
+					Index::<T, I>::insert(value, key);
+					let _ = set.try_insert(value.clone());
+				});
+				Map::<T, I>::insert(key.clone(), set);
+			});
+		}
+	}
 }

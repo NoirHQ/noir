@@ -21,6 +21,8 @@ extern crate alloc;
 
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use sp_core::ecdsa;
 
 #[cfg(feature = "cosmos")]
@@ -34,6 +36,7 @@ pub use np_ethereum::Address as EthereumAddress;
 pub use sp_core::crypto::AccountId32;
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Address {
 	Polkadot(AccountId32),
 	#[cfg(feature = "cosmos")]

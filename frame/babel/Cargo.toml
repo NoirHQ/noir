@@ -120,6 +120,7 @@ ethereum = [
 pallet = [
 	"cosmos",
 	"ethereum",
+	"np-babel/serde",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",

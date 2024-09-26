@@ -21,9 +21,13 @@
 
 extern crate alloc;
 
+#[cfg(feature = "serde")]
+use alloc::string::String;
 use buidl::FixedBytes;
 use k256::{elliptic_curve::sec1::ToEncodedPoint, PublicKey};
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use sp_core::{ecdsa, H160, H256};
 use sp_io::hashing::{blake2_256, keccak_256};
 use sp_runtime::traits::AccountIdConversion;
@@ -58,9 +62,10 @@ impl From<ecdsa::Public> for Address {
 	}
 }
 
-#[cfg(feature = "std")]
-impl std::fmt::Display for Address {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+#[cfg(feature = "serde")]
+impl core::fmt::Display for Address {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+		use alloc::string::ToString;
 		let address = const_hex::encode(self.0);
 		let address_hash = const_hex::encode(keccak_256(address.as_bytes()));
 
@@ -85,9 +90,43 @@ impl std::fmt::Display for Address {
 	}
 }
 
+#[cfg(feature = "serde")]
+impl core::str::FromStr for Address {
+	type Err = &'static str;
+
+	// NOTE: For strict conversion, we should check the checksum.
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let data: [u8; 20] = const_hex::decode_to_array(s).map_err(|_| "invalid address")?;
+		Ok(Address(data))
+	}
+}
+
 impl core::fmt::Debug for Address {
 	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "{}", sp_core::hexdisplay::HexDisplay::from(&self.0))
+	}
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for Address {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		use alloc::string::ToString;
+		serializer.serialize_str(&self.to_string())
+	}
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for Address {
+	fn deserialize<D>(deserializer: D) -> Result<Address, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		use core::str::FromStr;
+		let s = String::deserialize(deserializer)?;
+		Address::from_str(&s).map_err(serde::de::Error::custom)
 	}
 }
 

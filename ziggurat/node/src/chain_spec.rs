@@ -1,4 +1,5 @@
 use cumulus_primitives_core::ParaId;
+use frame_babel::Address;
 use runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, UNIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -176,6 +177,12 @@ fn testnet_genesis(
 	id: ParaId,
 ) -> serde_json::Value {
 	serde_json::json!({
+		"addressMap": {
+			"multimap": vec![
+				address_map(get_from_seed::<ecdsa::Public>("Alice")),
+				address_map(ecdsa::Public::from(const_hex::const_decode_to_array(b"0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f").unwrap())),
+			],
+		},
 		"balances": {
 			"balances": endowed_accounts.iter().cloned().map(|k| (k, 1_000_000 * UNIT)).collect::<Vec<_>>(),
 		},
@@ -203,4 +210,11 @@ fn testnet_genesis(
 		},
 		"sudo": { "key": Some(root) }
 	})
+}
+
+fn address_map(account: ecdsa::Public) -> (AccountId, Vec<Address>) {
+	(
+		account.clone().into(),
+		vec![Address::Cosmos(account.clone().into()), Address::Ethereum(account.clone().into())],
+	)
 }
