@@ -38,7 +38,7 @@ use pallet_cosmwasm::{
 use parity_scale_codec::{Decode, DecodeLimit};
 use serde::{Deserialize, Serialize};
 use sp_core::H160;
-use sp_runtime::traits::{AccountIdConversion, Dispatchable};
+use sp_runtime::traits::{AccountIdConversion, Convert, Dispatchable};
 
 const ID: PalletId = PalletId(*b"dispatch");
 const DECODE_LIMIT: u32 = 8;
@@ -86,6 +86,10 @@ where
 				if let Ok(ExecuteMsg::Dispatch { input }) = serde_json_wasm::from_slice(message) {
 					let call = T::RuntimeCall::decode_with_depth_limit(DECODE_LIMIT, &mut &*input)
 						.unwrap();
+					let weight = call.get_dispatch_info().weight;
+					vm.0.data_mut()
+						.charge_raw(T::WeightToGas::convert(weight))
+						.map_err(|_| CosmwasmVMError::OutOfGas)?;
 
 					let sender = vm.0.data().cosmwasm_message_info.sender.clone().into_string();
 					let (_hrp, address_raw) = acc_address_from_bech32(&sender)

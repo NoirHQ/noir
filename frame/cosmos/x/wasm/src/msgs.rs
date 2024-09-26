@@ -79,6 +79,10 @@ where
 		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
+		ctx.gas_meter()
+			.consume_gas(wasm_byte_code.len() as u64, "")
+			.map_err(|_| RootError::OutOfGas)?;
+
 		let mut decoder = Decoder::new(&wasm_byte_code[..]).map_err(|_| WasmError::CreateFailed)?;
 		let mut decoded_code = Vec::new();
 		decoder.read_to_end(&mut decoded_code).map_err(|_| WasmError::CreateFailed)?;
