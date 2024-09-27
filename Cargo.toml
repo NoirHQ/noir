@@ -27,6 +27,7 @@ members = [
 	"vendor/composable/cosmwasm",
 	"vendor/composable/cosmwasm/rpc",
 	"vendor/composable/cosmwasm/runtime-api",
+	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
 	"ziggurat/node",
 	"ziggurat/runtime",
@@ -58,6 +59,7 @@ pallet-cosmos-x-bank-types = { path = "frame/cosmos/x/bank/types", default-featu
 pallet-cosmos-x-wasm = { path = "frame/cosmos/x/wasm", default-features = false }
 pallet-cosmos-x-wasm-types = { path = "frame/cosmos/x/wasm/types", default-features = false }
 pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = false }
+pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 

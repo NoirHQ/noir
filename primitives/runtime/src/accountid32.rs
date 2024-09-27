@@ -22,7 +22,7 @@ use buidl::FixedBytes;
 use scale_info::{Type, TypeInfo};
 #[cfg(feature = "serde")]
 use sp_core::crypto::Ss58Codec;
-use sp_core::{crypto, ecdsa, ed25519, sr25519, H256};
+use sp_core::{crypto, ecdsa, ed25519, sr25519, H160, H256};
 use sp_io::hashing::blake2_256;
 
 /// An opaque 32-byte cryptographic identifier.
@@ -50,6 +50,18 @@ impl<T: Clone> Ss58Codec for AccountId32<T> {}
 impl<T: Clone> From<H256> for AccountId32<T> {
 	fn from(h: H256) -> Self {
 		Self(h.0, None)
+	}
+}
+
+impl<T: Clone> From<AccountId32<T>> for H256 {
+	fn from(acc: AccountId32<T>) -> Self {
+		Self(acc.0)
+	}
+}
+
+impl<T: Clone> From<AccountId32<T>> for H160 {
+	fn from(acc: AccountId32<T>) -> Self {
+		H256::from(acc).into()
 	}
 }
 

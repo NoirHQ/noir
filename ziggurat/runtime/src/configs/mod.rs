@@ -32,7 +32,7 @@ use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use fp_evm::weight_per_gas;
 use frame_babel::{
 	cosmos::{self, precompile::Precompiles},
-	ethereum::{self, BabelPrecompiles, EnsureAddress},
+	ethereum::{self, BabelPrecompiles, EnsureAddress, ASSET_PRECOMPILE_ADDRESS_PREFIX},
 	extensions::unify_account,
 };
 use frame_support::{
@@ -70,7 +70,7 @@ use polkadot_runtime_common::{
 	xcm_sender::NoPriceForMessageDelivery, BlockHashCount, SlowAdjustingFeeUpdate,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{ConstU128, U256};
+use sp_core::{ConstU128, H160, U256};
 use sp_runtime::{Perbill, Permill};
 use sp_version::RuntimeVersion;
 use xcm::latest::prelude::BodyId;
@@ -375,6 +375,26 @@ impl frame_babel::ethereum::Erc20Metadata for Runtime {
 
 	fn is_native_currency() -> bool {
 		true
+	}
+}
+
+impl frame_babel::ethereum::AddressToAssetId<AssetId> for Runtime {
+	fn address_to_asset_id(address: H160) -> Option<AssetId> {
+		let mut data = [0u8; 4];
+		let address_bytes: [u8; 20] = address.into();
+		if ASSET_PRECOMPILE_ADDRESS_PREFIX.eq(&address_bytes[0..16]) {
+			data.copy_from_slice(&address_bytes[16..20]);
+			Some(AssetId::from_be_bytes(data))
+		} else {
+			None
+		}
+	}
+
+	fn asset_id_to_address(asset_id: AssetId) -> H160 {
+		let mut data = [0u8; 20];
+		data[0..16].copy_from_slice(ASSET_PRECOMPILE_ADDRESS_PREFIX);
+		data[16..20].copy_from_slice(&asset_id.to_be_bytes());
+		H160::from(data)
 	}
 }
 

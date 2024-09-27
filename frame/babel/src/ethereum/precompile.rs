@@ -25,11 +25,18 @@ use frame_support::{
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
 use pallet_evm_precompile_balances_erc20::Erc20Metadata;
+use pallet_evm_precompileset_assets_erc20::AddressToAssetId;
 use parity_scale_codec::{Decode, DecodeLimit, Encode};
 use precompile_utils::{prelude::*, EvmResult};
 use sp_runtime::traits::{Dispatchable, Get};
 
-pub trait Config: pallet_balances::Config + pallet_evm::Config + Erc20Metadata {
+pub trait Config:
+	pallet_assets::Config
+	+ pallet_balances::Config
+	+ pallet_evm::Config
+	+ Erc20Metadata
+	+ AddressToAssetId<Self::AssetId>
+{
 	type DispatchValidator: DispatchValidate<Self::AccountId, Self::RuntimeCall>;
 	type DecodeLimit: Get<u32>;
 	type StorageFilter: StorageFilter;
