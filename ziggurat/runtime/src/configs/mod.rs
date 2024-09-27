@@ -48,7 +48,7 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureRoot,
+	EnsureRoot, EnsureSigned,
 };
 use pallet_assets::pallet::Instance2;
 use pallet_cosmos::{
