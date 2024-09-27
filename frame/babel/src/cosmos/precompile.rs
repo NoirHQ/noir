@@ -85,7 +85,7 @@ where
 			address if address == dispatch => {
 				if let Ok(ExecuteMsg::Dispatch { input }) = serde_json_wasm::from_slice(message) {
 					let call = T::RuntimeCall::decode_with_depth_limit(DECODE_LIMIT, &mut &*input)
-						.unwrap();
+						.map_err(|_| CosmwasmVMError::ExecuteDeserialize)?;
 					let weight = call.get_dispatch_info().weight;
 					vm.0.data_mut()
 						.charge_raw(T::WeightToGas::convert(weight))
