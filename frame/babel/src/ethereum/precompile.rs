@@ -24,11 +24,12 @@ use frame_support::{
 	StorageHasher, Twox128,
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
+use pallet_evm_precompile_balances_erc20::Erc20Metadata;
 use parity_scale_codec::{Decode, DecodeLimit, Encode};
 use precompile_utils::{prelude::*, EvmResult};
 use sp_runtime::traits::{Dispatchable, Get};
 
-pub trait Config: pallet_evm::Config {
+pub trait Config: pallet_balances::Config + pallet_evm::Config + Erc20Metadata {
 	type DispatchValidator: DispatchValidate<Self::AccountId, Self::RuntimeCall>;
 	type DecodeLimit: Get<u32>;
 	type StorageFilter: StorageFilter;

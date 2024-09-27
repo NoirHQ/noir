@@ -360,6 +360,24 @@ impl frame_babel::ethereum::precompile::Config for Runtime {
 	type StorageFilter = ();
 }
 
+impl frame_babel::ethereum::Erc20Metadata for Runtime {
+	fn name() -> &'static str {
+		"Ziggurat"
+	}
+
+	fn symbol() -> &'static str {
+		"ZIG"
+	}
+
+	fn decimals() -> u8 {
+		18
+	}
+
+	fn is_native_currency() -> bool {
+		true
+	}
+}
+
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;

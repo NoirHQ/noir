@@ -29,6 +29,7 @@ use pallet_evm::{
 	EnsureAddressOrigin, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult,
 	PrecompileSet,
 };
+use pallet_evm_precompile_balances_erc20::Erc20BalancesPrecompile;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_modexp::Modexp;
@@ -38,6 +39,8 @@ use parity_scale_codec::Decode;
 use precompile::Babel;
 use sp_core::{ecdsa, H160};
 use sp_runtime::traits::{AccountIdConversion, Dispatchable};
+
+pub use pallet_evm_precompile_balances_erc20::Erc20Metadata;
 
 pub struct EnsureAddress<AccountId>(PhantomData<AccountId>);
 
@@ -87,6 +90,9 @@ impl<T> Default for BabelPrecompiles<T> {
 	}
 }
 
+use pallet_evm_precompile_balances_erc20::BalanceOf;
+use sp_core::U256;
+
 impl<T> BabelPrecompiles<T>
 where
 	T: precompile::Config,
@@ -95,7 +101,7 @@ where
 		Self::default()
 	}
 
-	pub fn used_addresses() -> [H160; 10] {
+	pub fn used_addresses() -> [H160; 11] {
 		[
 			hash(1),
 			hash(2),
@@ -107,6 +113,7 @@ where
 			hash(8),
 			hash(9),
 			hash(0x400 /* 1024 */),
+			hash(0x401 /* 1025 */),
 		]
 	}
 }
@@ -116,6 +123,8 @@ where
 	T: precompile::Config,
 	T::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
 	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<T::AccountId>>,
+	T::RuntimeCall: From<pallet_balances::Call<T>>,
+	BalanceOf<T>: TryFrom<U256> + Into<U256>,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {
@@ -130,6 +139,7 @@ where
 			a if a == hash(8) => Some(Bn128Pairing::execute(handle)),
 			a if a == hash(9) => Some(Blake2F::execute(handle)),
 			a if a == hash(0x400) => Some(Babel::<T>::execute(handle)),
+			a if a == hash(0x401) => Some(Erc20BalancesPrecompile::<T>::execute(handle)),
 			_ => None,
 		}
 	}
