@@ -25,7 +25,7 @@ use fp_self_contained::SelfContainedCall;
 use frame_babel::{ethereum::TransactionExt, UnifyAccount};
 use np_cosmos::Address as CosmosAddress;
 use np_ethereum::Address as EthereumAddress;
-use pallet_cosmos_types::any_match;
+use pallet_cosmos_types::{any_match, tx_msgs::FeeTx};
 use sp_core::ecdsa;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf},
@@ -70,13 +70,14 @@ impl SelfContainedCall for RuntimeCall {
 					let check = || {
 						let tx =
 							Tx::decode(&mut &tx_bytes[..]).map_err(|_| InvalidTransaction::Call)?;
-						let auth_info = tx.auth_info.as_ref().ok_or(InvalidTransaction::Call)?;
-						let fee = auth_info.fee.as_ref().ok_or(InvalidTransaction::Call)?;
+						let fee_payer = tx.fee_payer().ok_or(InvalidTransaction::Call)?;
+						let signer_infos =
+							tx.auth_info.ok_or(InvalidTransaction::Call)?.signer_infos;
 
-						let public_key = if fee.payer.is_empty() {
-							auth_info.signer_infos.first()
+						let public_key = if fee_payer.is_empty() {
+							signer_infos.first()
 						} else {
-							auth_info.signer_infos.last()
+							signer_infos.last()
 						}
 						.and_then(|signer_info| signer_info.public_key.as_ref())
 						.ok_or(InvalidTransaction::Call)?;

@@ -189,7 +189,6 @@ impl<T> ValidateSigCountDecorator<T> {
 }
 
 pub struct IncrementSequenceDecorator<T>(PhantomData<T>);
-
 impl<T> AnteDecorator for IncrementSequenceDecorator<T>
 where
 	T: frame_system::Config + pallet_cosmos::Config,
