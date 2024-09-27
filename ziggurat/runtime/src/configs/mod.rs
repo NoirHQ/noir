@@ -40,7 +40,7 @@ use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
-		AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse,
+		ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, NeverEnsureOrigin,
 		TransformOrigin, VariantCountOf,
 	},
 	weights::{ConstantMultiplier, Weight},
@@ -434,7 +434,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetId = AssetId;
 	type AssetIdParameter = codec::Compact<AssetId>;
 	type Currency = Balances;
-	type CreateOrigin = EnsureRoot<AccountId>;
+	type CreateOrigin = NeverEnsureOrigin<AccountId>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = ConstU128<500>;
 	type AssetAccountDeposit = ConstU128<500>;
