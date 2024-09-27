@@ -69,7 +69,7 @@ pub mod pallet {
 			use pallet_ethereum::{Transaction, TransactionData};
 			use pallet_evm::GasWeightMapping;
 			let without_base_extrinsic_weight = true;
-			match <Transaction as EnvelopedDecodable>::decode(&transaction) {
+			match <Transaction as EnvelopedDecodable>::decode(transaction) {
 				Ok(transaction) => {
 					<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
 						let transaction_data = TransactionData::from(&transaction);

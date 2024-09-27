@@ -462,7 +462,7 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = ConstU32<20>;
 	type Freezer = ();
 	type Extra = ();
-	type CallbackHandle = cosmos::asset::AssetsCallback<Self, Instance2>;
+	type CallbackHandle = ();
 	type WeightInfo = ();
 	type RemoveItemsLimit = ConstU32<1000>;
 }
