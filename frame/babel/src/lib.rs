@@ -17,7 +17,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::too_many_arguments)]
 extern crate alloc;
 
 #[cfg(feature = "cosmos")]
@@ -37,14 +37,22 @@ pub use pallet::*;
 pub mod pallet {
 	use alloc::vec::Vec;
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
+	use frame_system::{ensure_root, pallet_prelude::*};
+	use pallet_cosmos::types::{AssetIdOf, DenomOf};
+	use pallet_multimap::traits::UniqueMap;
 	use sp_core::ecdsa;
-	use sp_runtime::traits::UniqueSaturatedInto;
+	use sp_runtime::traits::{StaticLookup, UniqueSaturatedInto};
+
+	type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + pallet_cosmos::Config + pallet_ethereum::Config
+		frame_system::Config
+		+ pallet_assets::Config
+		+ pallet_cosmos::Config<AssetId = <Self as pallet_assets::Config>::AssetId>
+		+ pallet_ethereum::Config
 	{
+		type AssetMap: UniqueMap<AssetIdOf<Self>, DenomOf<Self>>;
 	}
 
 	#[pallet::pallet]
@@ -94,6 +102,51 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidTransaction)?;
 
 			pallet_ethereum::Pallet::<T>::transact(origin, transaction)
+		}
+
+		#[pallet::call_index(1)]
+		#[pallet::weight({
+			use pallet_assets::weights::WeightInfo;
+
+			<T as pallet_assets::Config>::WeightInfo::force_create()
+				.saturating_add(<T as pallet_assets::Config>::WeightInfo::force_set_metadata(name.len() as u32, symbol.len() as u32))
+		})]
+		pub fn force_create_asset(
+			origin: OriginFor<T>,
+			id: T::AssetIdParameter,
+			name: Vec<u8>,
+			symbol: Vec<u8>,
+			denom: Vec<u8>,
+			decimals: u8,
+			is_frozon: bool,
+			is_sufficient: bool,
+			owner: AccountIdLookupOf<T>,
+			#[pallet::compact] min_balance: <T as pallet_assets::Config>::Balance,
+		) -> DispatchResult {
+			ensure_root(origin.clone())?;
+
+			pallet_assets::Pallet::<T>::force_create(
+				origin.clone(),
+				id.clone(),
+				owner,
+				is_sufficient,
+				min_balance,
+			)?;
+			pallet_assets::Pallet::<T>::force_set_metadata(
+				origin,
+				id.clone(),
+				symbol,
+				name,
+				decimals,
+				is_frozon,
+			)?;
+			let id: <T as pallet_cosmos::Config>::AssetId = id.into();
+			let denom: DenomOf<T> =
+				denom.try_into().map_err(|_| DispatchError::Other("Too long denom"))?;
+			T::AssetMap::try_insert(id, denom)
+				.map_err(|_| DispatchError::Other("Failed to insert to asset map"))?;
+
+			Ok(())
 		}
 	}
 }

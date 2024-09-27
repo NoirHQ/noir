@@ -321,6 +321,9 @@ mod runtime {
 	pub type Cosmos = pallet_cosmos;
 	#[runtime::pallet_index(180)]
 	pub type Cosmwasm = pallet_cosmwasm;
+
+	#[runtime::pallet_index(255)]
+	pub type Babel = frame_babel;
 }
 
 #[docify::export(register_validate_block)]

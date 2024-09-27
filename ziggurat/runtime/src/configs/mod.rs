@@ -78,12 +78,12 @@ use xcm::latest::prelude::BodyId;
 // Local module imports
 use super::{
 	weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
-	AccountId, AddressMap, AssetId, Assets, Aura, Balance, Balances, BaseFee, Block, BlockNumber,
-	CollatorSelection, ConsensusHook, Hash, Instance1, MessageQueue, Nonce, PalletInfo,
-	ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
-	RuntimeOrigin, RuntimeTask, Session, SessionKeys, System, Timestamp, WeightToFee, XcmpQueue,
-	AVERAGE_ON_INITIALIZE_RATIO, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, MICROUNIT,
-	NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
+	AccountId, AddressMap, AssetId, AssetMap, Assets, Aura, Balance, Balances, BaseFee, Block,
+	BlockNumber, CollatorSelection, ConsensusHook, Hash, Instance1, MessageQueue, Nonce,
+	PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
+	RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys, System, Timestamp,
+	WeightToFee, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, EXISTENTIAL_DEPOSIT, HOURS,
+	MAXIMUM_BLOCK_WEIGHT, MICROUNIT, NORMAL_DISPATCH_RATIO, SLOT_DURATION, VERSION,
 };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -543,8 +543,8 @@ impl pallet_cosmwasm::Config for Runtime {
 	type MaxCodeSize = ConstU32<{ 1024 * 1024 }>;
 	type MaxInstrumentedCodeSize = ConstU32<{ 2 * 1024 * 1024 }>;
 	type MaxMessageSize = ConstU32<{ 64 * 1024 }>;
-	type AccountToAddr = cosmos::address::AccountToAddr<Runtime>;
-	type AssetToDenom = cosmos::asset::AssetToDenom<Runtime, Instance2>;
+	type AccountToAddr = cosmos::address::AccountToAddr<Self>;
+	type AssetToDenom = cosmos::asset::AssetToDenom<Self, Instance2>;
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type Assets = Assets;
@@ -567,15 +567,19 @@ impl pallet_cosmwasm::Config for Runtime {
 
 	type WasmCostRules = WasmCostRules;
 	type UnixTime = Timestamp;
-	type WeightInfo = pallet_cosmwasm::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_cosmwasm::weights::SubstrateWeight<Self>;
 
-	type PalletHook = Precompiles<Runtime>;
+	type PalletHook = Precompiles<Self>;
 
-	type UploadWasmOrigin = frame_system::EnsureSigned<Self::AccountId>;
+	type UploadWasmOrigin = EnsureSigned<Self::AccountId>;
 
-	type ExecuteWasmOrigin = frame_system::EnsureSigned<Self::AccountId>;
+	type ExecuteWasmOrigin = EnsureSigned<Self::AccountId>;
 
 	type NativeDenom = NativeDenom;
 
 	type NativeAssetId = NativeAssetId;
+}
+
+impl frame_babel::Config for Runtime {
+	type AssetMap = AssetMap;
 }
