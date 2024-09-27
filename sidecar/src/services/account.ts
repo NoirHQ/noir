@@ -44,7 +44,7 @@ export class AccountService implements ApiService {
 	public async origin(address: string): Promise<Codec> {
 		const { data } = fromBech32(address);
 		return this.chainApi.query['addressMap']['index'](
-			Buffer.concat([Buffer.from([0x00]), data])
+			Buffer.concat([Buffer.from([0x01]), data])
 		);
 	}
 
