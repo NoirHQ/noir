@@ -44,6 +44,7 @@ const ID: PalletId = PalletId(*b"dispatch");
 const DECODE_LIMIT: u32 = 8;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
 	Dispatch { input: Binary },
 }
@@ -127,5 +128,19 @@ where
 		VmErrorOf<OwnedWasmiVM<pallet_cosmwasm::runtimes::vm::CosmwasmVM<'a, T>>>,
 	> {
 		Err(CosmwasmVMError::ContractNotFound)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn deserialize_msg_test() {
+		let message = r#"{ "dispatch": { "input" : "CgMAkLWrIFxpdMnqhBvmiIZGM9ycqKNXhD7qzyMUZJll/iIPAADBb/KGIw==" } }"#;
+		let ExecuteMsg::Dispatch { input } =
+			serde_json_wasm::from_slice(message.as_bytes()).unwrap();
+
+		assert_eq!(input, hex::decode("0a030090b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe220f0000c16ff28623").unwrap());
 	}
 }

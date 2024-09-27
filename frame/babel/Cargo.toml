@@ -51,6 +51,9 @@ sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
+[dev-dependencies]
+hex = "0.4.3"
+
 [features]
 default = ["std", "pallet"]
 std = [
