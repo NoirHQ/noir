@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::error::handle_vm_error;
 use alloc::{string::ToString, vec, vec::Vec};
 use core::{marker::PhantomData, str::FromStr};
 use core2::io::Read;
@@ -69,7 +70,6 @@ where
 	Context: context::traits::Context,
 {
 	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError> {
-		// TODO: Add gas metering
 		let MsgStoreCode { sender, wasm_byte_code, instantiate_permission: _ } =
 			MsgStoreCode::decode(&mut &*msg.value).map_err(|_| RootError::TxDecodeError)?;
 
@@ -167,10 +167,7 @@ where
 			funds,
 			message,
 		)
-		.map_err(|e| {
-			log::debug!("{:?}", e);
-			WasmError::InstantiateFailed
-		})?;
+		.map_err(|e| handle_vm_error(e, WasmError::InstantiateFailed))?;
 		ctx.gas_meter()
 			.consume_gas(gas.saturating_sub(shared.gas.remaining()), "")
 			.map_err(|_| RootError::OutOfGas)?;
@@ -235,10 +232,7 @@ where
 			funds,
 			message,
 		)
-		.map_err(|e| {
-			log::debug!("{:?}", e);
-			WasmError::ExecuteFailed
-		})?;
+		.map_err(|e| handle_vm_error(e, WasmError::ExecuteFailed))?;
 		ctx.gas_meter()
 			.consume_gas(gas.saturating_sub(shared.gas.remaining()), "")
 			.map_err(|_| RootError::OutOfGas)?;
@@ -313,10 +307,7 @@ where
 			new_code_identifier,
 			message,
 		)
-		.map_err(|e| {
-			log::debug!("{:?}", e);
-			WasmError::MigrationFailed
-		})?;
+		.map_err(|e| handle_vm_error(e, WasmError::MigrationFailed))?;
 		ctx.gas_meter()
 			.consume_gas(gas.saturating_sub(shared.gas.remaining()), "")
 			.map_err(|_| RootError::OutOfGas)?;
@@ -383,10 +374,7 @@ where
 			contract_account,
 			new_admin_account,
 		)
-		.map_err(|e| {
-			log::debug!("{:?}", e);
-			RootError::Unauthorized
-		})?;
+		.map_err(|e| handle_vm_error(e, RootError::Unauthorized))?;
 		ctx.gas_meter()
 			.consume_gas(gas.saturating_sub(shared.gas.remaining()), "")
 			.map_err(|_| RootError::OutOfGas)?;

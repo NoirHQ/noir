@@ -24,8 +24,11 @@ pub enum WasmError {
 	CreateFailed = 2,
 	InstantiateFailed = 4,
 	ExecuteFailed = 5,
+	GasLimit = 6,
 	MigrationFailed = 11,
 	Empty = 12,
+	Invalid = 14,
+	NoSuchContract = 22,
 }
 
 impl From<WasmError> for CosmosError {
