@@ -5,6 +5,7 @@ import { IConfig } from "config";
 import { QueryAllBalancesResponse } from "cosmjs-types/cosmos/bank/v1beta1/query.js";
 import Long from "long";
 import { AccountInfo } from "@polkadot/types/interfaces";
+import { encodeTo } from "../utils";
 
 export class BalanceService implements ApiService {
 	config: IConfig;
@@ -41,26 +42,33 @@ export class BalanceService implements ApiService {
 		const assets = [];
 		const metadata = await this.chainApi.query.assets.metadata.entries();
 		for (const [{ args: [assetId] }, value] of metadata) {
-			const asset = await this.chainApi.query.assets.account(assetId.toString(), origin)
+			const asset = await this.chainApi.query.assets.account(assetId.toString(), origin);
 
-			if (asset) {
-				const denom = value.toHuman()['symbol'];
-				const amount = asset.toJSON() ? BigInt(asset.toJSON()['balance']).toString() : '0';
 
-				assets.push({ denom, amount });
+			if (!asset.isEmpty) {
+				const assetDenom = await this.chainApi.query.assetMap.map(assetId);
+
+				if (!assetDenom.isEmpty) {
+					const denomSet = assetDenom.toJSON();
+					const denom = encodeTo(denomSet[0].toString(), 'hex', 'utf8');
+					const amount = BigInt(asset.toJSON()['balance']).toString();
+
+					console.debug(`denom: ${denom}, amount: ${amount}`);
+
+					assets.push({ denom, amount });
+				}
 			}
 		}
 
-		console.debug([
+		const balances = [
 			nativeBalance,
 			...assets,
-		]);
+		];
+
+		console.debug(`balances: ${JSON.stringify(balances)}`);
 
 		return {
-			balances: [
-				nativeBalance,
-				...assets,
-			],
+			balances,
 			pagination: {
 				nextKey: new Uint8Array(),
 				total: Long.ZERO,
