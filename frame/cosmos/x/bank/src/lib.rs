@@ -48,7 +48,7 @@ use pallet_cosmos_types::{
 };
 use pallet_cosmos_x_bank_types::events::{ATTRIBUTE_KEY_RECIPIENT, EVENT_TYPE_TRANSFER};
 use sp_core::{Get, H160};
-use sp_runtime::{traits::Convert, SaturatedConversion};
+use sp_runtime::{traits::TryConvert, SaturatedConversion};
 
 pub struct MsgSendHandler<T>(PhantomData<T>);
 
@@ -93,7 +93,7 @@ where
 					.consume_gas(GasInfo::<T>::msg_send_native(), "msg_send_native")
 					.map_err(|_| RootError::OutOfGas)?;
 			} else {
-				let asset_id = T::AssetToDenom::convert(amt.denom.clone())
+				let asset_id = T::AssetToDenom::try_convert(amt.denom.clone())
 					.map_err(|_| RootError::InvalidCoins)?;
 				T::Assets::transfer(
 					asset_id,

@@ -133,7 +133,7 @@ pub mod pallet {
 		transactional, PalletId, Twox64Concat,
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
-	use sp_runtime::traits::{Convert, MaybeDisplay};
+	use sp_runtime::traits::{Convert, MaybeDisplay, TryConvert};
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -302,8 +302,7 @@ pub mod pallet {
 		type AssetId: AssetId + Ord;
 
 		/// A way to convert from our native currency to cosmwasm `Denom`.
-		type AssetToDenom: Convert<AssetIdOf<Self>, String>
-			+ Convert<String, Result<AssetIdOf<Self>, ()>>;
+		type AssetToDenom: TryConvert<Self::AssetId, String> + TryConvert<String, AssetIdOf<Self>>;
 
 		/// Interface used to pay when uploading code.
 		type NativeAsset: ReservableCurrency<AccountIdOf<Self>, Balance = BalanceOf<Self>>
@@ -682,10 +681,11 @@ impl<T: Config> Pallet<T> {
 			CosmwasmVMError<T>,
 		>,
 	{
-		let cosmwasm_funds = funds
-			.into_iter()
-			.map(|(asset, (amount, _))| Self::native_asset_to_cosmwasm_asset(asset, amount))
-			.collect::<Vec<_>>();
+		let mut cosmwasm_funds = Vec::<Coin>::new();
+		for (asset, (amount, _)) in funds.into_iter() {
+			let cosmwasm_fund = Self::native_asset_to_cosmwasm_asset(asset, amount)?;
+			cosmwasm_funds.push(cosmwasm_fund);
+		}
 
 		Self::sub_level_dispatch(shared, sender, contract.clone(), cosmwasm_funds, call).map(
 			|(data, events)| {

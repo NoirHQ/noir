@@ -152,6 +152,7 @@ pub mod pallet {
 		context::traits::MinGasPrices, errors::CosmosError, events::CosmosEvent, gas::Gas,
 	};
 	use pallet_cosmos_x_auth_signing::sign_mode_handler::traits::SignModeHandler;
+	use sp_runtime::traits::{Convert, TryConvert};
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -211,8 +212,7 @@ pub mod pallet {
 
 		/// Converter between AssetId and Denom.
 		#[pallet::no_default]
-		type AssetToDenom: Convert<String, Result<Self::AssetId, ()>>
-			+ Convert<Self::AssetId, String>;
+		type AssetToDenom: TryConvert<Self::AssetId, String> + TryConvert<String, Self::AssetId>;
 
 		/// Context for executing transactions.
 		type Context: Context;

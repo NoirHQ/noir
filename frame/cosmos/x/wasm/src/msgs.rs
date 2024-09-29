@@ -54,7 +54,10 @@ use pallet_cosmwasm::{
 	},
 };
 use sp_core::H160;
-use sp_runtime::{traits::Convert, SaturatedConversion};
+use sp_runtime::{
+	traits::{Convert, TryConvert},
+	SaturatedConversion,
+};
 
 pub struct MsgStoreCodeHandler<T>(PhantomData<T>);
 
@@ -254,8 +257,8 @@ where
 fn convert_funds<T: pallet_cosmwasm::Config>(coins: &[Coin]) -> Result<FundsOf<T>, CosmosError> {
 	let mut funds = FundsOf::<T>::default();
 	for coin in coins.iter() {
-		let asset_id =
-			T::AssetToDenom::convert(coin.denom.clone()).map_err(|_| RootError::TxDecodeError)?;
+		let asset_id = T::AssetToDenom::try_convert(coin.denom.clone())
+			.map_err(|_| RootError::TxDecodeError)?;
 		let amount = u128::from_str(&coin.amount).map_err(|_| RootError::TxDecodeError)?;
 
 		funds

@@ -2,7 +2,7 @@ use alloc::{string::String, vec::Vec};
 use cosmwasm_std::Coin;
 use cosmwasm_vm::system::CosmwasmContractMeta;
 use sp_core::storage::ChildInfo;
-use sp_runtime::traits::{Convert, Hash};
+use sp_runtime::traits::{Convert, Hash, TryConvert};
 
 use crate::{
 	runtimes::{
@@ -84,14 +84,14 @@ impl<T: Config> Pallet<T> {
 	pub(crate) fn native_asset_to_cosmwasm_asset(
 		asset: AssetIdOf<T>,
 		amount: BalanceOf<T>,
-	) -> Coin {
-		let denom = T::AssetToDenom::convert(asset);
-		Coin { denom, amount: amount.into().into() }
+	) -> Result<Coin, Error<T>> {
+		let denom = T::AssetToDenom::try_convert(asset).map_err(|_| Error::<T>::AssetConversion)?;
+		Ok(Coin { denom, amount: amount.into().into() })
 	}
 
 	/// Try to convert from a CosmWasm denom to a native [`AssetIdOf<T>`].
 	pub(crate) fn cosmwasm_asset_to_native_asset(denom: String) -> Result<AssetIdOf<T>, Error<T>> {
-		T::AssetToDenom::convert(denom).map_err(|_| Error::<T>::UnknownDenom)
+		T::AssetToDenom::try_convert(denom).map_err(|_| Error::<T>::UnknownDenom)
 	}
 
 	/// Build a [`ChildInfo`] out of a contract trie id.

@@ -21,38 +21,37 @@ use core::marker::PhantomData;
 use pallet_cosmos::types::{AssetIdOf, DenomOf};
 use pallet_multimap::traits::UniqueMap;
 use sp_core::Get;
-use sp_runtime::traits::Convert;
+use sp_runtime::traits::TryConvert;
 
 pub struct AssetToDenom<T, I>(PhantomData<(T, I)>);
-impl<T, I: 'static> Convert<String, Result<AssetIdOf<T>, ()>> for AssetToDenom<T, I>
+impl<T, I: 'static> TryConvert<String, AssetIdOf<T>> for AssetToDenom<T, I>
 where
 	T: pallet_cosmos::Config + pallet_multimap::Config<I, Key = AssetIdOf<T>, Value = DenomOf<T>>,
 {
-	fn convert(denom: String) -> Result<AssetIdOf<T>, ()> {
+	fn try_convert(denom: String) -> Result<AssetIdOf<T>, String> {
 		if denom == T::NativeDenom::get() {
 			Ok(T::NativeAssetId::get())
 		} else {
-			let denom: DenomOf<T> = denom.as_bytes().to_vec().try_into().map_err(|_| ())?;
-			pallet_multimap::Pallet::<T, I>::find_key(denom).ok_or(())
+			let denom_raw: DenomOf<T> =
+				denom.as_bytes().to_vec().try_into().map_err(|_| denom.clone())?;
+			pallet_multimap::Pallet::<T, I>::find_key(denom_raw).ok_or(denom.clone())
 		}
 	}
 }
-
-impl<T, I: 'static> Convert<AssetIdOf<T>, String> for AssetToDenom<T, I>
+impl<T, I: 'static> TryConvert<AssetIdOf<T>, String> for AssetToDenom<T, I>
 where
 	T: pallet_cosmos::Config + pallet_multimap::Config<I, Key = AssetIdOf<T>, Value = DenomOf<T>>,
 {
-	fn convert(asset_id: AssetIdOf<T>) -> String {
+	fn try_convert(asset_id: AssetIdOf<T>) -> Result<String, AssetIdOf<T>> {
 		if asset_id == T::NativeAssetId::get() {
-			T::NativeDenom::get().to_string()
+			Ok(T::NativeDenom::get().to_string())
 		} else {
-			// TODO: Handle option
 			let denom =
 				<pallet_multimap::Pallet<T, I> as UniqueMap<AssetIdOf<T>, DenomOf<T>>>::get(
-					asset_id,
+					asset_id.clone(),
 				)
-				.unwrap();
-			String::from_utf8(denom.into()).unwrap()
+				.ok_or(asset_id.clone())?;
+			String::from_utf8(denom.into()).map_err(|_| asset_id.clone())
 		}
 	}
 }
