@@ -313,7 +313,7 @@ pub mod pallet {
 				.ok()
 				.and_then(|tx| tx.auth_info)
 				.and_then(|auth_info| auth_info.fee)
-				.map_or(T::WeightInfo::default_weight(), |fee| {
+				.map_or(T::WeightInfo::base_weight(), |fee| {
 					T::WeightToGas::convert(fee.gas_limit)
 				})
 		 })]
@@ -322,7 +322,7 @@ pub mod pallet {
 
 			let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| {
 				Error::<T>::CosmosError(RootError::TxDecodeError.into())
-					.with_weight(T::WeightInfo::default_weight())
+					.with_weight(T::WeightInfo::base_weight())
 			})?;
 
 			Self::apply_validated_transaction(tx)
@@ -365,7 +365,7 @@ impl<T: Config> Pallet<T> {
 	pub fn apply_validated_transaction(tx: Tx) -> DispatchResultWithPostInfo {
 		let gas_limit = tx.gas().ok_or(
 			Error::<T>::CosmosError(RootError::TxDecodeError.into())
-				.with_weight(T::WeightInfo::default_weight()),
+				.with_weight(T::WeightInfo::base_weight()),
 		)?;
 
 		let mut ctx = T::Context::new(gas_limit);
@@ -389,9 +389,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn run_tx(ctx: &mut T::Context, tx: &Tx) -> Result<(), CosmosError> {
-		let base_gas = T::WeightToGas::convert(T::WeightInfo::default_weight());
+		let base_gas = T::WeightToGas::convert(T::WeightInfo::base_weight());
 		ctx.gas_meter()
-			.consume_gas(base_gas, "base gas")
+			.consume_gas(base_gas, "base_gas")
 			.map_err(|_| RootError::OutOfGas)?;
 
 		let body = tx.body.as_ref().ok_or(RootError::TxDecodeError)?;

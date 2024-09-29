@@ -144,7 +144,7 @@ pub mod pallet {
 			let denom: DenomOf<T> =
 				denom.try_into().map_err(|_| DispatchError::Other("Too long denom"))?;
 			T::AssetMap::try_insert(id, denom)
-				.map_err(|_| DispatchError::Other("Failed to insert to asset map"))?;
+				.map_err(|_| DispatchError::Other("Failed to insert into asset map"))?;
 
 			Ok(())
 		}

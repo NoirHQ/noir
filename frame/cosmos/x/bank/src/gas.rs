@@ -16,19 +16,24 @@
 // limitations under the License.
 
 use core::marker::PhantomData;
-use frame_support::{dispatch::DispatchClass, weights::Weight};
+use frame_support::weights::Weight;
+use pallet_cosmos_types::gas::Gas;
 use sp_core::Get;
+use sp_runtime::traits::Convert;
 
-pub trait WeightInfo {
-	fn base_weight() -> Weight;
-}
+pub struct GasInfo<T>(PhantomData<T>);
+impl<T: pallet_cosmos::Config> GasInfo<T> {
+	pub fn msg_send_native() -> Gas {
+		let weight = Weight::from_parts(61_290_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64));
+		T::WeightToGas::convert(weight)
+	}
 
-pub struct CosmosWeight<T>(PhantomData<T>);
-impl<T> WeightInfo for CosmosWeight<T>
-where
-	T: frame_system::Config,
-{
-	fn base_weight() -> Weight {
-		T::BlockWeights::get().get(DispatchClass::Normal).base_extrinsic
+	pub fn msg_send_asset() -> Gas {
+		let weight = Weight::from_parts(40_059_000, 6208)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64));
+		T::WeightToGas::convert(weight)
 	}
 }

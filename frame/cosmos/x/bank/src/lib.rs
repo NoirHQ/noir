@@ -19,6 +19,8 @@
 
 extern crate alloc;
 
+pub mod gas;
+
 use alloc::vec;
 use core::marker::PhantomData;
 use cosmos_sdk_proto::{cosmos::bank::v1beta1::MsgSend, prost::Message, Any};
@@ -30,6 +32,7 @@ use frame_support::{
 		ExistenceRequirement,
 	},
 };
+use gas::GasInfo;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,
@@ -40,6 +43,7 @@ use pallet_cosmos_types::{
 		traits::EventManager, CosmosEvent, EventAttribute, ATTRIBUTE_KEY_AMOUNT,
 		ATTRIBUTE_KEY_SENDER,
 	},
+	gas::traits::GasMeter,
 	msgservice::traits::MsgHandler,
 };
 use pallet_cosmos_x_bank_types::events::{ATTRIBUTE_KEY_RECIPIENT, EVENT_TYPE_TRANSFER};
@@ -60,7 +64,6 @@ where
 	Context: context::traits::Context,
 {
 	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError> {
-		// TODO: Add gas metering
 		let MsgSend { from_address, to_address, amount } =
 			MsgSend::decode(&mut &*msg.value).map_err(|_| RootError::UnpackAnyError)?;
 
@@ -85,6 +88,10 @@ where
 					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|_| RootError::InsufficientFunds)?;
+
+				ctx.gas_meter()
+					.consume_gas(GasInfo::<T>::msg_send_native(), "msg_send_native")
+					.map_err(|_| RootError::OutOfGas)?;
 			} else {
 				let asset_id = T::AssetToDenom::convert(amt.denom.clone())
 					.map_err(|_| RootError::InvalidCoins)?;
@@ -96,6 +103,10 @@ where
 					Preservation::Preserve,
 				)
 				.map_err(|_| RootError::InsufficientFunds)?;
+
+				ctx.gas_meter()
+					.consume_gas(GasInfo::<T>::msg_send_asset(), "msg_send_asset")
+					.map_err(|_| RootError::OutOfGas)?;
 			}
 		}
 
