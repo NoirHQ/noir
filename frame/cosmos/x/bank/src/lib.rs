@@ -81,6 +81,10 @@ where
 			let amount = amt.amount.parse::<u128>().map_err(|_| RootError::InvalidCoins)?;
 
 			if T::NativeDenom::get() == amt.denom {
+				ctx.gas_meter()
+					.consume_gas(GasInfo::<T>::msg_send_native(), "msg_send_native")
+					.map_err(|_| RootError::OutOfGas)?;
+
 				T::NativeAsset::transfer(
 					&from_account,
 					&to_account,
@@ -88,11 +92,11 @@ where
 					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|_| RootError::InsufficientFunds)?;
-
-				ctx.gas_meter()
-					.consume_gas(GasInfo::<T>::msg_send_native(), "msg_send_native")
-					.map_err(|_| RootError::OutOfGas)?;
 			} else {
+				ctx.gas_meter()
+					.consume_gas(GasInfo::<T>::msg_send_asset(), "msg_send_asset")
+					.map_err(|_| RootError::OutOfGas)?;
+
 				let asset_id = T::AssetToDenom::try_convert(amt.denom.clone())
 					.map_err(|_| RootError::InvalidCoins)?;
 				T::Assets::transfer(
@@ -103,10 +107,6 @@ where
 					Preservation::Preserve,
 				)
 				.map_err(|_| RootError::InsufficientFunds)?;
-
-				ctx.gas_meter()
-					.consume_gas(GasInfo::<T>::msg_send_asset(), "msg_send_asset")
-					.map_err(|_| RootError::OutOfGas)?;
 			}
 		}
 
