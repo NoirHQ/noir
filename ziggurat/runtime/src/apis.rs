@@ -34,7 +34,10 @@ use frame_support::{
 	weights::Weight,
 };
 use pallet_aura::Authorities;
-use pallet_cosmos_types::{context::traits::Context, handler::AnteDecorator, tx_msgs::FeeTx};
+use pallet_cosmos_types::{
+	context::traits::Context, events::traits::EventManager, gas::traits::GasMeter,
+	handler::AnteDecorator,
+};
 use pallet_ethereum::{Transaction as EthereumTransaction, TransactionStatus};
 use pallet_evm::{Account as EVMAccount, FeeCalculator, Runner};
 use sp_api::impl_runtime_apis;
@@ -50,7 +53,7 @@ use sp_version::RuntimeVersion;
 // Local module imports
 use super::{
 	AccountId, Balance, Block, ConsensusHook, Ethereum, Executive, InherentDataExt, Nonce,
-	ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeGenesisConfig, SessionKeys, System,
+	ParachainSystem, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, System,
 	TransactionPayment, UncheckedExtrinsic, SLOT_DURATION, VERSION,
 };
 
@@ -577,19 +580,17 @@ impl_runtime_apis! {
 			<Runtime as pallet_cosmos::Config>::AnteHandler::ante_handle(&tx, true)
 				.map_err(|e| SimulateError::InternalError(format!("Failed to ante handle cosmos tx. error: {:?}", e).into()))?;
 
-			let gas_limit = tx.gas().ok_or(SimulateError::InternalError("Empty gas limit".into()))?;
-			let mut context = <Runtime as pallet_cosmos::Config>::Context::new(gas_limit);
+			let mut context = <Runtime as pallet_cosmos::Config>::Context::new(<Runtime as pallet_cosmos::Config>::SimulationGasLimit::get());
 			pallet_cosmos::Pallet::<Runtime>::run_tx(&mut context, &tx)
 				.map_err(|e| SimulateError::InternalError(format!("Failed to simulate cosmos tx. error: {:?}", e).into()))?;
 
-			System::read_events_no_consensus()
-				.find_map(|record| {
-					if let RuntimeEvent::Cosmos(pallet_cosmos::Event::Executed { gas_wanted, gas_used, events }) = record.event {
-						Some(SimulateResponse{gas_info: GasInfo { gas_wanted, gas_used }, events})
-					} else {
-						None
-					}
-				}).ok_or(SimulateError::InternalError("Cosmos events does not exist".into()))
+			Ok(SimulateResponse {
+				gas_info: GasInfo {
+					gas_wanted: 0,
+					gas_used: context.gas_meter().consumed_gas()
+				},
+				events: context.event_manager().events()
+			})
 		}
 	}
 

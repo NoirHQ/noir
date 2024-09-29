@@ -14,20 +14,25 @@ import { TxService } from "./tx";
 import { QuerySmartContractStateRequest, QuerySmartContractStateResponse } from 'cosmjs-types/cosmwasm/wasm/v1/query.js'
 import { convertToCodespace } from "../constants/codespace";
 import { encodeTo } from "../utils";
+import { BalanceService } from "./balance";
+import { QueryAllBalancesRequest, QueryAllBalancesResponse, QueryBalanceRequest, QueryBalanceResponse } from "cosmjs-types/cosmos/bank/v1beta1/query";
 
 export class AbciService implements ApiService {
 	chainApi: ApiPromise;
 	accountService: AccountService;
+	balanceService: BalanceService;
 	txService: TxService;
 
-	constructor(chainApi: ApiPromise, accountService: AccountService, txService: TxService) {
+	constructor(chainApi: ApiPromise, accountService: AccountService, balanceService: BalanceService, txService: TxService) {
 		this.chainApi = chainApi;
 		this.accountService = accountService;
+		this.balanceService = balanceService;
 		this.txService = txService;
 	}
 
 	async query(path: string, data: string): Promise<ABCIQueryResponse> {
 		console.debug('query');
+		console.debug(`path: ${path}`);
 
 		if (path === '/cosmos.auth.v1beta1.Query/Account') {
 			const address = QueryAccountRequest.decode(
@@ -51,13 +56,55 @@ export class AbciService implements ApiService {
 				sequence: Long.fromNumber(parseInt(account.sequence)),
 			};
 
-			const queryAccountResponse: QueryAccountResponse = {
+			const response: QueryAccountResponse = {
 				account: {
 					typeUrl: '/cosmos.auth.v1beta1.BaseAccount',
 					value: BaseAccount.encode(baseAccount).finish(),
 				},
 			};
-			const value = QueryAccountResponse.encode(queryAccountResponse).finish();
+			const value = QueryAccountResponse.encode(response).finish();
+			return {
+				code: 0,
+				log: '',
+				info: '',
+				index: Long.ZERO,
+				key: undefined,
+				value,
+				proofOps: undefined,
+				height: Long.fromString(height.toString()),
+				codespace: '',
+			};
+		} else if (path === '/cosmos.bank.v1beta1.Query/AllBalances') {
+			const height = await this.chainApi.query.system.number();
+			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+
+			const { address } = QueryAllBalancesRequest.decode(
+				Buffer.from(data, 'hex')
+			);
+
+			const response = await this.balanceService.balances(address, blockHash.toString());
+			const value = QueryAllBalancesResponse.encode(response).finish();
+			return {
+				code: 0,
+				log: '',
+				info: '',
+				index: Long.ZERO,
+				key: undefined,
+				value,
+				proofOps: undefined,
+				height: Long.fromString(height.toString()),
+				codespace: '',
+			};
+		} else if (path === '/cosmos.bank.v1beta1.Query/Balance') {
+			const height = await this.chainApi.query.system.number();
+			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+
+			const { address, denom } = QueryBalanceRequest.decode(
+				Buffer.from(data, 'hex')
+			);
+
+			const response = await this.balanceService.balance(address, denom, blockHash.toString());
+			const value = QueryBalanceResponse.encode(response).finish();
 			return {
 				code: 0,
 				log: '',

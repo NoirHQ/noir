@@ -129,12 +129,12 @@ export class App {
 
 		const accountService = new AccountService(this.chainApi);
 		const txService = new TxService(this.db, this.chainApi);
-		const abciService = new AbciService(this.chainApi, accountService, txService);
 		const balanceService = new BalanceService(
 			this.config,
 			this.chainApi,
 			accountService
 		);
+		const abciService = new AbciService(this.chainApi, accountService, balanceService, txService);
 		const distributionService = new DistributionService();
 		const nodeInfoService = new NodeInfoService(this.config);
 		const stakingService = new StakingService();

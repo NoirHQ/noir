@@ -57,8 +57,8 @@ use frame_system::{
 use pallet_assets::pallet::Instance2;
 use pallet_cosmos::{
 	config_preludes::{
-		MaxDenomLimit, MaxMemoCharacters, MsgFilter, NativeAssetId, NativeDenom, TxSigLimit,
-		WeightToGas,
+		MaxDenomLimit, MaxMemoCharacters, MsgFilter, NativeAssetId, NativeDenom,
+		SimulationGasLimit, TxSigLimit, WeightToGas,
 	},
 	types::{AssetIdOf, DenomOf},
 };
@@ -547,6 +547,7 @@ impl pallet_cosmos::Config for Runtime {
 	type MaxMemoCharacters = MaxMemoCharacters;
 	type TxSigLimit = TxSigLimit;
 	type MaxDenomLimit = MaxDenomLimit;
+	type SimulationGasLimit = SimulationGasLimit;
 }
 
 parameter_types! {

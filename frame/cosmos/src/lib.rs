@@ -247,6 +247,10 @@ pub mod pallet {
 		/// The maximum length of a denomination for an asset.
 		#[pallet::constant]
 		type MaxDenomLimit: Get<u32>;
+
+		/// The gas limit for simulation.
+		#[pallet::constant]
+		type SimulationGasLimit: Get<u64>;
 	}
 
 	pub mod config_preludes {
@@ -296,6 +300,7 @@ pub mod pallet {
 			pub const TxSigLimit: u64 = 7;
 			pub const MaxDenomLimit: u32 = 128;
 			pub const NativeAssetId: u32 = 0;
+			pub const SimulationGasLimit: u64 = 1000000000;
 		}
 	}
 
