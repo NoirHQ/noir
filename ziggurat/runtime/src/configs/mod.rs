@@ -26,7 +26,11 @@
 mod xcm_config;
 
 // Substrate and Polkadot dependencies
-use alloc::{string::ToString, vec, vec::Vec};
+use alloc::{
+	string::{String, ToString},
+	vec,
+	vec::Vec,
+};
 use cumulus_pallet_parachain_system::RelayNumberMonotonicallyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use fp_evm::weight_per_gas;
@@ -64,6 +68,7 @@ use pallet_cosmos_x_auth_signing::{
 };
 use pallet_cosmwasm::instrument::CostRules;
 use pallet_ethereum::PostLogContent;
+use pallet_multimap::traits::UniqueMap;
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 use polkadot_runtime_common::{
@@ -71,7 +76,7 @@ use polkadot_runtime_common::{
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{ConstU128, H160, U256};
-use sp_runtime::{Perbill, Permill};
+use sp_runtime::{traits::TryConvert, BoundedVec, Perbill, Permill};
 use sp_version::RuntimeVersion;
 use xcm::latest::prelude::BodyId;
 
@@ -494,6 +499,31 @@ impl context::traits::MinGasPrices for MinGasPrices {
 	}
 }
 
+pub struct AssetToDenom;
+impl TryConvert<String, AssetId> for AssetToDenom {
+	fn try_convert(denom: String) -> Result<AssetId, String> {
+		if denom == NativeDenom::get() {
+			Ok(NativeAssetId::get())
+		} else {
+			let denom_raw: BoundedVec<u8, MaxDenomLimit> =
+				denom.as_bytes().to_vec().try_into().map_err(|_| denom.clone())?;
+			AssetMap::find_key(denom_raw).ok_or(denom.clone())
+		}
+	}
+}
+impl TryConvert<AssetId, String> for AssetToDenom {
+	fn try_convert(asset_id: AssetId) -> Result<String, AssetId> {
+		if asset_id == NativeAssetId::get() {
+			Ok(NativeDenom::get().to_string())
+		} else {
+			let denom =
+				<AssetMap as UniqueMap<AssetId, BoundedVec<u8, MaxDenomLimit>>>::get(asset_id)
+					.ok_or(asset_id)?;
+			String::from_utf8(denom.into()).map_err(|_| asset_id)
+		}
+	}
+}
+
 impl pallet_cosmos::Config for Runtime {
 	type AddressMapping = cosmos::address::AddressMapping<Self>;
 	type Balance = Balance;
@@ -506,7 +536,7 @@ impl pallet_cosmos::Config for Runtime {
 	type WeightInfo = pallet_cosmos::weights::CosmosWeight<Self>;
 	type WeightToGas = WeightToGas;
 	type MinGasPrices = MinGasPrices;
-	type AssetToDenom = cosmos::asset::AssetToDenom<Self, Instance2>;
+	type AssetToDenom = AssetToDenom;
 	type Context = context::Context;
 	type ChainInfo = np_cosmos::traits::CosmosHub;
 	type AnteHandler = pallet_cosmos_x_auth::AnteDecorators<Self>;
@@ -544,7 +574,7 @@ impl pallet_cosmwasm::Config for Runtime {
 	type MaxInstrumentedCodeSize = ConstU32<{ 2 * 1024 * 1024 }>;
 	type MaxMessageSize = ConstU32<{ 64 * 1024 }>;
 	type AccountToAddr = cosmos::address::AccountToAddr<Self>;
-	type AssetToDenom = cosmos::asset::AssetToDenom<Self, Instance2>;
+	type AssetToDenom = AssetToDenom;
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type Assets = Assets;
