@@ -28,6 +28,7 @@ pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 pallet-cosmos = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-types = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-x-auth-signing = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-x-bank = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-x-wasm = { workspace = true, default-features = false, optional = true }
 pallet-cosmwasm = { workspace = true, default-features = false, optional = true }
@@ -78,6 +79,7 @@ std = [
 	"pallet-balances/std",
 	"pallet-cosmos?/std",
 	"pallet-cosmos-types?/std",
+	"pallet-cosmos-x-auth-signing?/std",
 	"pallet-cosmos-x-bank?/std",
 	"pallet-cosmos-x-wasm?/std",
 	"pallet-cosmwasm?/std",
@@ -109,6 +111,7 @@ cosmos = [
 	"pallet-assets",
 	"pallet-cosmos",
 	"pallet-cosmos-types",
+	"pallet-cosmos-x-auth-signing",
 	"pallet-cosmos-x-bank",
 	"pallet-cosmos-x-wasm",
 	"pallet-cosmwasm",

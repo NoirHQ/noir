@@ -36,9 +36,12 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use alloc::vec::Vec;
+	use cosmos_sdk_proto::{cosmos::tx::v1beta1::Tx, traits::Message};
 	use frame_support::pallet_prelude::*;
 	use frame_system::{ensure_root, pallet_prelude::*};
 	use pallet_cosmos::types::{AssetIdOf, DenomOf};
+	use pallet_cosmos_types::address::acc_address_from_bech32;
+	use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 	use pallet_multimap::traits::UniqueMap;
 	use sp_core::ecdsa;
 	use sp_runtime::traits::{StaticLookup, UniqueSaturatedInto};
@@ -67,9 +70,10 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
-		OriginFor<T>: Into<Result<pallet_ethereum::RawOrigin, OriginFor<T>>>,
+		OriginFor<T>: Into<Result<pallet_ethereum::RawOrigin, OriginFor<T>>>
+			+ Into<Result<pallet_cosmos::RawOrigin, OriginFor<T>>>,
 		T::AccountId: TryInto<ecdsa::Public>,
-		T::RuntimeOrigin: From<pallet_ethereum::RawOrigin>,
+		T::RuntimeOrigin: From<pallet_ethereum::RawOrigin> + From<pallet_cosmos::RawOrigin>,
 	{
 		#[pallet::call_index(0)]
 		#[pallet::weight({
@@ -105,6 +109,48 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
+		#[pallet::weight({
+			use cosmos_sdk_proto::traits::Message;
+			use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
+			use pallet_cosmos::weights::WeightInfo;
+			use sp_runtime::traits::Convert;
+
+			Tx::decode(&mut &tx_bytes[..])
+				.ok()
+				.and_then(|tx| tx.auth_info)
+				.and_then(|auth_info| auth_info.fee)
+				.map_or(<T as pallet_cosmos::Config>::WeightInfo::base_weight(), |fee| {
+					<T as pallet_cosmos::Config>::WeightToGas::convert(fee.gas_limit)
+				})
+		})]
+		pub fn cosmos_transact(
+			origin: OriginFor<T>,
+			tx_bytes: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+			let public: ecdsa::Public = who.try_into().map_err(|_| Error::<T>::InvalidOrigin)?;
+			let address: np_babel::CosmosAddress = public.into();
+
+			let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| Error::<T>::InvalidTransaction)?;
+			let signers =
+				T::SigVerifiableTx::get_signers(&tx).map_err(|_| Error::<T>::InvalidTransaction)?;
+			ensure!(signers.len() == 1, Error::<T>::InvalidTransaction);
+
+			let signer = signers.first().ok_or(Error::<T>::InvalidTransaction)?;
+			let (_hrp, address_raw) =
+				acc_address_from_bech32(signer).map_err(|_| Error::<T>::InvalidTransaction)?;
+			ensure!(
+				address_raw.len() == 20 && address.to_vec() == address_raw,
+				Error::<T>::InvalidTransaction
+			);
+
+			let origin =
+				T::RuntimeOrigin::from(pallet_cosmos::RawOrigin::CosmosTransaction(address.into()));
+
+			pallet_cosmos::Pallet::<T>::transact(origin, tx_bytes)
+		}
+
+		#[pallet::call_index(2)]
 		#[pallet::weight({
 			use pallet_assets::weights::WeightInfo;
 
