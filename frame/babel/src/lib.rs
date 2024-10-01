@@ -35,16 +35,27 @@ pub use pallet::*;
 #[cfg(feature = "pallet")]
 #[frame_support::pallet]
 pub mod pallet {
+	use super::Address;
 	use alloc::vec::Vec;
 	use cosmos_sdk_proto::{cosmos::tx::v1beta1::Tx, traits::Message};
-	use frame_support::pallet_prelude::*;
+	use frame_support::{
+		pallet_prelude::*,
+		traits::{fungible::Mutate, tokens::Preservation::Preserve},
+	};
 	use frame_system::{ensure_root, pallet_prelude::*};
-	use pallet_cosmos::types::{AssetIdOf, DenomOf};
+	use pallet_cosmos::{
+		types::{AssetIdOf, DenomOf},
+		AddressMapping as _,
+	};
 	use pallet_cosmos_types::address::acc_address_from_bech32;
 	use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
-	use pallet_multimap::traits::UniqueMap;
+	use pallet_evm::AddressMapping as _;
+	use pallet_multimap::traits::{UniqueMap, UniqueMultimap};
 	use sp_core::ecdsa;
-	use sp_runtime::traits::{StaticLookup, UniqueSaturatedInto};
+	use sp_runtime::{
+		traits::{StaticLookup, UniqueSaturatedInto},
+		AccountId32,
+	};
 
 	type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
 
@@ -52,9 +63,12 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config
 		+ pallet_assets::Config
+		+ pallet_balances::Config
 		+ pallet_cosmos::Config<AssetId = <Self as pallet_assets::Config>::AssetId>
 		+ pallet_ethereum::Config
+		+ pallet_evm::Config
 	{
+		type AddressMap: UniqueMultimap<Self::AccountId, Address>;
 		type AssetMap: UniqueMap<AssetIdOf<Self>, DenomOf<Self>>;
 	}
 
@@ -72,7 +86,7 @@ pub mod pallet {
 	where
 		OriginFor<T>: Into<Result<pallet_ethereum::RawOrigin, OriginFor<T>>>
 			+ Into<Result<pallet_cosmos::RawOrigin, OriginFor<T>>>,
-		T::AccountId: TryInto<ecdsa::Public>,
+		T::AccountId: TryInto<ecdsa::Public> + From<AccountId32>,
 		T::RuntimeOrigin: From<pallet_ethereum::RawOrigin> + From<pallet_cosmos::RawOrigin>,
 	{
 		#[pallet::call_index(0)]
@@ -193,6 +207,30 @@ pub mod pallet {
 				.map_err(|_| DispatchError::Other("Failed to insert into asset map"))?;
 
 			Ok(())
+		}
+
+		#[pallet::call_index(3)]
+		#[pallet::weight({
+			use pallet_balances::weights::WeightInfo;
+
+			<T as pallet_balances::Config>::WeightInfo::transfer_keep_alive()
+		})]
+		pub fn transfer(
+			origin: OriginFor<T>,
+			dest: Address,
+			#[pallet::compact] value: <T as pallet_balances::Config>::Balance,
+		) -> DispatchResult {
+			let source = ensure_signed(origin.clone())?;
+
+			let dest: T::AccountId = match dest {
+				Address::Cosmos(address) =>
+					<T as pallet_cosmos::Config>::AddressMapping::into_account_id(address.into()),
+				Address::Ethereum(address) =>
+					<T as pallet_evm::Config>::AddressMapping::into_account_id(address.into()),
+				Address::Polkadot(address) => address.into(),
+			};
+
+			pallet_balances::Pallet::<T>::transfer(&source, &dest, value, Preserve).map(|_| ())
 		}
 	}
 }

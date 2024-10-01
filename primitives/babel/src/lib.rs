@@ -35,7 +35,7 @@ pub use np_ethereum as ethereum;
 pub use np_ethereum::Address as EthereumAddress;
 pub use sp_core::crypto::AccountId32;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Address {
 	Polkadot(AccountId32),
