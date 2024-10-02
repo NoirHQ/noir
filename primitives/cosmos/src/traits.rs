@@ -29,6 +29,6 @@ impl ChainInfo for CosmosHub {
 		"cosmos"
 	}
 	fn chain_id() -> &'static str {
-		"dev"
+		"ziggurat"
 	}
 }
