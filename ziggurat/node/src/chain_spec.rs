@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use frame_babel::Address;
+use frame_babel::VarAddress;
 use runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, UNIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -212,9 +212,12 @@ fn testnet_genesis(
 	})
 }
 
-fn address_map(account: ecdsa::Public) -> (AccountId, Vec<Address>) {
+fn address_map(account: ecdsa::Public) -> (AccountId, Vec<VarAddress>) {
 	(
 		account.clone().into(),
-		vec![Address::Cosmos(account.clone().into()), Address::Ethereum(account.clone().into())],
+		vec![
+			VarAddress::Cosmos(account.clone().into()),
+			VarAddress::Ethereum(account.clone().into()),
+		],
 	)
 }

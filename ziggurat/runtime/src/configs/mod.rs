@@ -38,6 +38,7 @@ use frame_babel::{
 	cosmos::{self, precompile::Precompiles},
 	ethereum::{self, BabelPrecompiles, EnsureAddress, ASSET_PRECOMPILE_ADDRESS_PREFIX},
 	extensions::unify_account,
+	VarAddress,
 };
 use frame_support::{
 	derive_impl,
@@ -337,8 +338,8 @@ impl pallet_collator_selection::Config for Runtime {
 #[derive_impl(pallet_multimap::config_preludes::TestDefaultConfig)]
 impl pallet_multimap::Config<Instance1> for Runtime {
 	type Key = AccountId;
-	type Value = frame_babel::Address;
-	type CapacityPerKey = ConstU32<{ frame_babel::Address::variant_count() }>;
+	type Value = VarAddress;
+	type CapacityPerKey = ConstU32<{ VarAddress::variant_count() }>;
 }
 
 impl unify_account::Config for Runtime {
@@ -466,7 +467,7 @@ impl pallet_base_fee::Config for Runtime {
 impl pallet_multimap::Config<Instance2> for Runtime {
 	type Key = AssetIdOf<Runtime>;
 	type Value = DenomOf<Runtime>;
-	type CapacityPerKey = ConstU32<{ frame_babel::Address::variant_count() - 1 }>;
+	type CapacityPerKey = ConstU32<1>;
 	type KeyHasher = Blake2_128Concat;
 	type ValueHasher = Blake2_128Concat;
 }

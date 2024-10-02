@@ -27,7 +27,7 @@ pub mod ethereum;
 pub mod extensions;
 
 pub use extensions::unify_account::UnifyAccount;
-pub use np_babel::Address;
+pub use np_babel::VarAddress;
 
 #[cfg(feature = "pallet")]
 pub use pallet::*;
@@ -35,7 +35,7 @@ pub use pallet::*;
 #[cfg(feature = "pallet")]
 #[frame_support::pallet]
 pub mod pallet {
-	use super::Address;
+	use super::VarAddress;
 	use alloc::vec::Vec;
 	use cosmos_sdk_proto::{cosmos::tx::v1beta1::Tx, traits::Message};
 	use frame_support::{
@@ -68,7 +68,7 @@ pub mod pallet {
 		+ pallet_ethereum::Config
 		+ pallet_evm::Config
 	{
-		type AddressMap: UniqueMultimap<Self::AccountId, Address>;
+		type AddressMap: UniqueMultimap<Self::AccountId, VarAddress>;
 		type AssetMap: UniqueMap<AssetIdOf<Self>, DenomOf<Self>>;
 	}
 
@@ -217,17 +217,17 @@ pub mod pallet {
 		})]
 		pub fn transfer(
 			origin: OriginFor<T>,
-			dest: Address,
+			dest: VarAddress,
 			#[pallet::compact] value: <T as pallet_balances::Config>::Balance,
 		) -> DispatchResult {
 			let source = ensure_signed(origin.clone())?;
 
 			let dest: T::AccountId = match dest {
-				Address::Cosmos(address) =>
+				VarAddress::Cosmos(address) =>
 					<T as pallet_cosmos::Config>::AddressMapping::into_account_id(address.into()),
-				Address::Ethereum(address) =>
+				VarAddress::Ethereum(address) =>
 					<T as pallet_evm::Config>::AddressMapping::into_account_id(address.into()),
-				Address::Polkadot(address) => address.into(),
+				VarAddress::Polkadot(address) => address.into(),
 			};
 
 			pallet_balances::Pallet::<T>::transfer(&source, &dest, value, Preserve).map(|_| ())

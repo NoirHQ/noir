@@ -18,7 +18,7 @@
 
 use core::marker::PhantomData;
 use frame_support::traits::tokens::{fungible, Fortitude, Preservation};
-use np_babel::{Address, CosmosAddress, EthereumAddress};
+use np_babel::{CosmosAddress, EthereumAddress, VarAddress};
 use pallet_multimap::traits::UniqueMultimap;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -31,7 +31,7 @@ use sp_runtime::{
 /// A configuration for UnifyAccount signed extension.
 pub trait Config: frame_system::Config<AccountId: From<H256> + TryInto<ecdsa::Public>> {
 	/// A map from account to addresses.
-	type AddressMap: UniqueMultimap<Self::AccountId, Address>;
+	type AddressMap: UniqueMultimap<Self::AccountId, VarAddress>;
 	/// Drain account balance when unifying accounts.
 	type DrainBalance: DrainBalance<Self::AccountId>;
 }
@@ -63,7 +63,7 @@ impl<T: Config> UnifyAccount<T> {
 				let address = EthereumAddress::from(public.clone());
 				let interim = address.clone().into_account_truncating();
 				T::DrainBalance::drain_balance(&interim, who)?;
-				T::AddressMap::try_insert(who.clone(), Address::Ethereum(address))
+				T::AddressMap::try_insert(who.clone(), VarAddress::Ethereum(address))
 					.map_err(|_| "account unification failed: ethereum")?;
 			}
 			#[cfg(feature = "cosmos")]
@@ -71,7 +71,7 @@ impl<T: Config> UnifyAccount<T> {
 				let address = CosmosAddress::from(public);
 				let interim = address.clone().into_account_truncating();
 				T::DrainBalance::drain_balance(&interim, who)?;
-				T::AddressMap::try_insert(who.clone(), Address::Cosmos(address))
+				T::AddressMap::try_insert(who.clone(), VarAddress::Cosmos(address))
 					.map_err(|_| "account unification failed: cosmos")?;
 			}
 		}

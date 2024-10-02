@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{extensions::unify_account, Address};
+use crate::{extensions::unify_account, VarAddress};
 use alloc::{string::String, vec::Vec};
 use bech32::{Bech32, Hrp};
 use core::marker::PhantomData;
@@ -34,7 +34,7 @@ where
 {
 	fn into_account_id(who: H160) -> T::AccountId {
 		let address = CosmosAddress::from(who);
-		T::AddressMap::find_key(Address::Cosmos(address.clone()))
+		T::AddressMap::find_key(VarAddress::Cosmos(address.clone()))
 			.unwrap_or_else(|| address.into_account_truncating())
 	}
 }
@@ -47,7 +47,7 @@ where
 	fn convert(account: AccountIdOf<T>) -> String {
 		let addresses = T::AddressMap::get(account.clone());
 		let address: Option<&CosmosAddress> = addresses.iter().find_map(|address| match address {
-			Address::Cosmos(address) => Some(address),
+			VarAddress::Cosmos(address) => Some(address),
 			_ => None,
 		});
 		let address_raw = match address {
@@ -77,7 +77,7 @@ where
 		match address.len() {
 			20 => {
 				let address = CosmosAddress::from(H160::from_slice(&address));
-				T::AddressMap::find_key(Address::Cosmos(address)).ok_or(())
+				T::AddressMap::find_key(VarAddress::Cosmos(address)).ok_or(())
 			},
 			32 => Ok(H256::from_slice(&address).into()),
 			_ => Err(()),

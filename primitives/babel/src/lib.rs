@@ -37,7 +37,7 @@ pub use sp_core::crypto::AccountId32;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum Address {
+pub enum VarAddress {
 	Polkadot(AccountId32),
 	#[cfg(feature = "cosmos")]
 	Cosmos(CosmosAddress),
@@ -45,7 +45,7 @@ pub enum Address {
 	Ethereum(EthereumAddress),
 }
 
-impl Address {
+impl VarAddress {
 	pub const fn variant_count() -> u32 {
 		let mut n = 1;
 		if cfg!(feature = "cosmos") {

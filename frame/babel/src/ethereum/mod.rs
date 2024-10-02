@@ -71,7 +71,7 @@ where
 {
 	fn into_account_id(who: H160) -> T::AccountId {
 		let address = EthereumAddress::from(who);
-		T::AddressMap::find_key(Address::Ethereum(address.clone()))
+		T::AddressMap::find_key(VarAddress::Ethereum(address.clone()))
 			.unwrap_or_else(|| address.into_account_truncating())
 	}
 }
