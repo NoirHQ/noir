@@ -21,7 +21,6 @@ scale-info = { version = "2.11", default-features = false, features = ["derive"]
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
 # Frontier
 fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
@@ -59,5 +58,4 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"sp-std/std",
 ]
