@@ -21,7 +21,7 @@ sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable24
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
 [dev-dependencies]
-hex = { version = "0.4.3", default-features = false }
+hex = "0.4"
 
 [features]
 default = ["std"]
@@ -37,5 +37,4 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"hex/std",
 ]
