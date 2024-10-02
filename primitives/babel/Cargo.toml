@@ -20,12 +20,16 @@ default = ["std", "cosmos", "ethereum"]
 std = [
 	"np-cosmos?/std",
 	"np-ethereum?/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
 	"serde/std",
+	"sp-core/std",
 ]
 serde = [
 	"dep:serde",
 	"np-cosmos?/serde",
 	"np-ethereum?/serde",
+	"sp-core/serde",
 ]
 cosmos = [
 	"np-cosmos",

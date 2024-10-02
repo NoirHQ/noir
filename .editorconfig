@@ -11,6 +11,7 @@ max_line_length=100
 insert_final_newline=true
 
 [*.toml]
+indent_style=space
 max_line_length=off
 
 [*.md]

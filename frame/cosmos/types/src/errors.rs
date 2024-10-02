@@ -42,6 +42,7 @@ pub enum RootError {
 	UnknownRequest = 6,
 	InvalidAddress = 7,
 	InvalidPubKey = 8,
+	UnknownAddress = 9,
 	InvalidCoins = 10,
 	OutOfGas = 11,
 	MemoTooLarge = 12,

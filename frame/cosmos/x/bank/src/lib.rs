@@ -48,7 +48,10 @@ use pallet_cosmos_types::{
 };
 use pallet_cosmos_x_bank_types::events::{ATTRIBUTE_KEY_RECIPIENT, EVENT_TYPE_TRANSFER};
 use sp_core::{Get, H160};
-use sp_runtime::{traits::TryConvert, SaturatedConversion};
+use sp_runtime::{
+	traits::{TryConvert, Zero},
+	SaturatedConversion,
+};
 
 pub struct MsgSendHandler<T>(PhantomData<T>);
 
@@ -97,6 +100,10 @@ where
 					.consume_gas(GasInfo::<T>::msg_send_asset(), "msg_send_asset")
 					.map_err(|_| RootError::OutOfGas)?;
 
+				// XXX: Need a general way to handle non-unified account
+				if frame_system::Account::<T>::get(&to_account).nonce.is_zero() {
+					return Err(RootError::UnknownAddress.into());
+				}
 				let asset_id = T::AssetToDenom::try_convert(amt.denom.clone())
 					.map_err(|_| RootError::InvalidCoins)?;
 				T::Assets::transfer(
