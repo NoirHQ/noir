@@ -102,7 +102,7 @@ use frame_support::{
 	ReversibleStorageHasher, StorageHasher,
 };
 use np_cosmos::traits::ChainInfo;
-use sp_runtime::traits::SaturatedConversion;
+use sp_runtime::traits::{SaturatedConversion, Zero};
 use wasmi::AsContext;
 use wasmi_validation::PlainValidator;
 
@@ -1308,6 +1308,12 @@ impl<T: Config> Pallet<T> {
 					.map_err(|_| Error::<T>::TransferFailed)?;
 			} else {
 				let asset = Self::cosmwasm_asset_to_native_asset(denom.clone())?;
+				// XXX: Need a general way to handle non-unified account
+				if frame_system::Account::<T>::get(&to).nonce.is_zero() &&
+					Self::contract_exists(&to).is_err()
+				{
+					return Err(Error::<T>::InvalidAccount);
+				}
 				T::Assets::transfer(asset, from, to, amount, preservation)
 					.map_err(|_| Error::<T>::TransferFailed)?;
 			}
