@@ -165,10 +165,6 @@ export class App {
 		});
 		await this.server.register(FastifyWebsocket);
 
-		this.server.get('/', (_request: FastifyRequest, reply: FastifyReply) => {
-			reply.sendFile('index.html');
-		});
-
 		this.server.get(
 			'/cosmos/bank/v1beta1/balances/:address',
 			async (
