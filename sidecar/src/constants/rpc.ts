@@ -24,10 +24,15 @@ const rpc = {
 			],
 			type: 'SimulateResponse',
 		},
+		chainInfo: {
+			description: 'Get Cosmos chain information.',
+			params: [],
+			type: 'ChainInfo',
+		}
 	},
 	cosmwasm: {
 		query: {
-			description: 'Query Cosmwasm state',
+			description: 'Query Cosmwasm state.',
 			params: [
 				{
 					name: 'contract',

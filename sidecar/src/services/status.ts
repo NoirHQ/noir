@@ -24,10 +24,10 @@ export class StatusService implements ApiService {
 		const blockTime = new Date(parseInt(timestamp)).toISOString();
 		const blockHash = hash.startsWith('0x') ? hash.slice(2) : hash;
 
+		const { chain_id, bech32_prefix, version } = (await this.chainApi.rpc['cosmos']['chainInfo']()).toJSON();
+
 		const endpoint = this.config.get<string>('server.endpoint');
-		const network = this.config.get<string>('chain.network');
-		const version = this.config.get<string>('chain.version');
-		const moniker = this.config.get<string>('chain.moniker');
+
 		return {
 			node_info: {
 				protocol_version: {
@@ -37,10 +37,10 @@ export class StatusService implements ApiService {
 				},
 				id: '0000000000000000000000000000000000000000',
 				listen_addr: endpoint,
-				network,
+				network: chain_id,
 				version,
 				channels: '0000000000000000',
-				moniker,
+				moniker: bech32_prefix,
 				other: {
 					tx_index: 'off',
 					rpc_address: endpoint,

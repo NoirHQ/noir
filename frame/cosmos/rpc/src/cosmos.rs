@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use crate::{internal_error, request_error};
-use cosmos_runtime_api::{CosmosRuntimeApi, SimulateError, SimulateResponse};
+use cosmos_runtime_api::{ChainInfo, CosmosRuntimeApi, SimulateError, SimulateResponse};
 use futures::future::TryFutureExt;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -38,6 +38,9 @@ pub trait CosmosApi<BlockHash> {
 	#[method(name = "cosmos_simulate")]
 	async fn simulate(&self, tx_bytes: Bytes, at: Option<BlockHash>)
 		-> RpcResult<SimulateResponse>;
+
+	#[method(name = "cosmos_chainInfo")]
+	async fn chain_info(&self) -> RpcResult<ChainInfo>;
 }
 
 pub struct Cosmos<C, P> {
@@ -90,5 +93,10 @@ where
 				SimulateError::InvalidTx => request_error("Invalid tx"),
 				SimulateError::InternalError(e) => internal_error(String::from_utf8_lossy(&e)),
 			})
+	}
+
+	async fn chain_info(&self) -> RpcResult<ChainInfo> {
+		let best_hash = self.client.info().best_hash;
+		self.client.runtime_api().chain_info(best_hash).map_err(internal_error)
 	}
 }

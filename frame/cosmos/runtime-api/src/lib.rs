@@ -19,7 +19,7 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+use alloc::{string::String, vec::Vec};
 use pallet_cosmos_types::{events::CosmosEvent, gas::Gas};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -47,9 +47,18 @@ pub enum SimulateError {
 
 pub type SimulateResult = Result<SimulateResponse, SimulateError>;
 
+#[derive(Clone, Decode, Encode, Debug, TypeInfo, Serialize, Deserialize)]
+pub struct ChainInfo {
+	pub chain_id: String,
+	pub bech32_prefix: String,
+	pub name: String,
+	pub version: String,
+}
+
 decl_runtime_apis! {
 	pub trait CosmosRuntimeApi {
 		fn convert_tx(tx_bytes: Vec<u8>) -> <Block as BlockT>::Extrinsic;
 		fn simulate(tx_bytes: Vec<u8>) -> SimulateResult;
+		fn chain_info() -> ChainInfo;
 	}
 }

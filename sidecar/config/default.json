@@ -9,10 +9,6 @@
   },
   "chain": {
     "endpoint": "ws://127.0.0.1:9944",
-    "network": "dev",
-    "moniker": "cosmos",
-    "name": "noir",
-    "version": "1",
     "denom": "azig"
   }
 }

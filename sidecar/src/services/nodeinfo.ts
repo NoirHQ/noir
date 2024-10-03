@@ -2,20 +2,21 @@ import { GetNodeInfoResponse } from "cosmjs-types/cosmos/base/tendermint/v1beta1
 import { ApiService } from "./service";
 import { IConfig } from "config";
 import Long from "long";
+import { ApiPromise } from "@polkadot/api";
 
 export class NodeInfoService implements ApiService {
 	config: IConfig;
+	chainApi: ApiPromise;
 
-	constructor(config: IConfig) {
+	constructor(config: IConfig, chainApi: ApiPromise) {
 		this.config = config;
+		this.chainApi = chainApi;
 	}
 
-	public nodeInfo(): GetNodeInfoResponse {
+	public async nodeInfo(): Promise<GetNodeInfoResponse> {
+		const { chain_id, name, bech32_prefix, version } = (await this.chainApi.rpc['cosmos']['chainInfo']()).toJSON();
 		const endpoint = this.config.get<string>('server.endpoint');
-		const network = this.config.get<string>('chain.network');
-		const version = this.config.get<string>('chain.version');
-		const moniker = this.config.get<string>('chain.moniker');
-		const name = this.config.get<string>('chain.name');
+
 		return {
 			defaultNodeInfo: {
 				protocolVersion: {
@@ -25,10 +26,10 @@ export class NodeInfoService implements ApiService {
 				},
 				defaultNodeId: '0000000000000000000000000000000000000000',
 				listenAddr: endpoint,
-				network,
+				network: chain_id,
 				version,
 				channels: new Uint8Array(Buffer.allocUnsafe(8)),
-				moniker,
+				moniker: bech32_prefix,
 				other: {
 					txIndex: 'off',
 					rpcAddress: '',

@@ -24,15 +24,20 @@
 // For more information, please refer to <http://unlicense.org>
 
 // External crates imports
-use alloc::{format, string::String, vec::Vec};
+use alloc::{
+	format,
+	string::{String, ToString},
+	vec::Vec,
+};
 use codec::Encode;
-use cosmos_runtime_api::{GasInfo, SimulateError, SimulateResponse, SimulateResult};
+use cosmos_runtime_api::{ChainInfo, GasInfo, SimulateError, SimulateResponse, SimulateResult};
 use cosmos_sdk_proto::{cosmos::tx::v1beta1::Tx, traits::Message};
 use frame_support::{
 	genesis_builder_helper::{build_state, get_preset},
 	traits::OnFinalize,
 	weights::Weight,
 };
+use np_cosmos::traits::ChainInfo as _;
 use pallet_aura::Authorities;
 use pallet_cosmos_types::{
 	context::traits::Context, events::traits::EventManager, gas::traits::GasMeter,
@@ -591,6 +596,20 @@ impl_runtime_apis! {
 				},
 				events: context.event_manager().events()
 			})
+		}
+
+		fn chain_info() -> ChainInfo {
+			let chain_id = <Runtime as pallet_cosmos::Config>::ChainInfo::chain_id().to_string();
+			let name = <Runtime as pallet_cosmos::Config>::ChainInfo::name().to_string();
+			let bech32_prefix = <Runtime as pallet_cosmos::Config>::ChainInfo::bech32_prefix().to_string();
+			let version = <Runtime as pallet_cosmos::Config>::ChainInfo::version().to_string();
+
+			ChainInfo {
+				chain_id,
+				name,
+				bech32_prefix,
+				version,
+			}
 		}
 	}
 

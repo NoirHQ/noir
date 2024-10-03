@@ -1309,8 +1309,8 @@ impl<T: Config> Pallet<T> {
 			} else {
 				let asset = Self::cosmwasm_asset_to_native_asset(denom.clone())?;
 				// XXX: Need a general way to handle non-unified account
-				if frame_system::Account::<T>::get(&to).nonce.is_zero() &&
-					Self::contract_exists(&to).is_err()
+				if frame_system::Account::<T>::get(to).nonce.is_zero() &&
+					Self::contract_exists(to).is_err()
 				{
 					return Err(Error::<T>::InvalidAccount);
 				}

@@ -117,6 +117,12 @@ export class App {
 				SimulateResponse: {
 					gas_info: 'GasInfo',
 					events: 'Vec<CosmosEvent>',
+				},
+				ChainInfo: {
+					chain_id: 'String',
+					name: 'String',
+					bech32_prefix: 'String',
+					version: 'String',
 				}
 			},
 			rpc
@@ -136,7 +142,7 @@ export class App {
 		);
 		const abciService = new AbciService(this.chainApi, accountService, balanceService, txService);
 		const distributionService = new DistributionService();
-		const nodeInfoService = new NodeInfoService(this.config);
+		const nodeInfoService = new NodeInfoService(this.config, this.chainApi);
 		const stakingService = new StakingService();
 		const statusService = new StatusService(this.config, this.chainApi);
 
@@ -194,9 +200,9 @@ export class App {
 
 		this.server.get(
 			'/cosmos/base/tendermint/v1beta1/node_info',
-			(): GetNodeInfoResponse => {
+			async (): Promise<GetNodeInfoResponse> => {
 				const response = GetNodeInfoResponse.toJSON(
-					this.services.get<NodeInfoService>('nodeInfo').nodeInfo()
+					await this.services.get<NodeInfoService>('nodeInfo').nodeInfo()
 				);
 				return toSnakeCase(response);
 			}
