@@ -32,35 +32,28 @@ export class TxService implements ApiService {
 		txHash = txHash.startsWith('0x') ? txHash.slice(2) : txHash;
 		console.debug(`txHash: ${txHash}`);
 
-		while (true) {
-			const txs = this.searchTx(txHash);
-			if (txs.length > 0) {
-				const tx = txs.at(0);
-				return {
-					txResponse: {
-						height: Long.fromString(tx.height),
-						txhash: txHash.toUpperCase(),
-						codespace: tx.tx_result.codespace,
-						code: tx.tx_result.code,
-						data: tx.tx_result.data,
-						rawLog: '',
-						logs: [],
-						info: tx.tx_result.info,
-						gasWanted: Long.fromString(tx.tx_result.gas_wanted),
-						gasUsed: Long.fromString(tx.tx_result.gas_used),
-						tx: {
-							typeUrl: '',
-							value: new Uint8Array(),
-						},
-						timestamp: '',
-						events: tx.tx_result.events,
-					},
-				};
-			} else {
-				console.debug('Waiting for events...');
-				await sleep(1000);
-			}
-		}
+		const height = await chainApi.query.system.number();
+
+		return {
+			txResponse: {
+				height: Long.fromString(height.toString()),
+				txhash: txHash.toUpperCase(),
+				codespace: '',
+				code: 0,
+				data: '',
+				rawLog: '',
+				logs: [],
+				info: '',
+				gasWanted: Long.fromNumber(0),
+				gasUsed: Long.fromNumber(0),
+				tx: {
+					typeUrl: '',
+					value: new Uint8Array(),
+				},
+				timestamp: '',
+				events: [],
+			},
+		};
 	}
 
 	public searchTx(hash: string): ResultTx[] {
