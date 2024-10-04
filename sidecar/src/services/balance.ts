@@ -82,7 +82,7 @@ export class BalanceService implements ApiService {
 
 		const assets = [];
 		const metadata = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query.assets.metadata.entries();
-		for (const [{ args: [assetId] }, value] of metadata) {
+		for (const [{ args: [assetId] }] of metadata) {
 			const asset = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query.assets.account(assetId.toString(), origin);
 
 			if (!asset.isEmpty) {
