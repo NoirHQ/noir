@@ -1,4 +1,4 @@
-const rpc = {
+export const rpc = {
 	cosmos: {
 		broadcastTx: {
 			description: 'Broadcast cosmos transaction.',
@@ -55,5 +55,3 @@ const rpc = {
 		},
 	}
 };
-
-export default rpc;

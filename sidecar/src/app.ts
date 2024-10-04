@@ -1,7 +1,6 @@
 import fastify, {
 	FastifyInstance,
 } from "fastify";
-import { ApiPromise, WsProvider } from "@polkadot/api";
 import {
 	AbciService,
 	ApiServices,
@@ -12,6 +11,7 @@ import {
 	StatusService,
 	TxService,
 	AccountService,
+	ChainService,
 } from "./services";
 import path from "path";
 import fastifyStatic from "@fastify/static";
@@ -19,9 +19,7 @@ import FastifyWebsocket from "@fastify/websocket";
 import { JSONRPCServer } from "json-rpc-2.0";
 import { IConfig } from "config";
 import { Database, open } from "lmdb";
-import rpc from "./constants/rpc";
 import { Header } from "@polkadot/types/interfaces";
-import { types } from "./constants/types";
 import {
 	BalanceHandler,
 	AccountHandler,
@@ -38,7 +36,6 @@ export class App {
 	server: FastifyInstance;
 	services: ApiServices;
 	jsonrpc: JSONRPCServer;
-	chainApi: ApiPromise;
 
 	constructor(config: IConfig) {
 		this.config = config;
@@ -74,32 +71,22 @@ export class App {
 
 	async initApiServices() {
 		const endpoint = this.config.get<string>('chain.endpoint');
-		console.debug(`Try connecting to chain RPC. endpoint: ${endpoint}`);
+		const chainService = new ChainService(endpoint);
 
-		this.chainApi = await ApiPromise.create({
-			provider: new WsProvider(endpoint),
-			types,
-			rpc
-		});
-		if (this.chainApi.isConnected) {
-			console.debug('Chain RPC connected');
-		} else {
-			console.error('Failed to connect with chain RPC');
-		}
-
-		const accountService = new AccountService(this.chainApi);
-		const txService = new TxService(this.db, this.chainApi);
+		const accountService = new AccountService(chainService);
+		const txService = new TxService(this.db, chainService);
 		const balanceService = new BalanceService(
 			this.config,
-			this.chainApi,
+			chainService,
 			accountService
 		);
-		const abciService = new AbciService(this.chainApi, accountService, balanceService, txService);
+		const abciService = new AbciService(chainService, accountService, balanceService, txService);
 		const distributionService = new DistributionService();
-		const nodeInfoService = new NodeInfoService(this.config, this.chainApi);
+		const nodeInfoService = new NodeInfoService(this.config, chainService);
 		const stakingService = new StakingService();
-		const statusService = new StatusService(this.config, this.chainApi);
+		const statusService = new StatusService(this.config, chainService);
 
+		this.services.set('chain', chainService);
 		this.services.set('abci', abciService);
 		this.services.set('account', accountService);
 		this.services.set('balance', balanceService);
@@ -142,9 +129,10 @@ export class App {
 	}
 
 	async initSubscribeEvents() {
-		await this.chainApi.rpc.chain.subscribeNewHeads(
+		const chainApi = await this.services.get<ChainService>('chain').getChainApi();
+		await chainApi.rpc.chain.subscribeNewHeads(
 			async (header: Header) => {
-				const signedBlock = await this.chainApi.rpc.chain.getBlock(header.hash);
+				const signedBlock = await chainApi.rpc.chain.getBlock(header.hash);
 
 				signedBlock.block.extrinsics.forEach(
 					async ({ method: { args, method, section } }, index) => {

@@ -7,7 +7,6 @@ import { AccountService } from "./account";
 import { PubKey } from "cosmjs-types/cosmos/crypto/secp256k1/keys.js";
 import { BaseAccount } from "cosmjs-types/cosmos/auth/v1beta1/auth.js";
 import Long from "long";
-import { ApiPromise } from "@polkadot/api";
 import { ABCIQueryResponse } from "cosmjs-types/cosmos/base/tendermint/v1beta1/query.js";
 import { SimulateRequest, SimulateResponse } from "cosmjs-types/cosmos/tx/v1beta1/service.js";
 import { TxService } from "./tx";
@@ -16,15 +15,16 @@ import { convertToCodespace } from "../constants/codespace";
 import { encodeTo } from "../utils";
 import { BalanceService } from "./balance";
 import { QueryAllBalancesRequest, QueryAllBalancesResponse, QueryBalanceRequest, QueryBalanceResponse } from "cosmjs-types/cosmos/bank/v1beta1/query";
+import { ChainService } from "./chain";
 
 export class AbciService implements ApiService {
-	chainApi: ApiPromise;
+	chainService: ChainService;
 	accountService: AccountService;
 	balanceService: BalanceService;
 	txService: TxService;
 
-	constructor(chainApi: ApiPromise, accountService: AccountService, balanceService: BalanceService, txService: TxService) {
-		this.chainApi = chainApi;
+	constructor(chainService: ChainService, accountService: AccountService, balanceService: BalanceService, txService: TxService) {
+		this.chainService = chainService;
 		this.accountService = accountService;
 		this.balanceService = balanceService;
 		this.txService = txService;
@@ -34,13 +34,15 @@ export class AbciService implements ApiService {
 		console.debug('query');
 		console.debug(`path: ${path}`);
 
+		const chainApi = await this.chainService.getChainApi();
+
 		if (path === '/cosmos.auth.v1beta1.Query/Account') {
 			const address = QueryAccountRequest.decode(
 				Buffer.from(data, 'hex')
 			).address;
 
-			const height = await this.chainApi.query.system.number();
-			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+			const height = await chainApi.query.system.number();
+			const blockHash = await chainApi.rpc.chain.getBlockHash(height.toString());
 
 			const { account } = await this.accountService.accounts(address, blockHash.toString());
 			const pubkey: PubKey = {
@@ -75,8 +77,8 @@ export class AbciService implements ApiService {
 				codespace: '',
 			};
 		} else if (path === '/cosmos.bank.v1beta1.Query/AllBalances') {
-			const height = await this.chainApi.query.system.number();
-			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+			const height = await chainApi.query.system.number();
+			const blockHash = await chainApi.rpc.chain.getBlockHash(height.toString());
 
 			const { address } = QueryAllBalancesRequest.decode(
 				Buffer.from(data, 'hex')
@@ -96,8 +98,8 @@ export class AbciService implements ApiService {
 				codespace: '',
 			};
 		} else if (path === '/cosmos.bank.v1beta1.Query/Balance') {
-			const height = await this.chainApi.query.system.number();
-			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+			const height = await chainApi.query.system.number();
+			const blockHash = await chainApi.rpc.chain.getBlockHash(height.toString());
 
 			const { address, denom } = QueryBalanceRequest.decode(
 				Buffer.from(data, 'hex')
@@ -117,8 +119,8 @@ export class AbciService implements ApiService {
 				codespace: '',
 			};
 		} else if (path === '/cosmos.tx.v1beta1.Service/Simulate') {
-			const height = await this.chainApi.query.system.number();
-			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+			const height = await chainApi.query.system.number();
+			const blockHash = await chainApi.rpc.chain.getBlockHash(height.toString());
 			try {
 				const req = SimulateRequest.decode(Buffer.from(data, 'hex'));
 				const res = await this.txService.simulate(Buffer.from(req.txBytes).toString('base64'), blockHash.toString());
@@ -161,10 +163,10 @@ export class AbciService implements ApiService {
 				}
 			};
 
-			const height = await this.chainApi.query.system.number();
-			const blockHash = await this.chainApi.rpc.chain.getBlockHash(height.toString());
+			const height = await chainApi.query.system.number();
+			const blockHash = await chainApi.rpc.chain.getBlockHash(height.toString());
 
-			const response = await this.chainApi.rpc['cosmwasm']['query'](address, gas, `0x${encodeTo(JSON.stringify(msg), 'utf8', 'hex')}`, blockHash.toString());
+			const response = await chainApi.rpc['cosmwasm']['query'](address, gas, `0x${encodeTo(JSON.stringify(msg), 'utf8', 'hex')}`, blockHash.toString());
 			const stateResponse = QuerySmartContractStateResponse.fromPartial({ data: Uint8Array.from(Buffer.from(response, 'hex')) });
 
 			return {

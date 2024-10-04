@@ -24,3 +24,9 @@ export function toSnakeCase(input: unknown): unknown {
 export const encodeTo = (value: string, from: BufferEncoding, to: BufferEncoding): string => {
 	return Buffer.from(from === 'hex' && value.startsWith('0x') ? value.slice(2) : value, from).toString(to);
 }
+
+export const sleep = (ms: number) => {
+	return new Promise(resolve => {
+		setTimeout(resolve, ms)
+	})
+};

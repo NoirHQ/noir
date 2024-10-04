@@ -1,30 +1,33 @@
-import { ApiPromise } from "@polkadot/api";
 import { ResultStatus } from "../types";
 import { ApiService } from "./service";
 import { IConfig } from "config";
 import Long from "long";
 import { Block } from "@polkadot/types/interfaces";
+import { ChainService } from "./chain";
 
 export class StatusService implements ApiService {
 	config: IConfig;
-	chainApi: ApiPromise;
+	chainService: ChainService;
 
-	constructor(config: IConfig, chainApi: ApiPromise) {
+	constructor(config: IConfig, chainService: ChainService) {
 		this.config = config;
-		this.chainApi = chainApi;
+		this.chainService = chainService;
 	}
 
 	public async status(): Promise<ResultStatus> {
-		const hash = (await this.chainApi.rpc.chain.getFinalizedHead()).toString();
-		const { block } = (await this.chainApi.rpc.chain.getBlock(hash)).toJSON();
+		console.debug('status');
+
+		const chainApi = await this.chainService.getChainApi();
+		const hash = (await chainApi.rpc.chain.getFinalizedHead()).toString();
+		const { block } = (await chainApi.rpc.chain.getBlock(hash)).toJSON();
 		const blockNumber = (block as unknown as Block).header.number.toString();
 		const timestamp = (
-			await (await this.chainApi.at(hash)).query.timestamp.now()
+			await (await chainApi.at(hash)).query.timestamp.now()
 		).toString();
 		const blockTime = new Date(parseInt(timestamp)).toISOString();
 		const blockHash = hash.startsWith('0x') ? hash.slice(2) : hash;
 
-		const { chain_id, bech32_prefix, version } = (await this.chainApi.rpc['cosmos']['chainInfo']()).toJSON();
+		const { chain_id, bech32_prefix, version } = (await chainApi.rpc['cosmos']['chainInfo']()).toJSON();
 
 		const endpoint = this.config.get<string>('server.endpoint');
 

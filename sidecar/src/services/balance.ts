@@ -1,4 +1,3 @@
-import { ApiPromise } from "@polkadot/api";
 import { AccountService } from "./account";
 import { ApiService } from "./service";
 import { IConfig } from "config";
@@ -6,25 +5,27 @@ import { QueryAllBalancesResponse, QueryBalanceResponse } from "cosmjs-types/cos
 import Long from "long";
 import { AccountInfo } from "@polkadot/types/interfaces";
 import { encodeTo } from "../utils";
+import { ChainService } from "./chain";
 
 export class BalanceService implements ApiService {
 	config: IConfig;
-	chainApi: ApiPromise;
+	chainService: ChainService;
 	accountService: AccountService;
 
 	constructor(
 		config: IConfig,
-		chainApi: ApiPromise,
+		chainService: ChainService,
 		accountService: AccountService
 	) {
 		this.config = config;
-		this.chainApi = chainApi;
+		this.chainService = chainService;
 		this.accountService = accountService;
 	}
 
 	public async balance(address: string, denom: string, blockHash?: string): Promise<QueryBalanceResponse> {
 		console.debug('balance');
 
+		const chainApi = await this.chainService.getChainApi();
 		const originRaw = await this.accountService.origin(address);
 		let amount = '0';
 		let origin = originRaw.toString();
@@ -34,7 +35,7 @@ export class BalanceService implements ApiService {
 
 		const nativeDenom = this.config.get<string>('chain.denom');
 		if (nativeDenom === denom) {
-			const account = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query['system']['account'](origin);
+			const account = await (await (blockHash ? chainApi.at(blockHash) : chainApi)).query['system']['account'](origin);
 			if (account) {
 				const { data } = account.toJSON() as unknown as AccountInfo;
 				amount = BigInt(data.free.toString()).toString();
@@ -47,8 +48,8 @@ export class BalanceService implements ApiService {
 				}
 			}
 		} else {
-			const assetId = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query.assetMap.index(denom);
-			const asset = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query.assets.account(assetId.toString(), origin);
+			const assetId = await (await (blockHash ? chainApi.at(blockHash) : chainApi)).query.assetMap.index(denom);
+			const asset = await (await (blockHash ? chainApi.at(blockHash) : chainApi)).query.assets.account(assetId.toString(), origin);
 			if (!asset.isEmpty) {
 				const amount = BigInt(asset.toJSON()['balance']).toString();
 				console.debug(`denom: ${denom}, amount: ${amount}`);
@@ -66,13 +67,14 @@ export class BalanceService implements ApiService {
 	public async balances(address: string, blockHash?: string): Promise<QueryAllBalancesResponse> {
 		console.debug('balances');
 
+		const chainApi = await this.chainService.getChainApi();
 		const originRaw = await this.accountService.origin(address);
 		let amount = '0';
 		let origin = originRaw.toString();
 		if (!origin) {
 			origin = this.accountService.interim(address);
 		}
-		const account = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query['system']['account'](origin);
+		const account = await (await (blockHash ? chainApi.at(blockHash) : chainApi)).query['system']['account'](origin);
 		if (account) {
 			const { data } = account.toJSON() as unknown as AccountInfo;
 			amount = BigInt(data.free.toString()).toString();
@@ -81,12 +83,12 @@ export class BalanceService implements ApiService {
 		const nativeBalance = { denom, amount };
 
 		const assets = [];
-		const metadata = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query.assets.metadata.entries();
+		const metadata = await (await (blockHash ? chainApi.at(blockHash) : chainApi)).query.assets.metadata.entries();
 		for (const [{ args: [assetId] }] of metadata) {
-			const asset = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query.assets.account(assetId.toString(), origin);
+			const asset = await (await (blockHash ? chainApi.at(blockHash) : chainApi)).query.assets.account(assetId.toString(), origin);
 
 			if (!asset.isEmpty) {
-				const assetDenom = await (await (blockHash ? this.chainApi.at(blockHash) : this.chainApi)).query.assetMap.map(assetId);
+				const assetDenom = await (await (blockHash ? chainApi.at(blockHash) : chainApi)).query.assetMap.map(assetId);
 
 				if (!assetDenom.isEmpty) {
 					const denomSet = assetDenom.toJSON();

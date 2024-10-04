@@ -1,4 +1,3 @@
-import { ApiPromise } from "@polkadot/api";
 import { ResultTx } from "../types";
 import { ApiService } from "./service";
 import { Database } from "lmdb";
@@ -9,29 +8,29 @@ import {
 import Long from "long";
 import { createHash } from "crypto";
 import { convertToCodespace } from "../constants/codespace";
-import { encodeTo } from "../utils";
+import { encodeTo, sleep } from "../utils";
 import { Event as CosmosEvent } from "cosmjs-types/tendermint/abci/types";
 import { Header } from "@polkadot/types/interfaces";
+import { ChainService } from "./chain";
 
 export type TransactResult = { codespace: string, code: number, gasWanted: number, gasUsed: number, events: CosmosEvent[] };
 
 export class TxService implements ApiService {
-	chainApi: ApiPromise;
+	chainService: ChainService;
 	db: Database;
 
-	constructor(db: Database, chainApi: ApiPromise) {
-		this.chainApi = chainApi;
+	constructor(db: Database, chainService: ChainService) {
+		this.chainService = chainService;
 		this.db = db;
 	}
 
 	public async broadcastTx(txBytes: string): Promise<BroadcastTxResponse> {
 		console.debug('broadcastTx');
 
-		let txHash = (await this.chainApi.rpc['cosmos']['broadcastTx'](`0x${encodeTo(txBytes, 'base64', 'hex')}`)).toString();
+		const chainApi = await this.chainService.getChainApi();
+		let txHash = (await chainApi.rpc['cosmos']['broadcastTx'](`0x${encodeTo(txBytes, 'base64', 'hex')}`)).toString();
 		txHash = txHash.startsWith('0x') ? txHash.slice(2) : txHash;
 		console.debug(`txHash: ${txHash}`);
-
-		const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 		while (true) {
 			const txs = this.searchTx(txHash);
@@ -114,9 +113,11 @@ export class TxService implements ApiService {
 		header: Header,
 		extrinsicIndex: number
 	): Promise<TransactResult> {
+		const chainApi = await this.chainService.getChainApi();
+
 		/* eslint-disable @typescript-eslint/no-explicit-any */
 		const events = (await (
-			await this.chainApi.at(header.hash)
+			await chainApi.at(header.hash)
 		).query.system.events()) as any;
 
 		const result = events
@@ -153,8 +154,9 @@ export class TxService implements ApiService {
 	public async simulate(txBytes: string, blockHash?: string): Promise<SimulateResponse> {
 		console.debug('simulate');
 
+		const chainApi = await this.chainService.getChainApi();
 		const txRaw = `0x${encodeTo(txBytes, 'base64', 'hex')}`;
-		const { gas_info, events } = (await this.chainApi.rpc['cosmos']['simulate'](txRaw, blockHash)).toJSON();
+		const { gas_info, events } = (await chainApi.rpc['cosmos']['simulate'](txRaw, blockHash)).toJSON();
 		const cosmosEvents = this.encodeEvents(events, 'hex', 'utf8');
 
 		console.debug(`gasInfo: ${JSON.stringify(gas_info)}`);

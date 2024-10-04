@@ -1,6 +1,7 @@
 export * from "./abci";
 export * from "./account";
 export * from "./balance";
+export * from "./chain";
 export * from "./distribution";
 export * from "./nodeinfo";
 export * from "./service";

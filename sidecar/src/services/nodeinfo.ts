@@ -2,19 +2,22 @@ import { GetNodeInfoResponse } from "cosmjs-types/cosmos/base/tendermint/v1beta1
 import { ApiService } from "./service";
 import { IConfig } from "config";
 import Long from "long";
-import { ApiPromise } from "@polkadot/api";
+import { ChainService } from "./chain";
 
 export class NodeInfoService implements ApiService {
 	config: IConfig;
-	chainApi: ApiPromise;
+	chainService: ChainService;
 
-	constructor(config: IConfig, chainApi: ApiPromise) {
+	constructor(config: IConfig, chainService: ChainService) {
 		this.config = config;
-		this.chainApi = chainApi;
+		this.chainService = chainService;
 	}
 
 	public async nodeInfo(): Promise<GetNodeInfoResponse> {
-		const { chain_id, name, bech32_prefix, version } = (await this.chainApi.rpc['cosmos']['chainInfo']()).toJSON();
+		console.debug('nodeInfo');
+
+		const chainApi = await this.chainService.getChainApi();
+		const { chain_id, name, bech32_prefix, version } = (await chainApi.rpc['cosmos']['chainInfo']()).toJSON();
 		const endpoint = this.config.get<string>('server.endpoint');
 
 		return {
