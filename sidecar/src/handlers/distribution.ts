@@ -13,11 +13,11 @@ export class DistributionHandler {
 		this.distributionService = distributionService;
 	}
 
-	handleGetDistribution(
+	handleGetDistribution = (
 		request: FastifyRequest<{
 			Params: QueryDelegationTotalRewardsRequest;
 		}>
-	): unknown {
+	): unknown => {
 		const { delegatorAddress } = request.params;
 		const response = QueryDelegationTotalRewardsResponse.toJSON(
 			this.distributionService

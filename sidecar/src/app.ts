@@ -27,10 +27,10 @@ import {
 	StakingHandler,
 	WebsocketHandler
 } from "./handlers";
-import { 
-	StatusRpcHandler, 
-	AbciRpcHandler, 
-	TxRpcHandler 
+import {
+	StatusRpcHandler,
+	AbciRpcHandler,
+	TxRpcHandler
 } from "./rpc";
 
 export class App {

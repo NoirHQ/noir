@@ -10,15 +10,16 @@ export class BalanceHandler {
 	balanceService: BalanceService;
 
 	constructor(balanceService: BalanceService) {
-		this.balanceService = balanceService
+		this.balanceService = balanceService;
 	}
 
-	async handleGetBalance(
+	handleGetBalance = async (
 		request: FastifyRequest<{
 			Params: QueryAllBalancesRequest;
 		}>
-	): Promise<unknown> {
+	): Promise<unknown> => {
 		const { address } = request.params;
+
 		const response = QueryAllBalancesResponse.toJSON(
 			await this.balanceService.balances(address)
 		);

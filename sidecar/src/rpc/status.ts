@@ -8,7 +8,7 @@ export class StatusRpcHandler {
         this.statusService = statusService;
     }
 
-    async status() {
+    status = async () => {
         return toSnakeCase(
             await this.statusService.status()
         );

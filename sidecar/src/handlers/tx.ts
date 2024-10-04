@@ -10,14 +10,14 @@ export class TxHandler {
 		this.txService = txService;
 	}
 
-	async handlePostTxs(
+	handlePostTxs = async (
 		request: FastifyRequest<{
 			Body: {
 				tx_bytes: string;
 				mode: number;
 			};
 		}>
-	): Promise<unknown> {
+	): Promise<unknown> => {
 		const { tx_bytes } = request.body;
 		const response = BroadcastTxResponse.toJSON(
 			await this.txService.broadcastTx(tx_bytes)
@@ -25,10 +25,10 @@ export class TxHandler {
 		return toSnakeCase(response);
 	}
 
-	async handlePostSimulate(request: FastifyRequest<{
+	handlePostSimulate = async (request: FastifyRequest<{
 		Body: { tx_bytes: string };
 	}>
-	): Promise<unknown> {
+	): Promise<unknown> => {
 		const { tx_bytes } = request.body;
 		const response = SimulateResponse.toJSON(
 			await this.txService.simulate(tx_bytes)

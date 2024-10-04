@@ -9,7 +9,7 @@ export class TxRpcHandler {
         this.txService = txService;
     }
 
-    async broadcastTxSync({ tx }): Promise<BroadcastTxSyncResponse> {
+    broadcastTxSync = async ({ tx }): Promise<BroadcastTxSyncResponse> => {
         const result = await this.txService.broadcastTx(tx);
         const { code, txhash, data, rawLog, codespace } = result.txResponse;
         return {
@@ -21,7 +21,7 @@ export class TxRpcHandler {
         };
     }
 
-    txSearch({ query }): ResultTxSearch {
+    txSearch = ({ query }): ResultTxSearch => {
         const args = querystring.parse(query);
         let hash = args['tx.hash'] as string;
         if (hash.includes("'")) {

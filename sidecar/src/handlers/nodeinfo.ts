@@ -9,7 +9,7 @@ export class NodeInfoHandler {
 		this.nodeInfoService = nodeInfoService;
 	}
 
-	async handleGetNodeInfo(): Promise<GetNodeInfoResponse> {
+	handleGetNodeInfo = async (): Promise<GetNodeInfoResponse> => {
 		const response = GetNodeInfoResponse.toJSON(
 			await this.nodeInfoService.nodeInfo()
 		);

@@ -10,11 +10,11 @@ export class AccountHandler {
 		this.accountService = accountService;
 	}
 
-	async handleGetAccount(
+	handleGetAccount = async (
 		request: FastifyRequest<{
 			Params: QueryAccountRequest;
 		}>
-	): Promise<AccountResponse> {
+	): Promise<AccountResponse> => {
 		const { address } = request.params;
 		return this.accountService.accounts(address);
 	}

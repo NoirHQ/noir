@@ -8,7 +8,7 @@ export class AbciRpcHandler {
         this.abciService = abciService;
     }
 
-    async abciQuery({ path, data }): Promise<unknown> {
+    abciQuery = async ({ path, data }): Promise<unknown> => {
         const result = await this.abciService.query(path, data);
         const response = ABCIQueryResponse.toJSON(result);
         return {

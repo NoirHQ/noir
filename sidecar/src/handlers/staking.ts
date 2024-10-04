@@ -15,11 +15,11 @@ export class StakingHandler {
 		this.stakingService = stakingService;
 	}
 
-	handleGetStaking(
+	handleGetStaking = (
 		request: FastifyRequest<{
 			Params: QueryDelegatorDelegationsRequest;
 		}>
-	): unknown {
+	): unknown => {
 		const { delegatorAddr } = request.params;
 		const response = QueryDelegatorDelegationsResponse.toJSON(
 			this.stakingService.delegations(delegatorAddr)
@@ -27,11 +27,11 @@ export class StakingHandler {
 		return toSnakeCase(response);
 	}
 
-	handleGetUnbondingDelegations(
+	handleGetUnbondingDelegations = (
 		request: FastifyRequest<{
 			Params: QueryDelegatorUnbondingDelegationsRequest;
 		}>
-	): unknown {
+	): unknown => {
 		const { delegatorAddr } = request.params;
 		const response = QueryDelegatorUnbondingDelegationsResponse.toJSON(
 			this.stakingService.unbondingDelegations(delegatorAddr)
