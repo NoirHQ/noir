@@ -109,6 +109,14 @@ export class App {
 		this.server = fastify({ logger });
 		await this.server.register(FastifyWebsocket);
 
+		this.server.addHook('preHandler', (req, res, done) => {
+			res.header('Access-Control-Allow-Origin', '*');
+			res.header('Access-Control-Allow-Methods', '*');
+			res.header('Access-Control-Allow-Headers', '*');
+
+			done();
+		});
+
 		const balanceHandler = new BalanceHandler(this.services.get<BalanceService>('balance'));
 		const accountHandler = new AccountHandler(this.services.get<AccountService>('account'));
 		const distributionHandler = new DistributionHandler(this.services.get<DistributionService>('distribution'));
