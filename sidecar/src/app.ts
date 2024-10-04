@@ -13,8 +13,6 @@ import {
 	AccountService,
 	ChainService,
 } from "./services";
-import path from "path";
-import fastifyStatic from "@fastify/static";
 import FastifyWebsocket from "@fastify/websocket";
 import { JSONRPCServer } from "json-rpc-2.0";
 import { IConfig } from "config";
@@ -26,9 +24,14 @@ import {
 	DistributionHandler,
 	NodeInfoHandler,
 	TxHandler,
-	StakingHandler
+	StakingHandler,
+	WebsocketHandler
 } from "./handlers";
-import { addMethods } from "./rpc";
+import { 
+	StatusRpcHandler, 
+	AbciRpcHandler, 
+	TxRpcHandler 
+} from "./rpc";
 
 export class App {
 	config: IConfig;
@@ -47,8 +50,8 @@ export class App {
 
 		await this.initDatabase();
 		await this.initApiServices();
-		await this.initApiServer();
 		await this.initJsonRpcServer();
+		await this.initApiServer();
 		await this.initSubscribeEvents();
 	}
 
@@ -70,6 +73,8 @@ export class App {
 	}
 
 	async initApiServices() {
+		console.debug('Initialize API Services');
+
 		const endpoint = this.config.get<string>('chain.endpoint');
 		const chainService = new ChainService(endpoint);
 
@@ -98,12 +103,10 @@ export class App {
 	}
 
 	async initApiServer() {
+		console.debug('Initialize API Server');
+
 		const logger = this.config.get<boolean>('server.logger');
 		this.server = fastify({ logger });
-		const __dirname = path.resolve();
-		this.server.register(fastifyStatic, {
-			root: path.join(__dirname, 'public'),
-		});
 		await this.server.register(FastifyWebsocket);
 
 		const balanceHandler = new BalanceHandler(this.services.get<BalanceService>('balance'));
@@ -112,6 +115,7 @@ export class App {
 		const nodeInfoHandler = new NodeInfoHandler(this.services.get<NodeInfoService>('nodeInfo'));
 		const txHandler = new TxHandler(this.services.get<TxService>('tx'));
 		const stakingHandler = new StakingHandler(this.services.get<StakingService>('staking'));
+		const wsHandler = new WebsocketHandler(this.jsonrpc);
 
 		this.server.get('/cosmos/bank/v1beta1/balances/:address', balanceHandler.handleGetBalance);
 		this.server.get('/cosmos/auth/v1beta1/accounts/:address', accountHandler.handleGetAccount);
@@ -121,11 +125,20 @@ export class App {
 		this.server.post('/cosmos/tx/v1beta1/simulate', txHandler.handlePostSimulate);
 		this.server.get('/cosmos/staking/v1beta1/delegations/:delegatorAddr', stakingHandler.handleGetStaking);
 		this.server.get('/cosmos/staking/v1beta1/delegators/:delegatorAddr/unbonding_delegations', stakingHandler.handleGetUnbondingDelegations);
+		this.server.get('/websocket', { websocket: true }, wsHandler.handlerMessage);
 	}
 
 	async initJsonRpcServer() {
 		this.jsonrpc = new JSONRPCServer();
-		addMethods(this);
+
+		const statusHandler = new StatusRpcHandler(this.services.get<StatusService>('status'));
+		const abciHandler = new AbciRpcHandler(this.services.get<AbciService>('abci'));
+		const txHandler = new TxRpcHandler(this.services.get<TxService>('tx'));
+
+		this.jsonrpc.addMethod('status', statusHandler.status);
+		this.jsonrpc.addMethod('abci_query', abciHandler.abciQuery);
+		this.jsonrpc.addMethod('broadcast_tx_sync', txHandler.broadcastTxSync);
+		this.jsonrpc.addMethod('tx_search', txHandler.txSearch);
 	}
 
 	async initSubscribeEvents() {
