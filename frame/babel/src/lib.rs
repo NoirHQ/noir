@@ -178,7 +178,7 @@ pub mod pallet {
 			symbol: Vec<u8>,
 			denom: Vec<u8>,
 			decimals: u8,
-			is_frozon: bool,
+			is_frozen: bool,
 			is_sufficient: bool,
 			owner: AccountIdLookupOf<T>,
 			#[pallet::compact] min_balance: <T as pallet_assets::Config>::Balance,
@@ -198,7 +198,7 @@ pub mod pallet {
 				symbol,
 				name,
 				decimals,
-				is_frozon,
+				is_frozen,
 			)?;
 			let id: <T as pallet_cosmos::Config>::AssetId = id.into();
 			let denom: DenomOf<T> =
