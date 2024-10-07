@@ -29,8 +29,6 @@ members = [
 	"vendor/composable/cosmwasm/runtime-api",
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
-	"ziggurat/node",
-	"ziggurat/runtime",
 ]
 
 [workspace.dependencies]
