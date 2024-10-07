@@ -31,7 +31,6 @@ precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = 
 #moonkit-xcm-primitives = { workspace = true }
 
 [dev-dependencies]
-derive_more = "1.0"
 hex-literal = "0.4"
 libsecp256k1 = "0.7"
 serde = "1.0"

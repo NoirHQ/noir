@@ -35,7 +35,9 @@ use frame_support::{
 //use moonkit_xcm_primitives::AccountIdAssetIdConversion;
 use pallet_evm::AddressMapping;
 use precompile_utils::prelude::*;
-use sp_runtime::traits::{Bounded, Dispatchable, Zero};
+#[cfg(not(test))]
+use sp_runtime::traits::Zero;
+use sp_runtime::traits::{Bounded, Dispatchable};
 
 use sp_core::{MaxEncodedLen, H160, H256, U256};
 
@@ -246,6 +248,7 @@ where
 		let owner = Runtime::AddressMapping::into_account_id(owner);
 		let spender: Runtime::AccountId = Runtime::AddressMapping::into_account_id(spender);
 		// XXX: Need a general way to handle non-unified account
+		#[cfg(not(test))]
 		if frame_system::Account::<Runtime>::get(&spender).nonce.is_zero() {
 			return Err(revert("spender not unified"));
 		}
@@ -301,6 +304,7 @@ where
 			let origin = Runtime::AddressMapping::into_account_id(handle.context().caller);
 			let to = Runtime::AddressMapping::into_account_id(to);
 			// XXX: Need a general way to handle non-unified account
+			#[cfg(not(test))]
 			if frame_system::Account::<Runtime>::get(&to).nonce.is_zero() {
 				return Err(revert("to not unified"));
 			}

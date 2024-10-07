@@ -261,7 +261,7 @@ fn transfer() {
 					Precompile1,
 					PCall::transfer { to: Address(Bob.into()), value: 400.into() },
 				)
-				.expect_cost(176215756) // 1 weight => 1 gas in mock
+				.expect_cost(173364756) // 1 weight => 1 gas in mock
 				.expect_log(log3(
 					Precompile1,
 					SELECTOR_LOG_TRANSFER,
@@ -336,7 +336,7 @@ fn transfer_from() {
 						value: 400.into(),
 					},
 				)
-				.expect_cost(176215756) // 1 weight => 1 gas in mock
+				.expect_cost(173364756) // 1 weight => 1 gas in mock
 				.expect_log(log3(
 					Precompile1,
 					SELECTOR_LOG_TRANSFER,
@@ -426,7 +426,7 @@ fn transfer_from_self() {
 						value: 400.into(),
 					},
 				)
-				.expect_cost(176215756) // 1 weight => 1 gas in mock
+				.expect_cost(173364756) // 1 weight => 1 gas in mock
 				.expect_log(log3(
 					Precompile1,
 					SELECTOR_LOG_TRANSFER,
@@ -548,6 +548,9 @@ fn deposit(data: Vec<u8>) {
 						from: CryptoAlith.into(),
 						to: Precompile1.into(),
 						amount: 500
+					}),
+					RuntimeEvent::System(frame_system::Event::KilledAccount {
+						account: Precompile1.into()
 					}),
 					// Precompile1 send it back since deposit should be a no-op.
 					RuntimeEvent::Balances(pallet_balances::Event::Transfer {
@@ -760,7 +763,7 @@ fn permit_valid() {
 			let value: U256 = 500u16.into();
 			let deadline: U256 = 0u8.into(); // todo: proper timestamp
 
-			let permit = Eip2612::<Runtime, NativeErc20Metadata>::generate_permit(
+			let permit = Eip2612::<Runtime>::generate_permit(
 				Precompile1.into(),
 				owner,
 				spender,
@@ -843,7 +846,7 @@ fn permit_invalid_nonce() {
 			let value: U256 = 500u16.into();
 			let deadline: U256 = 0u8.into();
 
-			let permit = Eip2612::<Runtime, NativeErc20Metadata>::generate_permit(
+			let permit = Eip2612::<Runtime>::generate_permit(
 				Precompile1.into(),
 				owner,
 				spender,
@@ -982,7 +985,7 @@ fn permit_invalid_deadline() {
 			let value: U256 = 500u16.into();
 			let deadline: U256 = 5u8.into(); // deadline < timestamp => expired
 
-			let permit = Eip2612::<Runtime, NativeErc20Metadata>::generate_permit(
+			let permit = Eip2612::<Runtime>::generate_permit(
 				Precompile1.into(),
 				owner,
 				spender,

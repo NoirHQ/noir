@@ -1041,7 +1041,7 @@ mod tests {
 	use crate::{coin, coins, instantiate2_address, ContractInfoResponse, HexBinary, Response};
 	#[cfg(feature = "staking")]
 	use crate::{Decimal, Delegation};
-	use base64::{engine::general_purpose, Engine};
+	//use base64::{engine::general_purpose, Engine};
 	use cosmwasm_core::BLS12_381_G1_GENERATOR;
 	use hex_literal::hex;
 	use serde::Deserialize;

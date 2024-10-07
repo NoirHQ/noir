@@ -27,7 +27,6 @@ pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stabl
 precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
 
 [dev-dependencies]
-derive_more = "1.0"
 hex-literal = "0.4"
 libsecp256k1 = "0.7"
 serde = "1.0"

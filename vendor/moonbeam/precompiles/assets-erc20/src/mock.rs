@@ -55,21 +55,18 @@ mock_account!(ForeignAssetId(AssetId), |value: ForeignAssetId| {
 });
 
 // Implement the trait, where we convert AccountId to AssetID
-impl AccountIdAssetIdConversion<AccountId, AssetId> for Runtime {
+impl AddressToAssetId<AssetId> for Runtime {
 	/// The way to convert an account to assetId is by ensuring that the prefix is 0XFFFFFFFF
 	/// and by taking the lowest 128 bits as the assetId
-	fn account_to_asset_id(account: AccountId) -> Option<(Vec<u8>, AssetId)> {
-		if account.has_prefix_u32(FOREIGN_ASSET_PRECOMPILE_ADDRESS_PREFIX) {
-			return Some((
-				FOREIGN_ASSET_PRECOMPILE_ADDRESS_PREFIX.to_be_bytes().to_vec(),
-				account.without_prefix(),
-			));
+	fn address_to_asset_id(address: H160) -> Option<AssetId> {
+		if &address[..4] == &FOREIGN_ASSET_PRECOMPILE_ADDRESS_PREFIX.to_be_bytes()[..] {
+			return Some(AssetId::from_be_bytes(address[4..].try_into().unwrap()));
 		}
 		None
 	}
 
 	// Not used for now
-	fn asset_id_to_account(_prefix: &[u8], asset_id: AssetId) -> AccountId {
+	fn asset_id_to_address(asset_id: AssetId) -> H160 {
 		ForeignAssetId(asset_id).into()
 	}
 }
@@ -123,7 +120,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 0;
+	pub const ExistentialDeposit: u128 = 1;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -155,8 +152,6 @@ pub type Precompiles<R> = PrecompileSetBuilder<
 pub type ForeignPCall = Erc20AssetsPrecompileSetCall<Runtime, pallet_assets::Instance1>;
 
 const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
-/// Block Storage Limit in bytes. Set to 40KB.
-const BLOCK_STORAGE_LIMIT: u64 = 40 * 1024;
 
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(u64::MAX);
@@ -165,10 +160,6 @@ parameter_types! {
 	pub GasLimitPovSizeRatio: u64 = {
 		let block_gas_limit = BlockGasLimit::get().min(u64::MAX.into()).low_u64();
 		block_gas_limit.saturating_div(MAX_POV_SIZE)
-	};
-	pub GasLimitStorageGrowthRatio: u64 = {
-		let block_gas_limit = BlockGasLimit::get().min(u64::MAX.into()).low_u64();
-		block_gas_limit.saturating_div(BLOCK_STORAGE_LIMIT)
 	};
 }
 
@@ -192,7 +183,6 @@ impl pallet_evm::Config for Runtime {
 	type OnCreate = ();
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type SuicideQuickClearLimit = ConstU32<0>;
-	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
 	type Timestamp = Timestamp;
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
