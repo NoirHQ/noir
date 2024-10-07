@@ -300,7 +300,6 @@ pub mod pallet {
 			pub const TxSigLimit: u64 = 7;
 			pub const MaxDenomLimit: u32 = 128;
 			pub const NativeAssetId: u32 = 0;
-			pub const SimulationGasLimit: u64 = 1000000000;
 		}
 	}
 
