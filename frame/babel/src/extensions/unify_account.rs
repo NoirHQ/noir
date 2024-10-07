@@ -60,7 +60,7 @@ impl<T: Config> UnifyAccount<T> {
 		if let Ok(public) = who.clone().try_into() {
 			#[cfg(feature = "ethereum")]
 			{
-				let address = EthereumAddress::from(public.clone());
+				let address = EthereumAddress::from(public);
 				let interim = address.clone().into_account_truncating();
 				T::DrainBalance::drain_balance(&interim, who)?;
 				T::AddressMap::try_insert(who.clone(), VarAddress::Ethereum(address))
