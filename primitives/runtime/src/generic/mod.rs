@@ -18,3 +18,34 @@
 mod unchecked_extrinsic;
 
 pub use unchecked_extrinsic::*;
+
+use frame_support::{
+	dispatch::{DispatchInfo, GetDispatchInfo},
+	traits::ExtrinsicCall,
+};
+use scale_info::TypeInfo;
+use sp_runtime::traits::SignedExtension;
+
+impl<Address, Call, Signature, Extra> GetDispatchInfo
+	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Call: GetDispatchInfo,
+	Extra: SignedExtension,
+{
+	fn get_dispatch_info(&self) -> DispatchInfo {
+		self.function.get_dispatch_info()
+	}
+}
+
+impl<Address, Call, Signature, Extra> ExtrinsicCall
+	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Address: TypeInfo,
+	Call: TypeInfo,
+	Signature: TypeInfo,
+	Extra: SignedExtension + TypeInfo,
+{
+	fn call(&self) -> &Self::Call {
+		&self.function
+	}
+}

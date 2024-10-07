@@ -1,0 +1,56 @@
+[package]
+name = "pallet-evm-precompile-balances-erc20"
+authors = ["PureStake"]
+description = "A Precompile to expose a Balances pallet through an ERC20-compliant interface."
+edition = "2021"
+version = "0.1.0"
+
+[dependencies]
+log = { version = "0.4", default-features = false }
+num_enum = { version = "0.7", default-features = false }
+paste = "1.0"
+slices = "0.2"
+
+# Substrate
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+parity-scale-codec = { version = "3.6", default-features = false, features = ["max-encoded-len"] }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+
+# Frontier
+fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, features = ["forbid-evm-reentrancy"] }
+precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+
+[dev-dependencies]
+hex-literal = "0.4"
+libsecp256k1 = "0.7"
+serde = "1.0"
+sha3 = "0.10"
+
+# Moonbeam
+precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", features = ["testing"] }
+
+scale-info = { version = "2.11", features = ["derive"] }
+
+[features]
+default = ["std"]
+std = [
+	"fp-evm/std",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"num_enum/std",
+	"pallet-balances/std",
+	"pallet-evm/std",
+	"pallet-timestamp/std",
+	"parity-scale-codec/std",
+	"precompile-utils/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+]

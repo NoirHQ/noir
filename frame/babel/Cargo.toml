@@ -8,65 +8,127 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
+bech32 = { version = "0.11", default-features = false, features = ["alloc"], optional = true }
+cosmos-sdk-proto = { version = "0.24", default-features = false, optional = true }
+cosmwasm-std = { workspace = true, default-features = false, optional = true }
+cosmwasm-vm = { workspace = true, default-features = false, optional = true }
+cosmwasm-vm-wasmi = { workspace = true, default-features = false, optional = true }
 ethereum = { version = "0.15.0", default-features = false, optional = true }
+fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+hex-literal = "0.4"
+np-babel = { workspace = true, default-features = false }
 np-cosmos = { workspace = true, optional = true }
 np-ethereum = { workspace = true, optional = true }
+num_enum = { version = "0.7", default-features = false, optional = true }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false, optional = true }
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-cosmos = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-types = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-x-auth-signing = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-x-bank = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-x-wasm = { workspace = true, default-features = false, optional = true }
+pallet-cosmwasm = { workspace = true, default-features = false, optional = true }
 pallet-ethereum = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
+pallet-evm-precompileset-assets-erc20 = { workspace = true, optional = true }
+pallet-evm-precompile-balances-erc20 = { workspace = true, optional = true }
 pallet-evm-precompile-blake2 = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-bn128 = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-modexp = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
-pallet-evm-precompile-sha3fips = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 pallet-evm-precompile-simple = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
-pallet-multimap = { workspace = true }
+pallet-multimap = { workspace = true, default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
+precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, optional = true }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+serde = { version = "1.0.210", default-features = false, features = ["derive"], optional = true }
+serde-json-wasm = { version = "1.0.1", default-features = false, optional = true }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
+[dev-dependencies]
+hex = "0.4.3"
+
 [features]
-default = [
-	"std",
-	"cosmos",
-	"ethereum",
-]
+default = ["std", "pallet"]
 std = [
+	"bech32?/std",
+	"cosmos-sdk-proto?/std",
+	"cosmwasm-std?/std",
+	"cosmwasm-vm?/std",
+	"cosmwasm-vm-wasmi?/std",
 	"ethereum?/std",
+	"fp-evm?/std",
 	"frame-support/std",
 	"frame-system/std",
+	"np-babel/std",
 	"np-cosmos?/std",
 	"np-ethereum?/std",
+	"num_enum?/std",
+	"pallet-assets?/std",
 	"pallet-balances/std",
+	"pallet-cosmos?/std",
+	"pallet-cosmos-types?/std",
+	"pallet-cosmos-x-auth-signing?/std",
+	"pallet-cosmos-x-bank?/std",
+	"pallet-cosmos-x-wasm?/std",
+	"pallet-cosmwasm?/std",
 	"pallet-ethereum?/std",
 	"pallet-evm?/std",
+	"pallet-evm-precompileset-assets-erc20?/std",
+	"pallet-evm-precompile-balances-erc20?/std",
 	"pallet-evm-precompile-blake2?/std",
 	"pallet-evm-precompile-bn128?/std",
 	"pallet-evm-precompile-modexp?/std",
-	"pallet-evm-precompile-sha3fips?/std",
 	"pallet-evm-precompile-simple?/std",
 	"pallet-multimap/std",
 	"parity-scale-codec/std",
+	"precompile-utils?/std",
 	"scale-info/std",
+	"serde?/std",
+	"serde-json-wasm?/std",
 	"sp-core/std",
 	"sp-runtime/std",
 ]
 cosmos = [
+	"bech32",
+	"cosmos-sdk-proto",
+	"cosmwasm-std",
+	"cosmwasm-vm",
+	"cosmwasm-vm-wasmi",
+	"np-babel/cosmos",
 	"np-cosmos",
+	"pallet-assets",
+	"pallet-cosmos",
+	"pallet-cosmos-types",
+	"pallet-cosmos-x-auth-signing",
+	"pallet-cosmos-x-bank",
+	"pallet-cosmos-x-wasm",
+	"pallet-cosmwasm",
+	"serde",
+	"serde-json-wasm",
 ]
 ethereum = [
 	"dep:ethereum",
-	"np-ethereum",
+	"fp-evm",
+	"np-babel/ethereum",
+	"num_enum",
 	"pallet-ethereum",
 	"pallet-evm",
+	"pallet-evm-precompileset-assets-erc20",
+	"pallet-evm-precompile-balances-erc20",
 	"pallet-evm-precompile-blake2",
 	"pallet-evm-precompile-bn128",
 	"pallet-evm-precompile-modexp",
-	"pallet-evm-precompile-sha3fips",
 	"pallet-evm-precompile-simple",
+	"precompile-utils",
+]
+pallet = [
+	"cosmos",
+	"ethereum",
+	"np-babel/serde",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",

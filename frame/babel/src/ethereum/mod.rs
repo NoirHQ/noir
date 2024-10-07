@@ -16,23 +16,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+pub mod precompile;
+mod precompiles;
+
+pub use precompiles::*;
+
 use crate::*;
 
+use crate::extensions::unify_account;
 use core::marker::PhantomData;
 use frame_support::dispatch::RawOrigin;
-use np_ethereum::Address as EthereumAddress;
+use np_babel::EthereumAddress;
 use pallet_ethereum::Transaction;
-use pallet_evm::{
-	EnsureAddressOrigin, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult,
-	PrecompileSet,
-};
-use pallet_evm_precompile_blake2::Blake2F;
-use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
-use pallet_evm_precompile_modexp::Modexp;
-use pallet_evm_precompile_sha3fips::Sha3FIPS256;
-use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
-use sp_core::{ecdsa, H160, H256};
+use pallet_evm::EnsureAddressOrigin;
+use pallet_multimap::traits::UniqueMultimap;
+use sp_core::{ecdsa, H160};
 use sp_runtime::traits::AccountIdConversion;
+
+pub use pallet_evm_precompile_balances_erc20::Erc20Metadata;
+pub use pallet_evm_precompileset_assets_erc20::AddressToAssetId;
 
 pub struct EnsureAddress<AccountId>(PhantomData<AccountId>);
 
@@ -63,84 +65,15 @@ where
 
 pub struct AddressMapping<T>(PhantomData<T>);
 
-impl<T: Config> pallet_evm::AddressMapping<T::AccountId> for AddressMapping<T>
+impl<T> pallet_evm::AddressMapping<T::AccountId> for AddressMapping<T>
 where
-	T::AccountId: From<H256>,
+	T: unify_account::Config,
 {
 	fn into_account_id(who: H160) -> T::AccountId {
 		let address = EthereumAddress::from(who);
-		T::AddressMap::find_key(Address::Ethereum(address.clone()))
+		T::AddressMap::find_key(VarAddress::Ethereum(address.clone()))
 			.unwrap_or_else(|| address.into_account_truncating())
 	}
-}
-
-pub struct FrontierPrecompiles<R>(PhantomData<R>);
-
-impl<R> Default for FrontierPrecompiles<R>
-where
-	R: pallet_evm::Config,
-{
-	fn default() -> Self {
-		Self::new()
-	}
-}
-
-impl<R> FrontierPrecompiles<R>
-where
-	R: pallet_evm::Config,
-{
-	pub fn new() -> Self {
-		Self(Default::default())
-	}
-	pub fn used_addresses() -> [H160; 11] {
-		[
-			hash(1),
-			hash(2),
-			hash(3),
-			hash(4),
-			hash(5),
-			hash(6),
-			hash(7),
-			hash(8),
-			hash(9),
-			hash(1024),
-			hash(1025),
-		]
-	}
-}
-impl<R> PrecompileSet for FrontierPrecompiles<R>
-where
-	R: pallet_evm::Config,
-{
-	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
-		match handle.code_address() {
-			// Ethereum precompiles :
-			a if a == hash(1) => Some(ECRecover::execute(handle)),
-			a if a == hash(2) => Some(Sha256::execute(handle)),
-			a if a == hash(3) => Some(Ripemd160::execute(handle)),
-			a if a == hash(4) => Some(Identity::execute(handle)),
-			a if a == hash(5) => Some(Modexp::execute(handle)),
-			a if a == hash(6) => Some(Bn128Add::execute(handle)),
-			a if a == hash(7) => Some(Bn128Mul::execute(handle)),
-			a if a == hash(8) => Some(Bn128Pairing::execute(handle)),
-			a if a == hash(9) => Some(Blake2F::execute(handle)),
-			// Non-Frontier specific nor Ethereum precompiles :
-			a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
-			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(handle)),
-			_ => None,
-		}
-	}
-
-	fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
-		IsPrecompileResult::Answer {
-			is_precompile: Self::used_addresses().contains(&address),
-			extra_cost: 0,
-		}
-	}
-}
-
-fn hash(a: u64) -> H160 {
-	H160::from_low_u64_be(a)
 }
 
 pub trait TransactionExt {

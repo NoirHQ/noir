@@ -16,17 +16,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::*;
-
 use core::marker::PhantomData;
+use frame_support::traits::tokens::{fungible, Fortitude, Preservation};
+use np_babel::{CosmosAddress, EthereumAddress, VarAddress};
+use pallet_multimap::traits::UniqueMultimap;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sp_core::{ecdsa, H256};
 use sp_runtime::{
-	traits::{DispatchInfoOf, One, SignedExtension, Zero},
+	traits::{AccountIdConversion, DispatchInfoOf, One, SignedExtension, Zero},
 	transaction_validity::{TransactionValidityError, ValidTransaction},
 };
 
-/// Integrates the accounts associated with the same public key.
+/// A configuration for UnifyAccount signed extension.
+pub trait Config: frame_system::Config<AccountId: From<H256> + TryInto<ecdsa::Public>> {
+	/// A map from account to addresses.
+	type AddressMap: UniqueMultimap<Self::AccountId, VarAddress>;
+	/// Drain account balance when unifying accounts.
+	type DrainBalance: DrainBalance<Self::AccountId>;
+}
+
+/// Unifies the accounts associated with the same public key.
 ///
 /// WARN: This extension should be placed after the `CheckNonce` extension.
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
@@ -50,9 +60,19 @@ impl<T: Config> UnifyAccount<T> {
 		if let Ok(public) = who.clone().try_into() {
 			#[cfg(feature = "ethereum")]
 			{
-				let address = Address::ethereum(public);
-				T::AddressMap::try_insert(who.clone(), address)
-					.map_err(|_| "account integration failed: ethereum")?;
+				let address = EthereumAddress::from(public);
+				let interim = address.clone().into_account_truncating();
+				T::DrainBalance::drain_balance(&interim, who)?;
+				T::AddressMap::try_insert(who.clone(), VarAddress::Ethereum(address))
+					.map_err(|_| "account unification failed: ethereum")?;
+			}
+			#[cfg(feature = "cosmos")]
+			{
+				let address = CosmosAddress::from(public);
+				let interim = address.clone().into_account_truncating();
+				T::DrainBalance::drain_balance(&interim, who)?;
+				T::AddressMap::try_insert(who.clone(), VarAddress::Cosmos(address))
+					.map_err(|_| "account unification failed: cosmos")?;
 			}
 		}
 		Ok(())
@@ -122,5 +142,28 @@ impl<T: Config> SignedExtension for UnifyAccount<T> {
 			let _ = Self::unify_ecdsa(who);
 		}
 		Ok(())
+	}
+}
+
+pub trait DrainBalance<AccountId> {
+	type Output: Default;
+
+	fn drain_balance(_src: &AccountId, _dest: &AccountId) -> Result<Self::Output, &'static str> {
+		Ok(Default::default())
+	}
+}
+
+impl<AccountId, T> DrainBalance<AccountId> for T
+where
+	AccountId: Eq,
+	T: fungible::Inspect<AccountId> + fungible::Mutate<AccountId>,
+{
+	type Output = T::Balance;
+
+	fn drain_balance(src: &AccountId, dest: &AccountId) -> Result<Self::Output, &'static str> {
+		let amount = T::reducible_balance(src, Preservation::Expendable, Fortitude::Polite);
+		T::transfer(src, dest, amount, Preservation::Expendable)
+			.map_err(|_| "account draining failed")
+			.map(|_| amount)
 	}
 }

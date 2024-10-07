@@ -18,6 +18,9 @@
 /// Chain information trait.
 pub trait ChainInfo {
 	fn bech32_prefix() -> &'static str;
+	fn chain_id() -> &'static str;
+	fn name() -> &'static str;
+	fn version() -> &'static str;
 }
 
 /// Cosmos Hub chain information.
@@ -26,5 +29,14 @@ pub struct CosmosHub;
 impl ChainInfo for CosmosHub {
 	fn bech32_prefix() -> &'static str {
 		"cosmos"
+	}
+	fn chain_id() -> &'static str {
+		"ziggurat-1"
+	}
+	fn name() -> &'static str {
+		"ziggurat"
+	}
+	fn version() -> &'static str {
+		"1"
 	}
 }

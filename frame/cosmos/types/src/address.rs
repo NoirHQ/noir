@@ -1,0 +1,47 @@
+// This file is part of Noir.
+
+// Copyright (c) Haderech Pte. Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+use alloc::{
+	string::{String, ToString},
+	vec::Vec,
+};
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum Error {
+	DecodeError(bech32::DecodeError),
+}
+
+pub fn acc_address_from_bech32(address: &str) -> Result<(String, Vec<u8>), Error> {
+	bech32::decode(address)
+		.map(|(hrp, data)| (hrp.to_string(), data))
+		.map_err(Error::DecodeError)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn acc_address_from_bech32_test() {
+		let address = "cosmos1qd69nuwj95gta4akjgyxtj9ujmz4w8edmqysqw";
+		let (hrp, address_raw) = acc_address_from_bech32(address).unwrap();
+		assert_eq!(hrp, "cosmos");
+
+		let address_raw = hex::encode(address_raw);
+		assert_eq!(address_raw, "037459f1d22d10bed7b6920865c8bc96c5571f2d");
+	}
+}

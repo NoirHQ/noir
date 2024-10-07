@@ -1,0 +1,60 @@
+[package]
+name = "pallet-evm-precompileset-assets-erc20"
+authors = ["PureStake"]
+description = "A Precompile to expose Assets pallet through an ERC20-compliant interface."
+edition = "2021"
+version = "0.1.0"
+
+[dependencies]
+log = { version = "0.4", default-features = false }
+num_enum = { version = "0.7", default-features = false }
+paste = "1.0"
+
+# Substrate
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+parity-scale-codec = { version = "3.6", default-features = false, features = ["max-encoded-len"] }
+scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+
+# Frontier
+fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, features = ["forbid-evm-reentrancy"] }
+precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+
+# Moonkit
+#moonkit-xcm-primitives = { workspace = true }
+
+[dev-dependencies]
+hex-literal = "0.4"
+libsecp256k1 = "0.7"
+serde = "1.0"
+sha3 = "0.10"
+
+# Moonbeam
+precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", features = ["testing"] }
+
+[features]
+default = ["std"]
+std = [
+	"fp-evm/std",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	#"moonkit-xcm-primitives/std",
+	"pallet-assets/std",
+	"pallet-balances/std",
+	"pallet-evm/std",
+	"pallet-timestamp/std",
+	"parity-scale-codec/std",
+	"precompile-utils/std",
+	"scale-info/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+]

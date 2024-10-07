@@ -1,0 +1,37 @@
+[package]
+name = "pallet-cosmos-x-auth-signing"
+version = "0.4.0"
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/noirhq/noir.git"
+publish = false
+
+[dependencies]
+cosmos-sdk-proto = { version = "0.24", default-features = false, features = [
+	"cosmwasm",
+] }
+pallet-cosmos-types = { workspace = true, default-features = false }
+pallet-cosmos-x-auth-migrations = { workspace = true, default-features = false }
+pallet-cosmos-x-bank-types = { workspace = true, default-features = false }
+pallet-cosmos-x-wasm-types = { workspace = true, default-features = false }
+serde_json = { version = "1.0.127", default-features = false }
+
+[dev-dependencies]
+base64ct = { version = "1.6.0", default-features = false }
+hex = { version = "0.4.3", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"cosmos-sdk-proto/std",
+	"pallet-cosmos-types/std",
+	"pallet-cosmos-x-auth-migrations/std",
+	"pallet-cosmos-x-bank-types/std",
+	"pallet-cosmos-x-wasm-types/std",
+	"serde_json/std",
+	"base64ct/std",
+	"hex/std",
+	"sp-core/std",
+]

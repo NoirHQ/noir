@@ -1,0 +1,94 @@
+[package]
+authors = ["Composable Developers"]
+edition = "2021"
+homepage = "https://composable.finance"
+name = "pallet-cosmwasm"
+version = "1.0.0"
+
+[lib]
+doctest = false
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false }
+scale-info = { default-features = false, version = "2.11", features = [
+    "derive",
+] }
+
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+hex-literal = "0.4.1"
+ibc = { version = "0.54.0", default-features = false }
+libsecp256k1 = { version = "0.7.0", default-features = false }
+log = { version = "0.4.21", default-features = false }
+parity-wasm = { version = "0.45.0", default-features = false }
+serde = { version = "1.0.210", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0.127", default-features = false, features = [
+    "alloc",
+] }
+sha2 = { version = "0.10", default-features = false }
+sha3 = { version = "0.10", default-features = false }
+vec1 = { version = "*", default-features = false, features = ["smallvec-v1"] }
+wasmi = { version = "0.30.0", default-features = false }
+wasm-instrument = { version = "0.4.0", default-features = false }
+wasmi-validation = { version = "0.5.0", default-features = false }
+
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+
+composable-support = { workspace = true, default-features = false }
+cosmwasm-std = { workspace = true, default-features = false, features = [
+    "iterator",
+    "stargate",
+    "cosmwasm_1_4",
+] }
+cosmwasm-vm = { workspace = true, default-features = false, features = [
+    "iterator",
+    "stargate",
+] }
+cosmwasm-vm-wasmi = { workspace = true, default-features = false, features = [
+    "iterator",
+    "stargate",
+] }
+
+np-cosmos = { workspace = true, default-features = false }
+pallet-cosmos-types = { workspace = true, default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "scale-info/std",
+    "hex/std",
+    "ibc/std",
+    "libsecp256k1/std",
+    "log/std",
+    "parity-wasm/std",
+    "serde/std",
+    "serde_json/std",
+    "sha2/std",
+    "sha3/std",
+    "vec1/std",
+    "wasmi/std",
+    "wasm-instrument/std",
+    "wasmi-validation/std",
+    "frame-support/std",
+    "frame-system/std",
+    "pallet-assets/std",
+    "pallet-balances/std",
+    "sp-arithmetic/std",
+    "sp-core/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "composable-support/std",
+    "cosmwasm-std/std",
+    "cosmwasm-vm/std",
+    "cosmwasm-vm-wasmi/std",
+    "np-cosmos/std",
+    "pallet-cosmos-types/std",
+]
+try-runtime = []
