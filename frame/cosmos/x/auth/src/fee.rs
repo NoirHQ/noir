@@ -123,8 +123,6 @@ where
 					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|_| RootError::InsufficientFunds)?;
-
-				// TODO: Resolve imbalance
 			} else {
 				let asset_id = T::AssetToDenom::try_convert(amt.denom.clone())
 					.map_err(|_| RootError::InsufficientFunds)?;
@@ -137,8 +135,6 @@ where
 					Fortitude::Polite,
 				)
 				.map_err(|_| RootError::InsufficientFunds)?;
-
-				// TODO: Resolve imbalance
 			}
 		}
 
