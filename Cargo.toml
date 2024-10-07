@@ -30,6 +30,12 @@ members = [
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
 ]
+default-members = [
+	"core-primitives",
+	"frame/*",
+	"primitives/*",
+	"runtime/*",
+]
 
 [workspace.dependencies]
 composable-support = { path = "vendor/composable/composable-support", default-features = false }
