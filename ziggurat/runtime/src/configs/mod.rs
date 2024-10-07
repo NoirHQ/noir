@@ -58,8 +58,8 @@ use frame_system::{
 use pallet_assets::pallet::Instance2;
 use pallet_cosmos::{
 	config_preludes::{
-		MaxDenomLimit, MaxMemoCharacters, MsgFilter, NativeAssetId, NativeDenom,
-		SimulationGasLimit, TxSigLimit, WeightToGas,
+		MaxDenomLimit, MaxMemoCharacters, MsgFilter, NativeAssetId, NativeDenom, TxSigLimit,
+		WeightToGas,
 	},
 	types::{AssetIdOf, DenomOf},
 };
@@ -77,7 +77,10 @@ use polkadot_runtime_common::{
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{ConstU128, H160, U256};
-use sp_runtime::{traits::TryConvert, BoundedVec, Perbill, Permill};
+use sp_runtime::{
+	traits::{Convert, TryConvert},
+	BoundedVec, Perbill, Permill,
+};
 use sp_version::RuntimeVersion;
 use xcm::latest::prelude::BodyId;
 
@@ -523,6 +526,12 @@ impl TryConvert<AssetId, String> for AssetToDenom {
 			String::from_utf8(denom.into()).map_err(|_| asset_id)
 		}
 	}
+}
+
+parameter_types! {
+	pub SimulationGasLimit: u64 = <Runtime as pallet_cosmos::Config>::WeightToGas::convert(
+		RuntimeBlockWeights::get().per_class.get(DispatchClass::Normal).max_total.unwrap_or(RuntimeBlockWeights::get().max_block)
+	);
 }
 
 impl pallet_cosmos::Config for Runtime {
