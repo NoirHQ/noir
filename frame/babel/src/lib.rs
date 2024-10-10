@@ -110,8 +110,13 @@ pub mod pallet {
 			transaction: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			let public: ecdsa::Public = who.try_into().map_err(|_| Error::<T>::InvalidOrigin)?;
-			let address: np_babel::EthereumAddress = public.into();
+			let address = T::AddressMap::get(who)
+				.iter()
+				.find_map(|address| match address {
+					VarAddress::Ethereum(address) => Some(address.clone()),
+					_ => None,
+				})
+				.ok_or(Error::<T>::InvalidOrigin)?;
 
 			let origin = T::RuntimeOrigin::from(pallet_ethereum::RawOrigin::EthereumTransaction(
 				address.into(),
@@ -142,8 +147,13 @@ pub mod pallet {
 			tx_bytes: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			let public: ecdsa::Public = who.try_into().map_err(|_| Error::<T>::InvalidOrigin)?;
-			let address: np_babel::CosmosAddress = public.into();
+			let address = T::AddressMap::get(who)
+				.iter()
+				.find_map(|address| match address {
+					VarAddress::Cosmos(address) => Some(address.clone()),
+					_ => None,
+				})
+				.ok_or(Error::<T>::InvalidOrigin)?;
 
 			let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| Error::<T>::InvalidTransaction)?;
 			let signers =
