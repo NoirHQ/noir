@@ -53,7 +53,7 @@ pub mod pallet {
 	use pallet_multimap::traits::{UniqueMap, UniqueMultimap};
 	use sp_core::ecdsa;
 	use sp_runtime::{
-		traits::{StaticLookup, UniqueSaturatedInto},
+		traits::{One, Saturating, StaticLookup, UniqueSaturatedInto},
 		AccountId32,
 	};
 
@@ -110,7 +110,7 @@ pub mod pallet {
 			transaction: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			let address = T::AddressMap::get(who)
+			let address = T::AddressMap::get(who.clone())
 				.iter()
 				.find_map(|address| match address {
 					VarAddress::Ethereum(address) => Some(address.clone()),
@@ -124,6 +124,11 @@ pub mod pallet {
 			let transaction = ethereum::EnvelopedDecodable::decode(&transaction)
 				.map_err(|_| Error::<T>::InvalidTransaction)?;
 
+			// CheckNonce signed extension already increased the nonce at this point,
+			// but EVM will increase it again, so we need to decrease it here.
+			frame_system::Account::<T>::mutate(who, |account| {
+				account.nonce = account.nonce.saturating_sub(T::Nonce::one());
+			});
 			pallet_ethereum::Pallet::<T>::transact(origin, transaction)
 		}
 
