@@ -45,7 +45,7 @@ where
 	T: pallet_cosmwasm::Config + unify_account::Config,
 {
 	fn convert(account: AccountIdOf<T>) -> String {
-		let addresses = T::AddressMap::get(account.clone());
+		let addresses = T::AddressMap::get(&account);
 		let address: Option<&CosmosAddress> = addresses.iter().find_map(|address| match address {
 			VarAddress::Cosmos(address) => Some(address),
 			_ => None,

@@ -19,31 +19,44 @@ use crate::*;
 
 use alloc::collections::BTreeSet;
 use frame_support::ensure;
+use parity_scale_codec::{Codec, EncodeLike, FullCodec};
+
+fn transmute<T: EncodeLike<R>, R: Codec>(value: T) -> R {
+	value.using_encoded(|encoded| R::decode(&mut &encoded[..]).expect("Decoding failed"))
+}
 
 /// Unique multimap whose values are unique across all keys.
-pub trait UniqueMultimap<K, V> {
+pub trait UniqueMultimap<K: FullCodec, V: FullCodec> {
 	type Error;
 
 	/// Tries to insert a value into the multimap.
-	fn try_insert(key: K, value: V) -> Result<bool, Self::Error>;
+	fn try_insert<KeyArg: EncodeLike<K>, ValArg: EncodeLike<V>>(
+		key: KeyArg,
+		value: ValArg,
+	) -> Result<bool, Self::Error>;
 
 	/// Gets all values for a key.
-	fn get(key: K) -> BTreeSet<V>;
+	fn get<KeyArg: EncodeLike<K>>(key: KeyArg) -> BTreeSet<V>;
 
 	/// Finds the key for a value.
-	fn find_key(value: V) -> Option<K>;
+	fn find_key<ValArg: EncodeLike<V>>(value: ValArg) -> Option<K>;
 
 	/// Removes a value from the multimap.
-	fn remove(key: K, value: V) -> bool;
+	fn remove<KeyArg: EncodeLike<K>, ValArg: EncodeLike<V>>(key: KeyArg, value: ValArg) -> bool;
 
 	/// Removes all values for a key.
-	fn remove_all(key: K) -> bool;
+	fn remove_all<KeyArg: EncodeLike<K>>(key: KeyArg) -> bool;
 }
 
 impl<T: Config<I>, I: 'static> UniqueMultimap<T::Key, T::Value> for Pallet<T, I> {
 	type Error = Error<T, I>;
 
-	fn try_insert(key: T::Key, value: T::Value) -> Result<bool, Error<T, I>> {
+	fn try_insert<K: EncodeLike<T::Key>, V: EncodeLike<T::Value>>(
+		key: K,
+		value: V,
+	) -> Result<bool, Error<T, I>> {
+		let key = transmute(key);
+		let value = transmute(value);
 		Map::<T, I>::try_mutate(&key, |values| {
 			ensure!(
 				Index::<T, I>::get(&value).filter(|k| *k != key).is_none(),
@@ -53,57 +66,66 @@ impl<T: Config<I>, I: 'static> UniqueMultimap<T::Key, T::Value> for Pallet<T, I>
 				.try_insert(value.clone())
 				.inspect(|ok| {
 					if *ok {
-						Index::<T, I>::insert(&value, &key);
+						Index::<T, I>::insert(value, key.clone());
 					}
 				})
 				.map_err(|_| Error::<T, I>::CapacityOverflow)
 		})
 	}
 
-	fn get(key: T::Key) -> BTreeSet<T::Value> {
-		Map::<T, I>::get(&key).into()
+	fn get<K: EncodeLike<T::Key>>(key: K) -> BTreeSet<T::Value> {
+		Map::<T, I>::get(key).into()
 	}
 
-	fn find_key(value: T::Value) -> Option<T::Key> {
-		Index::<T, I>::get(&value)
+	fn find_key<V: EncodeLike<T::Value>>(value: V) -> Option<T::Key> {
+		Index::<T, I>::get(value)
 	}
 
-	fn remove(key: T::Key, value: T::Value) -> bool {
-		Map::<T, I>::try_mutate(&key, |values| -> Result<bool, ()> {
-			Ok(values.remove(&value).then(|| Index::<T, I>::remove(&value)).is_some())
+	fn remove<K: EncodeLike<T::Key>, V: EncodeLike<T::Value>>(key: K, value: V) -> bool {
+		let value = transmute(value);
+		Map::<T, I>::try_mutate(key, |values| -> Result<bool, ()> {
+			Ok(values.remove(&value).then(|| Index::<T, I>::remove(value)).is_some())
 		})
 		.unwrap_or(false)
 	}
 
-	fn remove_all(key: T::Key) -> bool {
-		Map::<T, I>::take(&key).into_iter().fold(false, |_, value| {
-			Index::<T, I>::remove(&value);
+	fn remove_all<K: EncodeLike<T::Key>>(key: K) -> bool {
+		Map::<T, I>::take(key).into_iter().fold(false, |_, value| {
+			Index::<T, I>::remove(value);
 			true
 		})
 	}
 }
 
 /// Unique map whose the value is unique across all keys.
-pub trait UniqueMap<K, V> {
+pub trait UniqueMap<K: FullCodec, V: FullCodec> {
 	type Error;
 
 	/// Tries to insert a value into the map.
-	fn try_insert(key: K, value: V) -> Result<bool, Self::Error>;
+	fn try_insert<KeyArg: EncodeLike<K>, ValArg: EncodeLike<V>>(
+		key: KeyArg,
+		value: ValArg,
+	) -> Result<bool, Self::Error>;
 
 	/// Gets the value for a key.
-	fn get(key: K) -> Option<V>;
+	fn get<KeyArg: EncodeLike<K>>(key: KeyArg) -> Option<V>;
 
 	/// Finds the key for a value.
-	fn find_key(value: V) -> Option<K>;
+	fn find_key<ValArg: EncodeLike<V>>(value: ValArg) -> Option<K>;
 
 	/// Removes a value from the map.
-	fn remove(key: K);
+	fn remove<KeyArg: EncodeLike<K>>(key: KeyArg);
 }
 
 impl<T: Config<I>, I: 'static> UniqueMap<T::Key, T::Value> for Pallet<T, I> {
 	type Error = Error<T, I>;
 
-	fn try_insert(key: T::Key, value: T::Value) -> Result<bool, Error<T, I>> {
+	fn try_insert<K: EncodeLike<T::Key>, V: EncodeLike<T::Value>>(
+		key: K,
+		value: V,
+	) -> Result<bool, Error<T, I>> {
+		let key = transmute(key);
+		let value = transmute(value);
 		Map::<T, I>::try_mutate(&key, |values| {
 			ensure!(
 				Index::<T, I>::get(&value).filter(|k| *k != key).is_none(),
@@ -113,21 +135,21 @@ impl<T: Config<I>, I: 'static> UniqueMap<T::Key, T::Value> for Pallet<T, I> {
 			*values = BTreeSet::from([value.clone()])
 				.try_into()
 				.map_err(|_| Error::<T, I>::CapacityOverflow)?;
-			Index::<T, I>::insert(&value, &key);
+			Index::<T, I>::insert(value, key.clone());
 
 			Ok(true)
 		})
 	}
 
-	fn get(key: T::Key) -> Option<T::Value> {
-		Map::<T, I>::get(&key).first().cloned()
+	fn get<K: EncodeLike<T::Key>>(key: K) -> Option<T::Value> {
+		Map::<T, I>::get(key).first().cloned()
 	}
 
-	fn find_key(value: T::Value) -> Option<T::Key> {
-		Index::<T, I>::get(&value)
+	fn find_key<V: EncodeLike<T::Value>>(value: V) -> Option<T::Key> {
+		Index::<T, I>::get(value)
 	}
 
-	fn remove(key: T::Key) {
-		Map::<T, I>::remove(&key);
+	fn remove<K: EncodeLike<T::Key>>(key: K) {
+		Map::<T, I>::remove(key);
 	}
 }

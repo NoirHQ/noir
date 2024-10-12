@@ -110,7 +110,7 @@ pub mod pallet {
 			transaction: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			let address = T::AddressMap::get(who.clone())
+			let address = T::AddressMap::get(&who)
 				.iter()
 				.find_map(|address| match address {
 					VarAddress::Ethereum(address) => Some(address.clone()),
