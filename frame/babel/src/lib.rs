@@ -54,7 +54,7 @@ pub mod pallet {
 	};
 	use pallet_cosmos_types::address::acc_address_from_bech32;
 	use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
-	use pallet_evm::AddressMapping as _;
+	use pallet_evm::{AddressMapping as _, FrameSystemAccountProvider};
 	use pallet_multimap::traits::{UniqueMap, UniqueMultimap};
 	use sp_core::ecdsa;
 	use sp_runtime::{
@@ -72,7 +72,7 @@ pub mod pallet {
 		+ pallet_balances::Config
 		+ pallet_cosmos::Config<AssetId = <Self as pallet_assets::Config>::AssetId>
 		+ pallet_ethereum::Config
-		+ pallet_evm::Config
+		+ pallet_evm::Config<AccountProvider = FrameSystemAccountProvider<Self>>
 	{
 		type AddressMap: UniqueMultimap<Self::AccountId, VarAddress>;
 		type AssetMap: UniqueMap<AssetIdOf<Self>, DenomOf<Self>>;
