@@ -12,8 +12,8 @@ cosmos-runtime-api = { workspace = true, features = ["std"] }
 futures = "0.3"
 hex = "0.4.3"
 jsonrpsee = { version = "0.23", features = ["client", "server", "macros"] }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }

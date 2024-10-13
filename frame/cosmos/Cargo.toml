@@ -9,16 +9,16 @@ publish = false
 
 [dependencies]
 cosmos-sdk-proto = { version = "0.24", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-cosmos-x-auth-signing = { workspace = true, default-features = false }
 pallet-cosmos-types = { workspace = true, default-features = false }
 pallet-multimap = { workspace = true, default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
 np-cosmos = { workspace = true, default-features = false }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 
 [features]
 default = ["std"]

@@ -9,13 +9,13 @@ publish = false
 
 [dependencies]
 cosmos-sdk-proto = { version = "0.24", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-cosmos = { workspace = true, default-features = false }
 pallet-cosmos-types = { workspace = true, default-features = false }
 pallet-cosmos-x-bank-types = { workspace = true, default-features = false }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 
 [features]
 default = ["std"]

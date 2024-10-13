@@ -11,21 +11,21 @@ num_enum = { version = "0.7", default-features = false }
 paste = "1.0"
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false, features = ["max-encoded-len"] }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 
 # Frontier
-fp-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
-pallet-evm = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false, features = ["forbid-evm-reentrancy"] }
-precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", default-features = false }
+fp-evm = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false }
+pallet-evm = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, features = ["forbid-evm-reentrancy"] }
+precompile-utils = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false }
 
 # Moonkit
 #moonkit-xcm-primitives = { workspace = true }
@@ -37,7 +37,7 @@ serde = "1.0"
 sha3 = "0.10"
 
 # Moonbeam
-precompile-utils = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2407", features = ["testing"] }
+precompile-utils = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", features = ["testing"] }
 
 [features]
 default = ["std"]

@@ -15,9 +15,9 @@ codec = { version = "3.6.0", package = "parity-scale-codec", default-features = 
 ] }
 num-traits = { version = "0.2.14", default-features = false }
 
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 
 [features]
 default = ["std"]

@@ -20,7 +20,7 @@ serde_json = { version = "1.0.127", default-features = false }
 [dev-dependencies]
 base64ct = { version = "1.6.0", default-features = false }
 hex = { version = "0.4.3", default-features = false }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 
 [features]
 default = ["std"]
