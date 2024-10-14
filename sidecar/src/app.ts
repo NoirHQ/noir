@@ -56,10 +56,11 @@ export class App {
 	}
 
 	async start() {
+		const host = this.config.get<string>('server.host');
 		const port = this.config.get<number>('server.port');
-		console.debug(`Start to listen on port: ${port}`);
+		console.debug(`Start to listen on ${host}:${port}`);
 
-		await this.server.listen({ port });
+		await this.server.listen({ host, port });
 	}
 
 	async initDatabase() {

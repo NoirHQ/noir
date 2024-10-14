@@ -1,8 +1,9 @@
 {
-	"name": "@noir/sidecar",
+	"name": "sidecar",
 	"version": "0.1.0",
-	"description": "Cosmos API Sidecar for Noir",
+	"description": "Cosmos API Sidecar",
 	"main": "dist/main.js",
+	"private": true,
 	"scripts": {
 		"build": "tsc",
 		"lint": "npx eslint ./src",
