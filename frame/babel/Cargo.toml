@@ -14,7 +14,7 @@ cosmwasm-std = { workspace = true, default-features = false, optional = true }
 cosmwasm-vm = { workspace = true, default-features = false, optional = true }
 cosmwasm-vm-wasmi = { workspace = true, default-features = false, optional = true }
 ethereum = { version = "0.15.0", default-features = false, optional = true }
-fp-evm = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, optional = true }
+fp-evm = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 hex-literal = "0.4"
@@ -30,17 +30,17 @@ pallet-cosmos-x-auth-signing = { workspace = true, default-features = false, opt
 pallet-cosmos-x-bank = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-x-wasm = { workspace = true, default-features = false, optional = true }
 pallet-cosmwasm = { workspace = true, default-features = false, optional = true }
-pallet-ethereum = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, optional = true }
-pallet-evm = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, optional = true }
+pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, optional = true }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, optional = true }
 pallet-evm-precompileset-assets-erc20 = { workspace = true, optional = true }
 pallet-evm-precompile-balances-erc20 = { workspace = true, optional = true }
-pallet-evm-precompile-blake2 = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, optional = true }
-pallet-evm-precompile-bn128 = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, optional = true }
-pallet-evm-precompile-modexp = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, optional = true }
-pallet-evm-precompile-simple = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, optional = true }
+pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, optional = true }
+pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, optional = true }
+pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, optional = true }
+pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, optional = true }
 pallet-multimap = { workspace = true, default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
-precompile-utils = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, optional = true }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, optional = true }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
 serde = { version = "1.0.210", default-features = false, features = ["derive"], optional = true }
 serde-json-wasm = { version = "1.0.1", default-features = false, optional = true }

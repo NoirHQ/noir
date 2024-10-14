@@ -22,9 +22,9 @@ sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable24
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 
 # Frontier
-fp-evm = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false }
-pallet-evm = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false, features = ["forbid-evm-reentrancy"] }
-precompile-utils = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", default-features = false }
+fp-evm = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false, features = ["forbid-evm-reentrancy"] }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.4"
@@ -33,7 +33,7 @@ serde = "1.0"
 sha3 = "0.10"
 
 # Moonbeam
-precompile-utils = { git = "https://github.com/polkadot-evm/frontier", rev = "aacf5a4e", features = ["testing"] }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "fallback-eth_getCode", features = ["testing"] }
 
 scale-info = { version = "2.11", features = ["derive"] }
 
