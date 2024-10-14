@@ -4,11 +4,12 @@
   },
   "server": {
     "endpoint": "http://localhost:1317",
+    "host": "localhost",
     "port": 1317,
     "logger": false
   },
   "chain": {
-    "endpoint": "ws://127.0.0.1:9944",
+    "endpoint": "ws://localhost:9944",
     "denom": "azig"
   }
 }

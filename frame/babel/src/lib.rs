@@ -18,6 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::too_many_arguments)]
+
 extern crate alloc;
 
 #[cfg(feature = "cosmos")]
@@ -40,7 +41,11 @@ pub mod pallet {
 	use cosmos_sdk_proto::{cosmos::tx::v1beta1::Tx, traits::Message};
 	use frame_support::{
 		pallet_prelude::*,
-		traits::{fungible::Mutate, tokens::Preservation::Preserve},
+		traits::{
+			fungible::Mutate as _,
+			fungibles::Mutate,
+			tokens::Preservation::{Expendable, Preserve},
+		},
 	};
 	use frame_system::{ensure_root, pallet_prelude::*};
 	use pallet_cosmos::{
@@ -53,11 +58,12 @@ pub mod pallet {
 	use pallet_multimap::traits::{UniqueMap, UniqueMultimap};
 	use sp_core::ecdsa;
 	use sp_runtime::{
-		traits::{One, Saturating, StaticLookup, UniqueSaturatedInto},
+		traits::{AtLeast32BitUnsigned, One, Saturating, StaticLookup, UniqueSaturatedInto},
 		AccountId32,
 	};
 
 	type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
+	type BalanceOf<T> = <T as Config>::Balance;
 
 	#[pallet::config]
 	pub trait Config:
@@ -70,6 +76,16 @@ pub mod pallet {
 	{
 		type AddressMap: UniqueMultimap<Self::AccountId, VarAddress>;
 		type AssetMap: UniqueMap<AssetIdOf<Self>, DenomOf<Self>>;
+		type Balance: Member
+			+ Parameter
+			+ AtLeast32BitUnsigned
+			+ Default
+			+ Copy
+			+ MaybeSerializeDeserialize
+			+ MaxEncodedLen
+			+ TypeInfo
+			+ Into<<Self as pallet_balances::Config>::Balance>
+			+ Into<<Self as pallet_assets::Config>::Balance>;
 	}
 
 	#[pallet::pallet]
@@ -226,17 +242,17 @@ pub mod pallet {
 
 		#[pallet::call_index(3)]
 		#[pallet::weight({
-			use pallet_balances::weights::WeightInfo;
+			use pallet_assets::weights::WeightInfo;
 
-			<T as pallet_balances::Config>::WeightInfo::transfer_keep_alive()
+			<T as pallet_assets::Config>::WeightInfo::transfer()
 		})]
 		pub fn transfer(
 			origin: OriginFor<T>,
+			id: Option<T::AssetIdParameter>,
 			dest: VarAddress,
-			#[pallet::compact] value: <T as pallet_balances::Config>::Balance,
+			#[pallet::compact] value: BalanceOf<T>,
 		) -> DispatchResult {
-			let source = ensure_signed(origin.clone())?;
-
+			let who = ensure_signed(origin)?;
 			let dest: T::AccountId = match dest {
 				VarAddress::Cosmos(address) =>
 					<T as pallet_cosmos::Config>::AddressMapping::into_account_id(address.into()),
@@ -245,7 +261,18 @@ pub mod pallet {
 				VarAddress::Polkadot(address) => address.into(),
 			};
 
-			pallet_balances::Pallet::<T>::transfer(&source, &dest, value, Preserve).map(|_| ())
+			match id {
+				Some(id) => <pallet_assets::Pallet<T> as Mutate<T::AccountId>>::transfer(
+					id.into(),
+					&who,
+					&dest,
+					value.into(),
+					Expendable,
+				)
+				.map(|_| ()),
+				None => pallet_balances::Pallet::<T>::transfer(&who, &dest, value.into(), Preserve)
+					.map(|_| ()),
+			}
 		}
 	}
 }

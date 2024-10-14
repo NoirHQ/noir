@@ -136,7 +136,7 @@ export class AbciService implements ApiService {
 					height: Long.fromString(height.toString()),
 					codespace: '',
 				};
-			} catch (e: unknown) {
+			} catch (e: any) {
 				const message = e.toString();
 				const codespace = message.slice(message.indexOf('codespace:') + 'codespace:'.length, message.indexOf('code:')).trim();
 				const code = message.slice(message.indexOf('code:') + 'code:'.length, message.indexOf('}')).trim();

@@ -1,2 +1,3 @@
-# cosmos-api-sidecar
-Cosmos API Sidecar for Noir
+# Cosmos API Sidecar
+
+Cosmos API Sidecar
