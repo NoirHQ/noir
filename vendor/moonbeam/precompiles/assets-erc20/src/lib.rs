@@ -33,7 +33,7 @@ use frame_support::{
 	},
 };
 //use moonkit_xcm_primitives::AccountIdAssetIdConversion;
-use pallet_evm::AddressMapping;
+use pallet_evm::{AddressMapping, FrameSystemAccountProvider};
 use precompile_utils::prelude::*;
 #[cfg(not(test))]
 use sp_runtime::traits::Zero;
@@ -54,6 +54,8 @@ pub const SELECTOR_LOG_TRANSFER: [u8; 32] = keccak256!("Transfer(address,address
 
 /// Solidity selector of the Approval log, which is the Keccak of the Log signature.
 pub const SELECTOR_LOG_APPROVAL: [u8; 32] = keccak256!("Approval(address,address,uint256)");
+
+pub type AccountIdOf<Runtime> = <Runtime as frame_system::Config>::AccountId;
 
 /// Alias for the Balance type for the provided Runtime and Instance.
 pub type BalanceOf<Runtime, Instance = ()> = <Runtime as pallet_assets::Config<Instance>>::Balance;
@@ -113,15 +115,17 @@ impl<Runtime, Instance> Erc20AssetsPrecompileSet<Runtime, Instance> {
 impl<Runtime, Instance> Erc20AssetsPrecompileSet<Runtime, Instance>
 where
 	Instance: eip2612::InstanceToPrefix + 'static,
-	Runtime: pallet_assets::Config<Instance> + pallet_evm::Config + frame_system::Config,
+	Runtime: pallet_assets::Config<Instance>
+		+ pallet_evm::Config<AccountProvider = FrameSystemAccountProvider<Runtime>>
+		+ frame_system::Config,
 	Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
 	Runtime::RuntimeCall: From<pallet_assets::Call<Runtime, Instance>>,
-	<Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<Runtime::AccountId>>,
+	<Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<AccountIdOf<Runtime>>>,
 	BalanceOf<Runtime, Instance>: TryFrom<U256> + Into<U256> + solidity::Codec,
 	Runtime: AddressToAssetId<AssetIdOf<Runtime, Instance>>,
 	<<Runtime as frame_system::Config>::RuntimeCall as Dispatchable>::RuntimeOrigin: OriginTrait,
 	AssetIdOf<Runtime, Instance>: Display,
-	Runtime::AccountId: Into<H160>,
+	AccountIdOf<Runtime>: Into<H160>,
 {
 	/// PrecompileSet discriminant. Allows to knows if the address maps to an asset id,
 	/// and if this is the case which one.
@@ -176,7 +180,7 @@ where
 
 		// Fetch info.
 		let amount: U256 = {
-			let who: Runtime::AccountId = Runtime::AddressMapping::into_account_id(who);
+			let who: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(who);
 			pallet_assets::Pallet::<Runtime, Instance>::balance(asset_id, &who).into()
 		};
 
@@ -201,8 +205,8 @@ where
 
 		// Fetch info.
 		let amount: U256 = {
-			let owner: Runtime::AccountId = Runtime::AddressMapping::into_account_id(owner);
-			let spender: Runtime::AccountId = Runtime::AddressMapping::into_account_id(spender);
+			let owner: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(owner);
+			let spender: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(spender);
 
 			// Fetch info.
 			pallet_assets::Pallet::<Runtime, Instance>::allowance(asset_id, &owner, &spender).into()
@@ -246,7 +250,7 @@ where
 		value: U256,
 	) -> EvmResult {
 		let owner = Runtime::AddressMapping::into_account_id(owner);
-		let spender: Runtime::AccountId = Runtime::AddressMapping::into_account_id(spender);
+		let spender: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(spender);
 		// XXX: Need a general way to handle non-unified account
 		#[cfg(not(test))]
 		if frame_system::Account::<Runtime>::get(&spender).nonce.is_zero() {
@@ -348,10 +352,10 @@ where
 		let value = Self::u256_to_amount(value).in_field("value")?;
 
 		{
-			let caller: Runtime::AccountId =
+			let caller: AccountIdOf<Runtime> =
 				Runtime::AddressMapping::into_account_id(handle.context().caller);
-			let from: Runtime::AccountId = Runtime::AddressMapping::into_account_id(from.clone());
-			let to: Runtime::AccountId = Runtime::AddressMapping::into_account_id(to);
+			let from: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(from.clone());
+			let to: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(to);
 
 			// If caller is "from", it can spend as much as it wants from its own balance.
 			if caller != from {

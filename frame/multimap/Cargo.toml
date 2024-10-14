@@ -8,13 +8,13 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false }
 scale-info = { version = "2.11", default-features = false }
 
 [dev-dependencies]
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 
 [features]
 default = ["std"]

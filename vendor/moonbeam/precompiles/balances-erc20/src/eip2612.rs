@@ -20,6 +20,7 @@ use frame_support::{
 	ensure,
 	traits::{Get, Time},
 };
+use pallet_evm::FrameSystemAccountProvider;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -38,10 +39,11 @@ pub struct Eip2612<Runtime, Instance = ()>(PhantomData<(Runtime, Instance)>);
 
 impl<Runtime, Instance> Eip2612<Runtime, Instance>
 where
-	Runtime: pallet_balances::Config<Instance> + pallet_evm::Config,
+	Runtime: pallet_balances::Config<Instance>
+		+ pallet_evm::Config<AccountProvider = FrameSystemAccountProvider<Runtime>>,
 	Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
 	Runtime::RuntimeCall: From<pallet_balances::Call<Runtime, Instance>>,
-	<Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<Runtime::AccountId>>,
+	<Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<AccountIdOf<Runtime>>>,
 	BalanceOf<Runtime, Instance>: TryFrom<U256> + Into<U256>,
 	Runtime: Erc20Metadata<Instance>,
 	Instance: InstanceToPrefix + 'static,
@@ -136,8 +138,8 @@ where
 			let amount = Erc20BalancesPrecompile::<Runtime, Instance>::u256_to_amount(value)
 				.unwrap_or_else(|_| Bounded::max_value());
 
-			let owner: Runtime::AccountId = Runtime::AddressMapping::into_account_id(owner);
-			let spender: Runtime::AccountId = Runtime::AddressMapping::into_account_id(spender);
+			let owner: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(owner);
+			let spender: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(spender);
 			ApprovesStorage::<Runtime, Instance>::insert(owner, spender, amount);
 		}
 
