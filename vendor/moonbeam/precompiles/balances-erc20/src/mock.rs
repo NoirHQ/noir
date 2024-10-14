@@ -19,7 +19,7 @@
 use super::*;
 
 use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
-use pallet_evm::{EnsureAddressNever, EnsureAddressRoot};
+use pallet_evm::{EnsureAddressNever, EnsureAddressRoot, FrameSystemAccountProvider};
 use precompile_utils::{precompile_set::*, testing::MockAccount};
 use sp_core::{ConstU32, H256, U256};
 use sp_runtime::{
@@ -117,6 +117,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
+	type AccountProvider = FrameSystemAccountProvider<Self>;
 	type FeeCalculator = ();
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;

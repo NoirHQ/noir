@@ -25,7 +25,7 @@ use frame_support::{
 };
 
 use frame_system::{EnsureNever, EnsureRoot};
-use pallet_evm::{EnsureAddressNever, EnsureAddressRoot};
+use pallet_evm::{EnsureAddressNever, EnsureAddressRoot, FrameSystemAccountProvider};
 use precompile_utils::{
 	mock_account,
 	precompile_set::*,
@@ -164,6 +164,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
+	type AccountProvider = FrameSystemAccountProvider<Self>;
 	type FeeCalculator = ();
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
