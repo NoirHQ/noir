@@ -32,6 +32,7 @@ import {
 	AbciRpcHandler,
 	TxRpcHandler
 } from "./rpc";
+import { JsonRpcHandler } from "./handlers/jsonrpc";
 
 export class App {
 	config: IConfig;
@@ -125,6 +126,7 @@ export class App {
 		const txHandler = new TxHandler(this.services.get<TxService>('tx'));
 		const stakingHandler = new StakingHandler(this.services.get<StakingService>('staking'));
 		const wsHandler = new WebsocketHandler(this.jsonrpc);
+		const jsonrpcHandler = new JsonRpcHandler(this.jsonrpc);
 
 		this.server.get('/cosmos/bank/v1beta1/balances/:address', balanceHandler.handleGetBalance);
 		this.server.get('/cosmos/auth/v1beta1/accounts/:address', accountHandler.handleGetAccount);
@@ -134,7 +136,8 @@ export class App {
 		this.server.post('/cosmos/tx/v1beta1/simulate', txHandler.handlePostSimulate);
 		this.server.get('/cosmos/staking/v1beta1/delegations/:delegatorAddr', stakingHandler.handleGetStaking);
 		this.server.get('/cosmos/staking/v1beta1/delegators/:delegatorAddr/unbonding_delegations', stakingHandler.handleGetUnbondingDelegations);
-		this.server.get('/websocket', { websocket: true }, wsHandler.handlerMessage);
+		this.server.get('/websocket', { websocket: true }, wsHandler.handleMessage);
+		this.server.post('/', jsonrpcHandler.handleRequest)
 	}
 
 	async initJsonRpcServer() {
