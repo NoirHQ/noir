@@ -22,6 +22,7 @@ import {
 	BalanceHandler,
 	AccountHandler,
 	DistributionHandler,
+	JsonRpcHandler,
 	NodeInfoHandler,
 	TxHandler,
 	StakingHandler,
@@ -32,7 +33,6 @@ import {
 	AbciRpcHandler,
 	TxRpcHandler
 } from "./rpc";
-import { JsonRpcHandler } from "./handlers/jsonrpc";
 
 export class App {
 	config: IConfig;
