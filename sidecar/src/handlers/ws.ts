@@ -8,7 +8,7 @@ export class WebsocketHandler {
         this.jsonrpc = jsonrpc;
     }
 
-    handlerMessage = (connection: SocketStream) => {
+    handleMessage = (connection: SocketStream) => {
         connection.socket.on('message', async (message) => {
             const request = JSON.parse(message.toString());
             const response = await this.jsonrpc.receive(request);
