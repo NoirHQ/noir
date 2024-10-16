@@ -116,7 +116,7 @@ where
 			let amount = amt.amount.parse::<u128>().map_err(|_| RootError::InsufficientFee)?;
 
 			if amt.denom == T::NativeDenom::get() {
-				let _imbalance = T::NativeAsset::withdraw(
+				let imbalance = T::NativeAsset::withdraw(
 					acc,
 					amount.saturated_into(),
 					WithdrawReasons::TRANSACTION_PAYMENT,
@@ -124,11 +124,15 @@ where
 				)
 				.map_err(|_| RootError::InsufficientFunds)?;
 
-				// TODO: Resolve imbalance
+				if let Some(fee_collector) = T::FeeCollector::get() {
+					if T::NativeAsset::resolve_into_existing(&fee_collector, imbalance).is_err() {
+						panic!("Failed to resolve withdrawn fee");
+					}
+				}
 			} else {
 				let asset_id = T::AssetToDenom::try_convert(amt.denom.clone())
 					.map_err(|_| RootError::InsufficientFunds)?;
-				let _imbalance = T::Assets::withdraw(
+				let imbalance = T::Assets::withdraw(
 					asset_id,
 					acc,
 					amount.saturated_into(),
@@ -138,7 +142,10 @@ where
 				)
 				.map_err(|_| RootError::InsufficientFunds)?;
 
-				// TODO: Resolve imbalance
+				if let Some(fee_collector) = T::FeeCollector::get() {
+					T::Assets::resolve(&fee_collector, imbalance)
+						.expect("Failed to resolve withdrawn fee");
+				}
 			}
 		}
 
