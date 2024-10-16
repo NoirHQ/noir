@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::errors::CosmosError;
+use crate::{context::traits::Context, errors::CosmosError};
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
 
 pub trait AnteDecorator {
@@ -32,6 +32,24 @@ impl AnteDecorator for () {
 impl AnteDecorator for Tuple {
 	fn ante_handle(tx: &Tx, simulate: bool) -> Result<(), CosmosError> {
 		for_tuples!( #( Tuple::ante_handle(tx, simulate)?; )* );
+		Ok(())
+	}
+}
+
+pub trait PostDecorator<C: Context> {
+	fn post_handle(ctx: &mut C, tx: &Tx, simulate: bool) -> Result<(), CosmosError>;
+}
+
+impl<C: Context> PostDecorator<C> for () {
+	fn post_handle(_ctx: &mut C, _tx: &Tx, _simulate: bool) -> Result<(), CosmosError> {
+		Ok(())
+	}
+}
+
+#[impl_trait_for_tuples::impl_for_tuples(1, 12)]
+impl<C: Context> PostDecorator<C> for Tuple {
+	fn post_handle(ctx: &mut C, tx: &Tx, simulate: bool) -> Result<(), CosmosError> {
+		for_tuples!( #( Tuple::post_handle(ctx, tx, simulate)?; )* );
 		Ok(())
 	}
 }

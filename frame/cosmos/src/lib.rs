@@ -37,7 +37,7 @@ use pallet_cosmos_types::{
 	errors::{CosmosError, RootError},
 	events::traits::EventManager,
 	gas::traits::GasMeter,
-	handler::AnteDecorator,
+	handler::{AnteDecorator, PostDecorator},
 	msgservice::traits::MsgServiceRouter,
 	tx_msgs::FeeTx,
 };
@@ -150,6 +150,7 @@ pub mod pallet {
 	use np_cosmos::traits::ChainInfo;
 	use pallet_cosmos_types::{
 		context::traits::MinGasPrices, errors::CosmosError, events::CosmosEvent, gas::Gas,
+		handler::PostDecorator,
 	};
 	use pallet_cosmos_x_auth_signing::sign_mode_handler::traits::SignModeHandler;
 	use sp_runtime::traits::{Convert, TryConvert};
@@ -165,6 +166,7 @@ pub mod pallet {
 	pub enum Event {
 		AnteHandled(Vec<CosmosEvent>),
 		Executed { gas_wanted: u64, gas_used: u64, events: Vec<CosmosEvent> },
+		PostHandled(Vec<CosmosEvent>),
 	}
 
 	#[pallet::error]
@@ -223,6 +225,9 @@ pub mod pallet {
 
 		/// Ante handler for fee and auth.
 		type AnteHandler: AnteDecorator;
+
+		/// Post handler to perform custom post-processing.
+		type PostHandler: PostDecorator<Self::Context>;
 
 		/// Message filter for allowed messages.
 		type MsgFilter: Contains<Any>;
@@ -374,12 +379,10 @@ impl<T: Config> Pallet<T> {
 		)?;
 
 		let mut ctx = T::Context::new(gas_limit);
-		Self::run_tx(&mut ctx, &tx).map_err(|e| {
+		Self::run_tx(&mut ctx, &tx, false).map_err(|e| {
 			Error::<T>::CosmosError(e)
 				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
 		})?;
-
-		// TODO: Implement PostHandlers for refund functionality
 
 		Self::deposit_event(Event::Executed {
 			gas_wanted: gas_limit,
@@ -393,7 +396,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	pub fn run_tx(ctx: &mut T::Context, tx: &Tx) -> Result<(), CosmosError> {
+	pub fn run_tx(ctx: &mut T::Context, tx: &Tx, simulate: bool) -> Result<(), CosmosError> {
 		let base_gas = T::WeightToGas::convert(T::WeightInfo::base_weight());
 		ctx.gas_meter()
 			.consume_gas(base_gas, "base_gas")
@@ -405,6 +408,8 @@ impl<T: Config> Pallet<T> {
 			let handler = T::MsgServiceRouter::route(msg).ok_or(RootError::UnknownRequest)?;
 			handler.handle(ctx, msg)?;
 		}
+
+		T::PostHandler::post_handle(ctx, tx, simulate)?;
 
 		Ok(())
 	}
