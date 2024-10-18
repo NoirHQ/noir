@@ -8,7 +8,7 @@ import {
 import Long from "long";
 import { createHash } from "crypto";
 import { convertToCodespace } from "../constants/codespace";
-import { encodeTo, sleep } from "../utils";
+import { encodeTo } from "../utils";
 import { Event as CosmosEvent } from "cosmjs-types/tendermint/abci/types";
 import { Header } from "@polkadot/types/interfaces";
 import { ChainService } from "./chain";
