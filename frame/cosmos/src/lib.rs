@@ -39,6 +39,7 @@ use pallet_cosmos_types::{
 	gas::traits::GasMeter,
 	handler::{AnteDecorator, PostDecorator},
 	msgservice::traits::MsgServiceRouter,
+	tx::{GasInfo, SimulateResponse},
 	tx_msgs::FeeTx,
 };
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
@@ -258,6 +259,10 @@ pub mod pallet {
 		/// The gas limit for simulation.
 		#[pallet::constant]
 		type SimulationGasLimit: Get<u64>;
+
+		/// The collector account of a cosmos tx fee.
+		#[pallet::constant]
+		type FeeCollector: Get<Option<Self::AccountId>>;
 	}
 
 	pub mod config_preludes {
@@ -379,7 +384,12 @@ impl<T: Config> Pallet<T> {
 		)?;
 
 		let mut ctx = T::Context::new(gas_limit);
-		Self::run_tx(&mut ctx, &tx, false).map_err(|e| {
+		Self::run_tx(&mut ctx, &tx).map_err(|e| {
+			Error::<T>::CosmosError(e)
+				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
+		})?;
+
+		T::PostHandler::post_handle(&mut ctx, &tx, false).map_err(|e| {
 			Error::<T>::CosmosError(e)
 				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
 		})?;
@@ -396,7 +406,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	pub fn run_tx(ctx: &mut T::Context, tx: &Tx, simulate: bool) -> Result<(), CosmosError> {
+	pub fn run_tx(ctx: &mut T::Context, tx: &Tx) -> Result<(), CosmosError> {
 		let base_gas = T::WeightToGas::convert(T::WeightInfo::base_weight());
 		ctx.gas_meter()
 			.consume_gas(base_gas, "base_gas")
@@ -409,8 +419,22 @@ impl<T: Config> Pallet<T> {
 			handler.handle(ctx, msg)?;
 		}
 
-		T::PostHandler::post_handle(ctx, tx, simulate)?;
-
 		Ok(())
+	}
+
+	pub fn simulate(tx_bytes: Vec<u8>) -> Result<SimulateResponse, CosmosError> {
+		let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| RootError::TxDecodeError)?;
+
+		T::AnteHandler::ante_handle(&tx, true)?;
+
+		let mut ctx = T::Context::new(T::SimulationGasLimit::get());
+		Self::run_tx(&mut ctx, &tx)?;
+
+		T::PostHandler::post_handle(&mut ctx, &tx, true)?;
+
+		Ok(SimulateResponse {
+			gas_info: GasInfo { gas_wanted: 0, gas_used: ctx.gas_meter().consumed_gas() },
+			events: ctx.event_manager().events(),
+		})
 	}
 }

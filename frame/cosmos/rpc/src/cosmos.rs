@@ -16,12 +16,13 @@
 // limitations under the License.
 
 use crate::{internal_error, request_error};
-use cosmos_runtime_api::{ChainInfo, CosmosRuntimeApi, SimulateError, SimulateResponse};
+use cosmos_runtime_api::{ChainInfo, CosmosRuntimeApi, SimulateError};
 use futures::future::TryFutureExt;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 };
+use pallet_cosmos_types::tx::SimulateResponse;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
