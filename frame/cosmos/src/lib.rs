@@ -194,6 +194,7 @@ pub mod pallet {
 			> + fungibles::Mutate<Self::AccountId, Balance = Self::Balance, AssetId = Self::AssetId>
 			+ fungibles::Balanced<Self::AccountId, Balance = Self::Balance, AssetId = Self::AssetId>;
 
+		#[pallet::no_default]
 		type NativeDenom: Get<&'static str>;
 
 		type NativeAssetId: Get<Self::AssetId>;
@@ -208,6 +209,7 @@ pub mod pallet {
 		/// Converter between Weight and Gas.
 		type WeightToGas: Convert<Weight, Gas> + Convert<Gas, Weight>;
 
+		#[pallet::no_default]
 		type MinGasPrices: MinGasPrices;
 
 		/// Converter between AssetId and Denom.
@@ -217,6 +219,7 @@ pub mod pallet {
 		/// Context for executing transactions.
 		type Context: Context;
 
+		#[pallet::no_default]
 		type ChainInfo: ChainInfo;
 
 		/// Ante handler for fee and auth.
@@ -250,37 +253,14 @@ pub mod pallet {
 
 		/// The gas limit for simulation.
 		#[pallet::constant]
+		#[pallet::no_default]
 		type SimulationGasLimit: Get<u64>;
 	}
 
 	pub mod config_preludes {
 		use super::*;
-		use cosmos_sdk_proto::{
-			cosmos::bank::v1beta1::MsgSend,
-			cosmwasm::wasm::v1::{
-				MsgExecuteContract, MsgInstantiateContract2, MsgMigrateContract, MsgStoreCode,
-				MsgUpdateAdmin,
-			},
-		};
-		use frame_support::parameter_types;
-		use pallet_cosmos_types::any_match;
-
-		pub struct MsgFilter;
-		impl Contains<Any> for MsgFilter {
-			fn contains(msg: &Any) -> bool {
-				any_match!(
-					msg, {
-						MsgSend => true,
-						MsgStoreCode => true,
-						MsgInstantiateContract2 => true,
-						MsgExecuteContract => true,
-						MsgMigrateContract => true,
-						MsgUpdateAdmin => true,
-					},
-					false
-				)
-			}
-		}
+		use frame_support::{derive_impl, parameter_types, traits::Everything};
+		use pallet_cosmos_types::context::Context;
 
 		pub struct WeightToGas;
 		impl Convert<Weight, Gas> for WeightToGas {
@@ -296,10 +276,29 @@ pub mod pallet {
 
 		parameter_types! {
 			pub const MaxMemoCharacters: u64 = 256;
-			pub NativeDenom: &'static str = "azig";
 			pub const TxSigLimit: u64 = 7;
 			pub const MaxDenomLimit: u32 = 128;
 			pub const NativeAssetId: u32 = 0;
+		}
+
+		pub struct TestDefaultConfig;
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig, no_aggregated_types)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
+
+		#[frame_support::register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
+			type Balance = u128;
+			type AssetId = u32;
+			type NativeAssetId = NativeAssetId;
+			type WeightToGas = WeightToGas;
+			type Context = Context;
+			type AnteHandler = ();
+			type MaxMemoCharacters = MaxMemoCharacters;
+			type TxSigLimit = TxSigLimit;
+			type MaxDenomLimit = MaxDenomLimit;
+			type MsgFilter = Everything;
 		}
 	}
 
