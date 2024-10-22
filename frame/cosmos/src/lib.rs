@@ -226,7 +226,6 @@ pub mod pallet {
 		type AnteHandler: AnteDecorator;
 
 		/// Message filter for allowed messages.
-		#[pallet::no_default]
 		type MsgFilter: Contains<Any>;
 
 		/// Router for redirecting messages.
@@ -260,7 +259,7 @@ pub mod pallet {
 
 	pub mod config_preludes {
 		use super::*;
-		use frame_support::{derive_impl, parameter_types};
+		use frame_support::{derive_impl, parameter_types, traits::Everything};
 		use pallet_cosmos_types::context::Context;
 
 		pub struct WeightToGas;
@@ -299,6 +298,7 @@ pub mod pallet {
 			type MaxMemoCharacters = MaxMemoCharacters;
 			type TxSigLimit = TxSigLimit;
 			type MaxDenomLimit = MaxDenomLimit;
+			type MsgFilter = Everything;
 		}
 	}
 
