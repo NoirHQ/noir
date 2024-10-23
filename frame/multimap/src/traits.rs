@@ -164,8 +164,8 @@ pub mod in_mem {
 	};
 
 	thread_local! {
-		static UNIQUE_MULTIMAP: RefCell<BTreeMap<Vec<u8>, BTreeSet<Vec<u8>>>> = RefCell::new(BTreeMap::new());
-		static UNIQUE_MULTIMAP_INDEX: RefCell<BTreeMap<Vec<u8>, Vec<u8>>> = RefCell::new(BTreeMap::new());
+		static UNIQUE_MULTIMAP: RefCell<BTreeMap<Vec<u8>, BTreeSet<Vec<u8>>>> = const { RefCell::new(BTreeMap::new()) };
+		static UNIQUE_MULTIMAP_INDEX: RefCell<BTreeMap<Vec<u8>, Vec<u8>>> = const { RefCell::new(BTreeMap::new()) };
 	}
 
 	pub struct UniqueMultimap<K, V>(PhantomData<(K, V)>);
@@ -183,19 +183,19 @@ pub mod in_mem {
 				let mut index = index.borrow_mut();
 				if let Some(existing_key) = index.get(&value) {
 					if existing_key != &key {
-						return Err("Duplicate value");
+						Err("Duplicate value")
 					} else {
-						return Ok(false);
+						Ok(false)
 					}
 				} else {
 					index.insert(value.clone(), key.clone());
-					return Ok(true);
+					Ok(true)
 				}
 			}) {
 				Ok(true) => {
 					UNIQUE_MULTIMAP.with(|map| {
 						let mut map = map.borrow_mut();
-						map.entry(key).or_insert_with(BTreeSet::new).insert(value);
+						map.entry(key).or_default().insert(value);
 					});
 					Ok(true)
 				},
