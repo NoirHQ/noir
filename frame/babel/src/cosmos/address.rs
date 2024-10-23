@@ -42,7 +42,7 @@ where
 pub struct AccountToAddr<T>(PhantomData<T>);
 impl<T> Convert<AccountIdOf<T>, String> for AccountToAddr<T>
 where
-	T: pallet_cosmwasm::Config + unify_account::Config,
+	T: pallet_cosmwasm::Config + unify_account::Config<AccountId = AccountIdOf<T>>,
 {
 	fn convert(account: AccountIdOf<T>) -> String {
 		let addresses = T::AddressMap::get(&account);
@@ -61,7 +61,7 @@ where
 
 impl<T> Convert<String, Result<AccountIdOf<T>, ()>> for AccountToAddr<T>
 where
-	T: pallet_cosmwasm::Config + unify_account::Config,
+	T: pallet_cosmwasm::Config + unify_account::Config<AccountId = AccountIdOf<T>>,
 {
 	fn convert(address: String) -> Result<AccountIdOf<T>, ()> {
 		let (_hrp, address_raw) = acc_address_from_bech32(&address).map_err(|_| ())?;
@@ -71,7 +71,7 @@ where
 
 impl<T> Convert<Vec<u8>, Result<AccountIdOf<T>, ()>> for AccountToAddr<T>
 where
-	T: pallet_cosmwasm::Config + unify_account::Config,
+	T: pallet_cosmwasm::Config + unify_account::Config<AccountId = AccountIdOf<T>>,
 {
 	fn convert(address: Vec<u8>) -> Result<AccountIdOf<T>, ()> {
 		match address.len() {

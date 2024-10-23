@@ -49,7 +49,7 @@ sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable24
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 
 [dev-dependencies]
-hex = "0.4.3"
+const-hex = "1.13"
 # substrate
 pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
