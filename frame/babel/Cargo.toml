@@ -50,6 +50,20 @@ sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "sta
 
 [dev-dependencies]
 hex = "0.4.3"
+# substrate
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+# frontier
+pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409" }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409" }
+# noir
+np-runtime = { workspace = true, default-features = true }
+pallet-cosmos = { workspace = true, default-features = true }
+pallet-cosmos-x-auth = { workspace = true, default-features = false }
+pallet-cosmwasm = { workspace = true, default-features = true }
+pallet-multimap = { workspace = true, default-features = true }
 
 [features]
 default = ["std", "pallet"]

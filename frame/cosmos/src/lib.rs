@@ -203,7 +203,6 @@ pub mod pallet {
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Weight information for extrinsics in this pallet.
-		#[pallet::no_default]
 		type WeightInfo: WeightInfo;
 
 		/// Converter between Weight and Gas.
@@ -253,13 +252,13 @@ pub mod pallet {
 
 		/// The gas limit for simulation.
 		#[pallet::constant]
-		#[pallet::no_default]
 		type SimulationGasLimit: Get<u64>;
 	}
 
 	pub mod config_preludes {
 		use super::*;
 		use frame_support::{derive_impl, parameter_types, traits::Everything};
+		use frame_system::limits::BlockWeights;
 		use pallet_cosmos_types::context::Context;
 
 		pub struct WeightToGas;
@@ -279,13 +278,14 @@ pub mod pallet {
 			pub const TxSigLimit: u64 = 7;
 			pub const MaxDenomLimit: u32 = 128;
 			pub const NativeAssetId: u32 = 0;
+			pub SimulationGasLimit: u64 = BlockWeights::default().base_block.ref_time();
 		}
 
 		pub struct TestDefaultConfig;
-		#[derive_impl(frame_system::config_preludes::TestDefaultConfig, no_aggregated_types)]
+		#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig, no_aggregated_types)]
 		impl frame_system::DefaultConfig for TestDefaultConfig {}
 
-		#[frame_support::register_default_impl(TestDefaultConfig)]
+		#[register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
 			#[inject_runtime_type]
 			type RuntimeEvent = ();
@@ -299,6 +299,8 @@ pub mod pallet {
 			type TxSigLimit = TxSigLimit;
 			type MaxDenomLimit = MaxDenomLimit;
 			type MsgFilter = Everything;
+			type WeightInfo = ();
+			type SimulationGasLimit = SimulationGasLimit;
 		}
 	}
 
