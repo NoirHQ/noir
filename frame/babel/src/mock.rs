@@ -16,8 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{self as frame_babel, cosmos::precompile::Precompiles, ethereum::EnsureAddress};
-use bech32::{Bech32, Hrp};
+use crate as frame_babel;
 use cosmos_sdk_proto::{
 	cosmos::bank::v1beta1::MsgSend,
 	cosmwasm::wasm::v1::{
@@ -26,7 +25,15 @@ use cosmos_sdk_proto::{
 	},
 	Any,
 };
-use frame_babel::VarAddress;
+use frame_babel::{
+	cosmos::{
+		address::{AccountToAddr, AddressMapping as CosmosAddressMapping},
+		precompile::Precompiles,
+	},
+	ethereum::{AddressMapping as EthereumAddressMapping, EnsureAddress},
+	extensions::unify_account,
+	VarAddress,
+};
 use frame_support::{
 	derive_impl,
 	instances::{Instance1, Instance2},
@@ -35,15 +42,13 @@ use frame_support::{
 	PalletId,
 };
 use frame_system::EnsureRoot;
-use np_babel::{CosmosAddress, EthereumAddress};
-use np_cosmos::traits::{ChainInfo, CosmosHub};
+use np_cosmos::traits::CosmosHub;
 use np_runtime::{AccountId32, MultiSigner};
 use pallet_cosmos::{
 	config_preludes::{MaxDenomLimit, NativeAssetId},
 	types::DenomOf,
 };
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32,
 	any_match,
 	coin::DecCoin,
 	context::{self, Context},
@@ -60,9 +65,9 @@ use pallet_cosmos_x_wasm::msgs::{
 };
 use pallet_cosmwasm::instrument::CostRules;
 use pallet_multimap::traits::UniqueMap;
-use sp_core::{ConstU128, H160, H256};
+use sp_core::{ConstU128, H256};
 use sp_runtime::{
-	traits::{AccountIdConversion, Convert, IdentityLookup, TryConvert},
+	traits::{IdentityLookup, TryConvert},
 	BoundedVec,
 };
 
@@ -160,20 +165,11 @@ impl pallet_sudo::Config for Test {}
 #[derive_impl(pallet_ethereum::config_preludes::TestDefaultConfig)]
 impl pallet_ethereum::Config for Test {}
 
-pub struct EthereumAddressMapping;
-impl pallet_evm::AddressMapping<AccountId> for EthereumAddressMapping {
-	fn into_account_id(who: H160) -> AccountId {
-		let address = EthereumAddress::from(who);
-		AddressMap::find_key(VarAddress::Ethereum(address.clone()))
-			.unwrap_or_else(|| address.into_account_truncating())
-	}
-}
-
 #[derive_impl(pallet_evm::config_preludes::TestDefaultConfig)]
 impl pallet_evm::Config for Test {
 	type CallOrigin = EnsureAddress<AccountId>;
 	type WithdrawOrigin = EnsureAddress<AccountId>;
-	type AddressMapping = EthereumAddressMapping;
+	type AddressMapping = EthereumAddressMapping<Self>;
 	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
 	type Currency = Balances;
@@ -251,18 +247,9 @@ impl msgservice::traits::MsgServiceRouter<Context> for MsgServiceRouter {
 	}
 }
 
-pub struct CosmosAddressMapping;
-impl pallet_cosmos::AddressMapping<AccountId> for CosmosAddressMapping {
-	fn into_account_id(who: H160) -> AccountId {
-		let address = CosmosAddress::from(who);
-		AddressMap::find_key(VarAddress::Cosmos(address.clone()))
-			.unwrap_or_else(|| address.into_account_truncating())
-	}
-}
-
 #[derive_impl(pallet_cosmos::config_preludes::TestDefaultConfig)]
 impl pallet_cosmos::Config for Test {
-	type AddressMapping = CosmosAddressMapping;
+	type AddressMapping = CosmosAddressMapping<Self>;
 	type Balance = Balance;
 	type AssetId = AssetId;
 	type NativeAsset = Balances;
@@ -295,41 +282,6 @@ parameter_types! {
 	pub WasmCostRules: CostRules<Test> = Default::default();
 }
 
-pub struct AccountToAddr;
-impl Convert<AccountId, String> for AccountToAddr {
-	fn convert(account: AccountId) -> String {
-		let addresses = AddressMap::get(&account);
-		let address: Option<&CosmosAddress> = addresses.iter().find_map(|address| match address {
-			VarAddress::Cosmos(address) => Some(address),
-			_ => None,
-		});
-		let address_raw = match address {
-			Some(address) => address.as_ref(),
-			None => account.as_ref(),
-		};
-		let hrp = Hrp::parse(CosmosHub::bech32_prefix()).unwrap();
-		bech32::encode::<Bech32>(hrp, address_raw).unwrap()
-	}
-}
-impl Convert<String, Result<AccountId, ()>> for AccountToAddr {
-	fn convert(address: String) -> Result<AccountId, ()> {
-		let (_hrp, address_raw) = acc_address_from_bech32(&address).map_err(|_| ())?;
-		Self::convert(address_raw)
-	}
-}
-impl Convert<Vec<u8>, Result<AccountId, ()>> for AccountToAddr {
-	fn convert(address: Vec<u8>) -> Result<AccountId, ()> {
-		match address.len() {
-			20 => {
-				let address = CosmosAddress::from(H160::from_slice(&address));
-				AddressMap::find_key(VarAddress::Cosmos(address)).ok_or(())
-			},
-			32 => Ok(H256::from_slice(&address).into()),
-			_ => Err(()),
-		}
-	}
-}
-
 impl pallet_cosmwasm::Config for Test {
 	const MAX_FRAMES: u8 = 64;
 	type RuntimeEvent = RuntimeEvent;
@@ -338,7 +290,7 @@ impl pallet_cosmwasm::Config for Test {
 	type MaxCodeSize = ConstU32<{ 1024 * 1024 }>;
 	type MaxInstrumentedCodeSize = ConstU32<{ 2 * 1024 * 1024 }>;
 	type MaxMessageSize = ConstU32<{ 64 * 1024 }>;
-	type AccountToAddr = AccountToAddr;
+	type AccountToAddr = AccountToAddr<Self>;
 	type AssetToDenom = AssetToDenom;
 	type Balance = Balance;
 	type AssetId = AssetId;
@@ -392,4 +344,9 @@ impl frame_babel::Config for Test {
 	type AddressMap = AddressMap;
 	type AssetMap = AssetMap;
 	type Balance = Balance;
+}
+
+impl unify_account::Config for Test {
+	type AddressMap = AddressMap;
+	type DrainBalance = ();
 }
