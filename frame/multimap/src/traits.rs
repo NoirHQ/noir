@@ -17,6 +17,9 @@
 
 use crate::*;
 
+#[cfg(feature = "std")]
+pub mod in_mem;
+
 use alloc::collections::BTreeSet;
 use frame_support::ensure;
 use parity_scale_codec::{Codec, EncodeLike, FullCodec};
@@ -151,119 +154,5 @@ impl<T: Config<I>, I: 'static> UniqueMap<T::Key, T::Value> for Pallet<T, I> {
 
 	fn remove<K: EncodeLike<T::Key>>(key: K) {
 		Map::<T, I>::remove(key);
-	}
-}
-
-#[cfg(feature = "std")]
-pub mod in_mem {
-	use parity_scale_codec::{EncodeLike, FullCodec};
-	use std::{
-		cell::RefCell,
-		collections::{BTreeMap, BTreeSet},
-		marker::PhantomData,
-	};
-
-	thread_local! {
-		static UNIQUE_MULTIMAP: RefCell<BTreeMap<Vec<u8>, BTreeSet<Vec<u8>>>> = const { RefCell::new(BTreeMap::new()) };
-		static UNIQUE_MULTIMAP_INDEX: RefCell<BTreeMap<Vec<u8>, Vec<u8>>> = const { RefCell::new(BTreeMap::new()) };
-	}
-
-	pub struct UniqueMultimap<K, V>(PhantomData<(K, V)>);
-
-	impl<K: FullCodec, V: FullCodec + Ord> super::UniqueMultimap<K, V> for UniqueMultimap<K, V> {
-		type Error = &'static str;
-
-		fn try_insert<KeyArg: EncodeLike<K>, ValArg: EncodeLike<V>>(
-			key: KeyArg,
-			value: ValArg,
-		) -> Result<bool, Self::Error> {
-			let key = key.encode();
-			let value = value.encode();
-			match UNIQUE_MULTIMAP_INDEX.with(|index| {
-				let mut index = index.borrow_mut();
-				if let Some(existing_key) = index.get(&value) {
-					if existing_key != &key {
-						Err("Duplicate value")
-					} else {
-						Ok(false)
-					}
-				} else {
-					index.insert(value.clone(), key.clone());
-					Ok(true)
-				}
-			}) {
-				Ok(true) => {
-					UNIQUE_MULTIMAP.with(|map| {
-						let mut map = map.borrow_mut();
-						map.entry(key).or_default().insert(value);
-					});
-					Ok(true)
-				},
-				Ok(false) => Ok(false),
-				Err(e) => Err(e),
-			}
-		}
-
-		fn get<KeyArg: EncodeLike<K>>(key: KeyArg) -> BTreeSet<V> {
-			let key = key.encode();
-			UNIQUE_MULTIMAP.with(|map| {
-				map.borrow()
-					.get(&key)
-					.map(|values| {
-						values
-							.iter()
-							.map(|value| V::decode(&mut &value[..]).expect("Decoding failed"))
-							.collect()
-					})
-					.unwrap_or_default()
-			})
-		}
-
-		fn find_key<ValArg: EncodeLike<V>>(value: ValArg) -> Option<K> {
-			let value = value.encode();
-			UNIQUE_MULTIMAP_INDEX.with(|index| {
-				index
-					.borrow()
-					.get(&value)
-					.map(|key| K::decode(&mut &key[..]).expect("Decoding failed"))
-			})
-		}
-
-		fn remove<KeyArg: EncodeLike<K>, ValArg: EncodeLike<V>>(
-			key: KeyArg,
-			value: ValArg,
-		) -> bool {
-			let key = key.encode();
-			let value = value.encode();
-			if UNIQUE_MULTIMAP_INDEX.with(|index| {
-				let mut index = index.borrow_mut();
-				index.remove(&value).is_some()
-			}) {
-				UNIQUE_MULTIMAP.with(|map| {
-					let mut map = map.borrow_mut();
-					if let Some(values) = map.get_mut(&key) {
-						values.remove(&value);
-					}
-				});
-				true
-			} else {
-				false
-			}
-		}
-
-		fn remove_all<KeyArg: EncodeLike<K>>(key: KeyArg) -> bool {
-			let key = key.encode();
-			if let Some(values) = UNIQUE_MULTIMAP.with(|map| map.borrow_mut().remove(&key)) {
-				UNIQUE_MULTIMAP_INDEX.with(|index| {
-					let mut index = index.borrow_mut();
-					for value in values {
-						index.remove(&value);
-					}
-				});
-				true
-			} else {
-				false
-			}
-		}
 	}
 }
