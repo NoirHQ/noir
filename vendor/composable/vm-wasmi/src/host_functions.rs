@@ -278,11 +278,11 @@ where
 	>(&vm, message_hash_ptr as u32)?;
 	let signature = passthrough_out::<
 		WasmiVM<V, S>,
-		ConstantReadLimit<{ constants::EDCSA_SIGNATURE_LENGTH }>,
+		ConstantReadLimit<{ constants::ECDSA_SIGNATURE_LENGTH }>,
 	>(&vm, signature_ptr as u32)?;
 	let public_key = passthrough_out::<
 		WasmiVM<V, S>,
-		ConstantReadLimit<{ constants::MAX_LENGTH_EDCSA_PUBKEY_LENGTH }>,
+		ConstantReadLimit<{ constants::MAX_LENGTH_ECDSA_PUBKEY_LENGTH }>,
 	>(&vm, public_key_ptr as u32)?;
 
 	let result = vm.secp256k1_verify(&message_hash, &signature, &public_key)?;
@@ -313,7 +313,7 @@ where
 	>(&vm, message_hash_ptr as u32)?;
 	let signature = passthrough_out::<
 		WasmiVM<V, S>,
-		ConstantReadLimit<{ constants::EDCSA_SIGNATURE_LENGTH }>,
+		ConstantReadLimit<{ constants::ECDSA_SIGNATURE_LENGTH }>,
 	>(&vm, signature_ptr as u32)?;
 
 	if let Ok(pubkey) =
