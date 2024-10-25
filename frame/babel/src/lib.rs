@@ -26,6 +26,8 @@ pub mod cosmos;
 #[cfg(feature = "ethereum")]
 pub mod ethereum;
 pub mod extensions;
+#[cfg(test)]
+mod mock;
 
 pub use extensions::unify_account::UnifyAccount;
 pub use np_babel::VarAddress;

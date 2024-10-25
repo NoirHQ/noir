@@ -17,10 +17,17 @@
 
 use core::marker::PhantomData;
 use frame_support::{dispatch::DispatchClass, weights::Weight};
+use frame_system::limits::BlockWeights;
 use sp_core::Get;
 
 pub trait WeightInfo {
 	fn base_weight() -> Weight;
+}
+
+impl WeightInfo for () {
+	fn base_weight() -> Weight {
+		BlockWeights::default().per_class.get(DispatchClass::Normal).base_extrinsic
+	}
 }
 
 pub struct CosmosWeight<T>(PhantomData<T>);
