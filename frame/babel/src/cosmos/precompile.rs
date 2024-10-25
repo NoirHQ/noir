@@ -141,6 +141,6 @@ mod tests {
 		let ExecuteMsg::Dispatch { input } =
 			serde_json_wasm::from_slice(message.as_bytes()).unwrap();
 
-		assert_eq!(input, hex::decode("0a030090b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe220f0000c16ff28623").unwrap());
+		assert_eq!(input, const_hex::decode("0a030090b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe220f0000c16ff28623").unwrap());
 	}
 }

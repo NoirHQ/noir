@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::traits::AccountIdProvider;
 use core::marker::PhantomData;
 use frame_support::traits::tokens::{fungible, Fortitude, Preservation};
-use np_babel::{CosmosAddress, EthereumAddress, VarAddress};
+use np_babel::VarAddress;
 use pallet_multimap::traits::UniqueMultimap;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -28,12 +29,14 @@ use sp_runtime::{
 	transaction_validity::{TransactionValidityError, ValidTransaction},
 };
 
+type AccountIdOf<T> = <T as AccountIdProvider>::AccountId;
+
 /// A configuration for UnifyAccount signed extension.
-pub trait Config: frame_system::Config<AccountId: From<H256> + TryInto<ecdsa::Public>> {
+pub trait Config: AccountIdProvider<AccountId: From<H256> + TryInto<ecdsa::Public>> {
 	/// A map from account to addresses.
-	type AddressMap: UniqueMultimap<Self::AccountId, VarAddress>;
+	type AddressMap: UniqueMultimap<AccountIdOf<Self>, VarAddress>;
 	/// Drain account balance when unifying accounts.
-	type DrainBalance: DrainBalance<Self::AccountId>;
+	type DrainBalance: DrainBalance<AccountIdOf<Self>>;
 }
 
 /// Unifies the accounts associated with the same public key.
@@ -56,11 +59,11 @@ impl<T> UnifyAccount<T> {
 }
 
 impl<T: Config> UnifyAccount<T> {
-	pub fn unify_ecdsa(who: &T::AccountId) -> Result<(), &'static str> {
+	pub fn unify_ecdsa(who: &AccountIdOf<T>) -> Result<(), &'static str> {
 		if let Ok(public) = who.clone().try_into() {
 			#[cfg(feature = "ethereum")]
 			{
-				let address = EthereumAddress::from(public);
+				let address = np_babel::EthereumAddress::from(public);
 				let interim = address.clone().into_account_truncating();
 				T::DrainBalance::drain_balance(&interim, who)?;
 				T::AddressMap::try_insert(who, VarAddress::Ethereum(address))
@@ -68,7 +71,7 @@ impl<T: Config> UnifyAccount<T> {
 			}
 			#[cfg(feature = "cosmos")]
 			{
-				let address = CosmosAddress::from(public);
+				let address = np_babel::CosmosAddress::from(public);
 				let interim = address.clone().into_account_truncating();
 				T::DrainBalance::drain_balance(&interim, who)?;
 				T::AddressMap::try_insert(who, VarAddress::Cosmos(address))
@@ -105,8 +108,11 @@ impl<T> core::fmt::Debug for UnifyAccount<T> {
 	}
 }
 
-impl<T: Config> SignedExtension for UnifyAccount<T> {
-	type AccountId = T::AccountId;
+impl<T> SignedExtension for UnifyAccount<T>
+where
+	T: Config + frame_system::Config<AccountId = AccountIdOf<T>>,
+{
+	type AccountId = AccountIdOf<T>;
 	type Call = T::RuntimeCall;
 	type AdditionalSigned = ();
 	type Pre = ();
@@ -165,5 +171,42 @@ where
 		T::transfer(src, dest, amount, Preservation::Expendable)
 			.map_err(|_| "account draining failed")
 			.map(|_| amount)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use np_runtime::{AccountId32, MultiSigner};
+
+	type AccountId = AccountId32<MultiSigner>;
+
+	struct MockConfig;
+
+	impl Config for MockConfig {
+		type AddressMap = pallet_multimap::traits::in_mem::UniqueMultimap<AccountId, VarAddress>;
+		type DrainBalance = ();
+	}
+
+	impl AccountIdProvider for MockConfig {
+		type AccountId = AccountId;
+	}
+
+	fn dev_public() -> ecdsa::Public {
+		const_hex::decode_to_array(
+			b"02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f",
+		)
+		.unwrap()
+		.into()
+	}
+
+	#[test]
+	fn unify_ecdsa_works() {
+		let who = AccountId::from(dev_public());
+		let _ = UnifyAccount::<MockConfig>::unify_ecdsa(&who);
+		let cosmos = VarAddress::Cosmos(dev_public().into());
+		assert_eq!(<MockConfig as Config>::AddressMap::find_key(cosmos), Some(who.clone()));
+		let ethereum = VarAddress::Ethereum(dev_public().into());
+		assert_eq!(<MockConfig as Config>::AddressMap::find_key(ethereum), Some(who));
 	}
 }

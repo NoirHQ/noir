@@ -17,6 +17,9 @@
 
 use crate::*;
 
+#[cfg(feature = "std")]
+pub mod in_mem;
+
 use alloc::collections::BTreeSet;
 use frame_support::ensure;
 use parity_scale_codec::{Codec, EncodeLike, FullCodec};

@@ -21,13 +21,15 @@
 
 extern crate alloc;
 
+#[cfg(test)]
+mod mock;
+
 #[cfg(feature = "cosmos")]
 pub mod cosmos;
 #[cfg(feature = "ethereum")]
 pub mod ethereum;
 pub mod extensions;
-#[cfg(test)]
-mod mock;
+pub mod traits;
 
 pub use extensions::unify_account::UnifyAccount;
 pub use np_babel::VarAddress;
