@@ -721,10 +721,10 @@ pub mod constants {
 	pub const MAX_LENGTH_ABORT: usize = 2 * MI;
 	/// Max length of a message hash
 	pub const MAX_LENGTH_MESSAGE_HASH: usize = 32;
-	/// Length of an edcsa signature
-	pub const EDCSA_SIGNATURE_LENGTH: usize = 64;
-	/// Max length for edcsa public key
-	pub const MAX_LENGTH_EDCSA_PUBKEY_LENGTH: usize = 65;
+	/// Length of an ecdsa signature
+	pub const ECDSA_SIGNATURE_LENGTH: usize = 64;
+	/// Max length for ecdsa public key
+	pub const MAX_LENGTH_ECDSA_PUBKEY_LENGTH: usize = 65;
 	/// Length of an eddsa public key
 	pub const EDDSA_PUBKEY_LENGTH: usize = 32;
 }
