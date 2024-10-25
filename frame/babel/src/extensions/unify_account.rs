@@ -77,6 +77,14 @@ impl<T: Config> UnifyAccount<T> {
 				T::AddressMap::try_insert(who, VarAddress::Cosmos(address))
 					.map_err(|_| "account unification failed: cosmos")?;
 			}
+			#[cfg(feature = "nostr")]
+			{
+				let address = np_babel::NostrAddress::from(public);
+				let interim = address.clone().into_account_truncating();
+				T::DrainBalance::drain_balance(&interim, who)?;
+				T::AddressMap::try_insert(who, VarAddress::Nostr(address))
+					.map_err(|_| "account unification failed: cosmos")?;
+			}
 		}
 		Ok(())
 	}
@@ -207,6 +215,11 @@ mod tests {
 		let cosmos = VarAddress::Cosmos(dev_public().into());
 		assert_eq!(<MockConfig as Config>::AddressMap::find_key(cosmos), Some(who.clone()));
 		let ethereum = VarAddress::Ethereum(dev_public().into());
-		assert_eq!(<MockConfig as Config>::AddressMap::find_key(ethereum), Some(who));
+		assert_eq!(<MockConfig as Config>::AddressMap::find_key(ethereum), Some(who.clone()));
+		#[cfg(feature = "nostr")]
+		{
+			let nostr = VarAddress::Nostr(dev_public().into());
+			assert_eq!(<MockConfig as Config>::AddressMap::find_key(nostr), Some(who));
+		}
 	}
 }

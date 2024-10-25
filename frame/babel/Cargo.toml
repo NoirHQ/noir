@@ -139,6 +139,9 @@ ethereum = [
 	"pallet-evm-precompile-simple",
 	"precompile-utils",
 ]
+nostr = [
+	"np-babel/nostr",
+]
 pallet = [
 	"cosmos",
 	"ethereum",
