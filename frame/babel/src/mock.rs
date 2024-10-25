@@ -157,6 +157,8 @@ impl pallet_assets::Config for Test {
 	type MetadataDepositBase = ConstU128<0>;
 	type MetadataDepositPerByte = ConstU128<0>;
 	type ApprovalDeposit = ConstU128<0>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 #[derive_impl(pallet_sudo::config_preludes::TestDefaultConfig)]
