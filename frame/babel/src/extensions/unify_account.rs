@@ -18,7 +18,10 @@
 
 use crate::traits::AccountIdProvider;
 use core::marker::PhantomData;
-use frame_support::traits::tokens::{fungible, Fortitude, Preservation};
+use frame_support::traits::{
+	tokens::{fungible, Fortitude, Preservation},
+	OnKilledAccount as OnKilledAccountT,
+};
 use np_babel::VarAddress;
 use pallet_multimap::traits::UniqueMultimap;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -174,6 +177,14 @@ where
 	}
 }
 
+pub struct OnKilledAccount<T: Config>(PhantomData<T>);
+
+impl<T: Config> OnKilledAccountT<T::AccountId> for OnKilledAccount<T> {
+	fn on_killed_account(who: &T::AccountId) {
+		T::AddressMap::remove_all(who);
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -208,5 +219,14 @@ mod tests {
 		assert_eq!(<MockConfig as Config>::AddressMap::find_key(cosmos), Some(who.clone()));
 		let ethereum = VarAddress::Ethereum(dev_public().into());
 		assert_eq!(<MockConfig as Config>::AddressMap::find_key(ethereum), Some(who));
+	}
+
+	#[test]
+	fn on_killed_account_works() {
+		let who = AccountId::from(dev_public());
+		let _ = UnifyAccount::<MockConfig>::unify_ecdsa(&who);
+		assert!(!<MockConfig as Config>::AddressMap::get(&who).is_empty());
+		OnKilledAccount::<MockConfig>::on_killed_account(&who);
+		assert!(<MockConfig as Config>::AddressMap::get(&who).is_empty());
 	}
 }
