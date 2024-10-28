@@ -55,6 +55,7 @@ pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 # frontier
 pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409" }
 pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409" }
