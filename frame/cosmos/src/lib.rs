@@ -259,10 +259,6 @@ pub mod pallet {
 		/// The gas limit for simulation.
 		#[pallet::constant]
 		type SimulationGasLimit: Get<u64>;
-
-		/// The collector account of a cosmos tx fee.
-		#[pallet::constant]
-		type FeeCollector: Get<Option<Self::AccountId>>;
 	}
 
 	pub mod config_preludes {
@@ -305,6 +301,7 @@ pub mod pallet {
 			type WeightToGas = WeightToGas;
 			type Context = Context;
 			type AnteHandler = ();
+			type PostHandler = ();
 			type MaxMemoCharacters = MaxMemoCharacters;
 			type TxSigLimit = TxSigLimit;
 			type MaxDenomLimit = MaxDenomLimit;
