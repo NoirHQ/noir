@@ -20,6 +20,7 @@ members = [
 	"primitives/ethereum",
 	"primitives/nostr",
 	"primitives/runtime",
+	"primitives/solana",
 	"runtime/common",
 	"vendor/composable/composable-support",
 	"vendor/composable/vm",
@@ -55,6 +56,7 @@ np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-nostr = { path = "primitives/nostr", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
+np-solana = { path = "primitives/solana", default-features = false }
 pallet-cosmos = { path = "frame/cosmos", default-features = false }
 pallet-cosmos-types = { path = "frame/cosmos/types", default-features = false }
 pallet-cosmos-x-auth = { path = "frame/cosmos/x/auth", default-features = false }
