@@ -37,8 +37,9 @@ use pallet_cosmos_types::{
 	errors::{CosmosError, RootError},
 	events::traits::EventManager,
 	gas::traits::GasMeter,
-	handler::AnteDecorator,
+	handler::{AnteDecorator, PostDecorator},
 	msgservice::traits::MsgServiceRouter,
+	tx::{GasInfo, SimulateResponse},
 	tx_msgs::FeeTx,
 };
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
@@ -150,6 +151,7 @@ pub mod pallet {
 	use np_cosmos::traits::ChainInfo;
 	use pallet_cosmos_types::{
 		context::traits::MinGasPrices, errors::CosmosError, events::CosmosEvent, gas::Gas,
+		handler::PostDecorator,
 	};
 	use pallet_cosmos_x_auth_signing::sign_mode_handler::traits::SignModeHandler;
 	use sp_runtime::traits::{Convert, TryConvert};
@@ -165,6 +167,7 @@ pub mod pallet {
 	pub enum Event {
 		AnteHandled(Vec<CosmosEvent>),
 		Executed { gas_wanted: u64, gas_used: u64, events: Vec<CosmosEvent> },
+		PostHandled(Vec<CosmosEvent>),
 	}
 
 	#[pallet::error]
@@ -223,6 +226,9 @@ pub mod pallet {
 
 		/// Ante handler for fee and auth.
 		type AnteHandler: AnteDecorator;
+
+		/// Post handler to perform custom post-processing.
+		type PostHandler: PostDecorator<Self::Context>;
 
 		/// Message filter for allowed messages.
 		type MsgFilter: Contains<Any>;
@@ -295,6 +301,7 @@ pub mod pallet {
 			type WeightToGas = WeightToGas;
 			type Context = Context;
 			type AnteHandler = ();
+			type PostHandler = ();
 			type MaxMemoCharacters = MaxMemoCharacters;
 			type TxSigLimit = TxSigLimit;
 			type MaxDenomLimit = MaxDenomLimit;
@@ -379,7 +386,10 @@ impl<T: Config> Pallet<T> {
 				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
 		})?;
 
-		// TODO: Implement PostHandlers for refund functionality
+		T::PostHandler::post_handle(&mut ctx, &tx, false).map_err(|e| {
+			Error::<T>::CosmosError(e)
+				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
+		})?;
 
 		Self::deposit_event(Event::Executed {
 			gas_wanted: gas_limit,
@@ -407,5 +417,21 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(())
+	}
+
+	pub fn simulate(tx_bytes: Vec<u8>) -> Result<SimulateResponse, CosmosError> {
+		let tx = Tx::decode(&mut &*tx_bytes).map_err(|_| RootError::TxDecodeError)?;
+
+		T::AnteHandler::ante_handle(&tx, true)?;
+
+		let mut ctx = T::Context::new(T::SimulationGasLimit::get());
+		Self::run_tx(&mut ctx, &tx)?;
+
+		T::PostHandler::post_handle(&mut ctx, &tx, true)?;
+
+		Ok(SimulateResponse {
+			gas_info: GasInfo { gas_wanted: 0, gas_used: ctx.gas_meter().consumed_gas() },
+			events: ctx.event_manager().events(),
+		})
 	}
 }
