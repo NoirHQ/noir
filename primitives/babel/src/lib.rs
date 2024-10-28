@@ -33,6 +33,10 @@ pub use np_cosmos::Address as CosmosAddress;
 pub use np_ethereum as ethereum;
 #[cfg(feature = "ethereum")]
 pub use np_ethereum::Address as EthereumAddress;
+#[cfg(feature = "nostr")]
+pub use np_nostr as nostr;
+#[cfg(feature = "nostr")]
+pub use np_nostr::Address as NostrAddress;
 pub use sp_core::crypto::AccountId32;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
@@ -43,6 +47,8 @@ pub enum VarAddress {
 	Cosmos(CosmosAddress),
 	#[cfg(feature = "ethereum")]
 	Ethereum(EthereumAddress),
+	#[cfg(feature = "nostr")]
+	Nostr(NostrAddress),
 }
 
 impl VarAddress {
@@ -52,6 +58,9 @@ impl VarAddress {
 			n += 1;
 		}
 		if cfg!(feature = "ethereum") {
+			n += 1;
+		}
+		if cfg!(feature = "nostr") {
 			n += 1;
 		}
 		n
@@ -65,5 +74,10 @@ impl VarAddress {
 	#[cfg(feature = "ethereum")]
 	pub fn ethereum(public: ecdsa::Public) -> Self {
 		Self::Ethereum(EthereumAddress::from(public))
+	}
+
+	#[cfg(feature = "nostr")]
+	pub fn nostr(public: ecdsa::Public) -> Self {
+		Self::Nostr(NostrAddress::from(public))
 	}
 }

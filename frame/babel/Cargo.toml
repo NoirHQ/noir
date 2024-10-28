@@ -55,6 +55,7 @@ pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 # frontier
 pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409" }
 pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409" }
@@ -139,6 +140,9 @@ ethereum = [
 	"pallet-evm-precompile-simple",
 	"precompile-utils",
 ]
+nostr = [
+	"np-babel/nostr",
+]
 pallet = [
 	"cosmos",
 	"ethereum",
@@ -147,6 +151,7 @@ pallet = [
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-ethereum?/runtime-benchmarks",
 	"pallet-evm?/runtime-benchmarks",
@@ -156,6 +161,7 @@ runtime-benchmarks = [
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
+	"pallet-assets/try-runtime",
 	"pallet-balances/try-runtime",
 	"pallet-ethereum?/try-runtime",
 	"pallet-evm?/try-runtime",

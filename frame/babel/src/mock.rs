@@ -65,16 +65,16 @@ use pallet_cosmos_x_wasm::msgs::{
 };
 use pallet_cosmwasm::instrument::CostRules;
 use pallet_multimap::traits::UniqueMap;
-use sp_core::{ConstU128, H256};
+use sp_core::{ConstU128, Pair, H256};
 use sp_runtime::{
 	traits::{IdentityLookup, TryConvert},
-	BoundedVec,
+	BoundedVec, BuildStorage,
 };
 
-type AccountId = AccountId32<MultiSigner>;
-type Balance = u128;
-type AssetId = u32;
-type Hash = H256;
+pub type AccountId = AccountId32<MultiSigner>;
+pub type Balance = u128;
+pub type AssetId = u32;
+pub type Hash = H256;
 
 #[frame_support::runtime]
 mod runtime {
@@ -157,6 +157,8 @@ impl pallet_assets::Config for Test {
 	type MetadataDepositBase = ConstU128<0>;
 	type MetadataDepositPerByte = ConstU128<0>;
 	type ApprovalDeposit = ConstU128<0>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 #[derive_impl(pallet_sudo::config_preludes::TestDefaultConfig)]
@@ -348,5 +350,17 @@ impl frame_babel::Config for Test {
 
 impl unify_account::Config for Test {
 	type AddressMap = AddressMap;
-	type DrainBalance = ();
+	type DrainBalance = Balances;
+}
+
+pub fn alice() -> AccountId {
+	sp_keyring::sr25519::Keyring::Alice.pair().public().into()
+}
+
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	pallet_balances::GenesisConfig::<Test> { balances: vec![(alice(), 10000)] }
+		.assimilate_storage(&mut t)
+		.unwrap();
+	t.into()
 }

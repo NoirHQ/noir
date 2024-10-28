@@ -1,5 +1,5 @@
 [package]
-name = "np-runtime"
+name = "np-nostr"
 version = "0.4.0"
 authors = ["Haderech Pte. Ltd."]
 edition = "2021"
@@ -8,44 +8,29 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
+bech32 = { version = "0.11", default-features = false, optional = true }
 buidl = { version = "0.1.1", default-features = false, features = ["derive"] }
-const-hex = { version = "1.12", default-features = false }
-fp-self-contained = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, optional = true }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+
+[dev-dependencies]
+const-hex = { version = "1.12", default-features = false }
 
 [features]
 default = ["std"]
 std = [
+	"bech32/std",
 	"buidl/std",
-	"const-hex/std",
-	"fp-self-contained/std",
-	"frame-support/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",
 	"sp-core/std",
-	"sp-io/std",
 	"sp-runtime/std",
 ]
 serde = [
 	"dep:serde",
-	"fp-self-contained/serde",
-	"scale-info/serde",
-	"sp-core/serde",
-	"sp-runtime/serde",
-]
-runtime-benchmarks = [
-	"frame-support/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
-]
-try-runtime = [
-	"fp-self-contained/try-runtime",
-	"frame-support/try-runtime",
-	"sp-runtime/try-runtime",
+	"bech32/alloc",
 ]

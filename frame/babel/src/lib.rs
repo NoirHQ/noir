@@ -23,6 +23,8 @@ extern crate alloc;
 
 #[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod tests;
 
 #[cfg(feature = "cosmos")]
 pub mod cosmos;
@@ -60,10 +62,11 @@ pub mod pallet {
 	use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 	use pallet_evm::{AddressMapping as _, FrameSystemAccountProvider};
 	use pallet_multimap::traits::{UniqueMap, UniqueMultimap};
-	use sp_core::ecdsa;
-	use sp_runtime::{
-		traits::{AtLeast32BitUnsigned, One, Saturating, StaticLookup, UniqueSaturatedInto},
-		AccountId32,
+	use sp_core::{ecdsa, H256};
+	#[cfg(feature = "nostr")]
+	use sp_runtime::traits::AccountIdConversion;
+	use sp_runtime::traits::{
+		AtLeast32BitUnsigned, One, Saturating, StaticLookup, UniqueSaturatedInto,
 	};
 
 	type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
@@ -106,7 +109,7 @@ pub mod pallet {
 	where
 		OriginFor<T>: Into<Result<pallet_ethereum::RawOrigin, OriginFor<T>>>
 			+ Into<Result<pallet_cosmos::RawOrigin, OriginFor<T>>>,
-		T::AccountId: TryInto<ecdsa::Public> + From<AccountId32>,
+		T::AccountId: TryInto<ecdsa::Public> + From<H256>,
 		T::RuntimeOrigin: From<pallet_ethereum::RawOrigin> + From<pallet_cosmos::RawOrigin>,
 	{
 		#[pallet::call_index(0)]
@@ -262,7 +265,10 @@ pub mod pallet {
 					<T as pallet_cosmos::Config>::AddressMapping::into_account_id(address.into()),
 				VarAddress::Ethereum(address) =>
 					<T as pallet_evm::Config>::AddressMapping::into_account_id(address.into()),
-				VarAddress::Polkadot(address) => address.into(),
+				VarAddress::Polkadot(address) => H256::from(<[u8; 32]>::from(address)).into(),
+				#[cfg(feature = "nostr")]
+				VarAddress::Nostr(ref address) =>
+					T::AddressMap::find_key(&dest).unwrap_or(address.into_account_truncating()),
 			};
 
 			match id {

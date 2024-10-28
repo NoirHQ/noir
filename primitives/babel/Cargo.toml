@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 np-cosmos = { workspace = true, default-features = false, optional = true }
 np-ethereum = { workspace = true, default-features = false, optional = true }
+np-nostr = { workspace = true, default-features = false, optional = true }
 parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
 scale-info = { version = "2.11", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
@@ -20,6 +21,7 @@ default = ["std", "cosmos", "ethereum"]
 std = [
 	"np-cosmos?/std",
 	"np-ethereum?/std",
+	"np-nostr?/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",
@@ -36,4 +38,7 @@ cosmos = [
 ]
 ethereum = [
 	"np-ethereum",
+]
+nostr = [
+	"np-nostr",
 ]
