@@ -48,11 +48,11 @@ impl<T: Config> Pallet<T> {
 			Err(_) => return false,
 		};
 
-		(0..=3).any(|rec_id| {
-			let mut rec_sig = [0_u8; SUBSTRATE_ECDSA_SIGNATURE_LEN];
-			rec_sig[..SUBSTRATE_ECDSA_SIGNATURE_LEN - 1].copy_from_slice(signature);
-			rec_sig[SUBSTRATE_ECDSA_SIGNATURE_LEN - 1] = rec_id;
-			let sig = ecdsa::Signature::from(rec_sig);
+		(0..=3).any(|recovery_id| {
+			let mut signature_inner = [0_u8; SUBSTRATE_ECDSA_SIGNATURE_LEN];
+			signature_inner[..SUBSTRATE_ECDSA_SIGNATURE_LEN - 1].copy_from_slice(signature);
+			signature_inner[SUBSTRATE_ECDSA_SIGNATURE_LEN - 1] = recovery_id;
+			let sig = ecdsa::Signature::from(signature_inner);
 			sp_io::crypto::ecdsa_verify_prehashed(&sig, message_hash, &public_key)
 		})
 	}

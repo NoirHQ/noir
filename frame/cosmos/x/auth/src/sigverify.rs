@@ -42,6 +42,8 @@ use ripemd::Digest;
 use sp_core::{ecdsa, sha2_256, ByteArray, Get, H160};
 use sp_runtime::SaturatedConversion;
 
+const ECDSA_SIGNATURE_LEN: usize = 65;
+
 pub struct SigVerificationDecorator<T>(PhantomData<T>);
 impl<T> AnteDecorator for SigVerificationDecorator<T>
 where
@@ -144,11 +146,11 @@ pub fn ecdsa_verify_prehashed(
 	};
 
 	match signature.len() {
-		64 => (0..=3).any(|rec_id| {
-			let mut rec_sig = [0u8; 65];
-			rec_sig[..64].copy_from_slice(signature);
-			rec_sig[64] = rec_id;
-			let sig = ecdsa::Signature::from(rec_sig);
+		64 => (0..=3).any(|recovery_id| {
+			let mut signature_inner = [0u8; ECDSA_SIGNATURE_LEN];
+			signature_inner[..ECDSA_SIGNATURE_LEN - 1].copy_from_slice(signature);
+			signature_inner[ECDSA_SIGNATURE_LEN - 1] = recovery_id;
+			let sig = ecdsa::Signature::from(signature_inner);
 			sp_io::crypto::ecdsa_verify_prehashed(&sig, message_hash, &pub_key)
 		}),
 		65 => ecdsa::Signature::try_from(signature).map_or(false, |sig| {
