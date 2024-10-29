@@ -37,22 +37,10 @@ impl<T: Config> Pallet<T> {
 			.map_err(|_| ())
 	}
 
-	pub(crate) fn do_secp256k1_verify(
-		message_hash: &[u8],
-		signature: &[u8],
-		public_key: &[u8],
-	) -> bool {
+	pub fn do_secp256k1_verify(message_hash: &[u8], signature: &[u8], public_key: &[u8]) -> bool {
 		let message_hash = match message_hash.try_into() {
 			Ok(message_hash) => message_hash,
 			Err(_) => return false,
-		};
-
-		// We are expecting 64 bytes long public keys but the substrate function use an
-		// additional byte for recovery id. So we insert a dummy byte.
-		let signature = {
-			let mut signature_inner = [0_u8; SUBSTRATE_ECDSA_SIGNATURE_LEN];
-			signature_inner[..SUBSTRATE_ECDSA_SIGNATURE_LEN - 1].copy_from_slice(signature);
-			ecdsa::Signature::from(signature_inner)
 		};
 
 		let public_key = match libsecp256k1::PublicKey::parse_slice(public_key, None) {
@@ -60,7 +48,13 @@ impl<T: Config> Pallet<T> {
 			Err(_) => return false,
 		};
 
-		sp_io::crypto::ecdsa_verify_prehashed(&signature, &message_hash, &public_key)
+		(0..=3).any(|rec_id| {
+			let mut rec_sig = [0_u8; SUBSTRATE_ECDSA_SIGNATURE_LEN];
+			rec_sig[..SUBSTRATE_ECDSA_SIGNATURE_LEN - 1].copy_from_slice(signature);
+			rec_sig[SUBSTRATE_ECDSA_SIGNATURE_LEN - 1] = rec_id;
+			let sig = ecdsa::Signature::from(rec_sig);
+			sp_io::crypto::ecdsa_verify_prehashed(&sig, message_hash, &public_key)
+		})
 	}
 
 	pub(crate) fn do_ed25519_batch_verify(
