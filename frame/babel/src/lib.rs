@@ -249,9 +249,13 @@ pub mod pallet {
 
 		#[pallet::call_index(3)]
 		#[pallet::weight({
-			use pallet_assets::weights::WeightInfo;
+			use pallet_assets::weights::WeightInfo as _;
+			use pallet_balances::weights::WeightInfo as _;
 
-			<T as pallet_assets::Config>::WeightInfo::transfer()
+			match id {
+				Some(_) => <T as pallet_assets::Config>::WeightInfo::transfer(),
+				None => <T as pallet_balances::Config>::WeightInfo::transfer_keep_alive()
+			}
 		})]
 		pub fn transfer(
 			origin: OriginFor<T>,
