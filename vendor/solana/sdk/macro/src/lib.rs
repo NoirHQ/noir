@@ -88,6 +88,12 @@ fn deprecated_id_to_tokens(
             ID
         }
 
+        /// Returns the program ID.
+        #[deprecated()]
+        pub const fn const_id() -> #pubkey_type {
+            #id
+        }
+
         #[cfg(test)]
         #[test]
         #[allow(deprecated)]

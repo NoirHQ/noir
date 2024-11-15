@@ -330,7 +330,9 @@ impl SanitizedMessage {
             )
             .filter(|ix| {
                 matches!(
-                    limited_deserialize(&ix.data, 4 /* serialized size of AdvanceNonceAccount */),
+                    limited_deserialize::<_, 4 /* serialized size of AdvanceNonceAccount */>(
+                        &ix.data
+                    ),
                     Ok(SystemInstruction::AdvanceNonceAccount)
                 )
             })

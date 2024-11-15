@@ -463,22 +463,27 @@
 //!
 //! [lut]: https://docs.solanalabs.com/proposals/versioned-transactions
 
-#![allow(incomplete_features)]
-#![cfg_attr(RUSTC_WITH_SPECIALIZATION, feature(specialization))]
-#![cfg_attr(RUSTC_NEEDS_PROC_MACRO_HYGIENE, feature(proc_macro_hygiene))]
+//#![allow(incomplete_features)]
+//#![cfg_attr(RUSTC_WITH_SPECIALIZATION, feature(specialization))]
+//#![cfg_attr(RUSTC_NEEDS_PROC_MACRO_HYGIENE, feature(proc_macro_hygiene))]
+
+#![allow(unexpected_cfgs)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
 
 // Allows macro expansion of `use ::solana_program::*` to work within this crate
 extern crate self as solana_program;
 
 pub mod account_info;
 pub mod address_lookup_table;
-pub mod alt_bn128;
-pub(crate) mod atomic_u64;
-pub mod big_mod_exp;
-pub mod blake3;
+//pub mod alt_bn128;
+//pub(crate mod atomic_u64;
+//pub mod big_mod_exp;
+//pub mod blake3;
 pub mod borsh;
-pub mod borsh0_10;
-pub mod borsh0_9;
+//pub mod borsh0_10;
+//pub mod borsh0_9;
 pub mod borsh1;
 pub mod bpf_loader;
 pub mod bpf_loader_deprecated;
@@ -489,7 +494,7 @@ pub mod debug_account_data;
 pub mod decode_error;
 pub mod ed25519_program;
 pub mod entrypoint;
-pub mod entrypoint_deprecated;
+//pub mod entrypoint_deprecated;
 pub mod epoch_rewards;
 pub mod epoch_schedule;
 pub mod feature;
@@ -508,7 +513,7 @@ pub mod log;
 pub mod message;
 pub mod native_token;
 pub mod nonce;
-pub mod poseidon;
+//pub mod poseidon;
 pub mod program;
 pub mod program_error;
 pub mod program_memory;
@@ -527,14 +532,16 @@ pub mod short_vec;
 pub mod slot_hashes;
 pub mod slot_history;
 pub mod stable_layout;
-pub mod stake;
+//pub mod stake;
 pub mod stake_history;
-pub mod syscalls;
+//pub mod syscalls;
 pub mod system_instruction;
 pub mod system_program;
 pub mod sysvar;
-pub mod vote;
-pub mod wasm;
+//pub mod vote;
+//pub mod wasm;
+
+pub mod bincode;
 
 #[deprecated(
     since = "1.17.0",
@@ -544,13 +551,13 @@ pub mod address_lookup_table_account {
     pub use crate::address_lookup_table::AddressLookupTableAccount;
 }
 
-#[cfg(target_os = "solana")]
-pub use solana_sdk_macro::wasm_bindgen_stub as wasm_bindgen;
+//#[cfg(target_os = "solana")]
+//pub use solana_sdk_macro::wasm_bindgen_stub as wasm_bindgen;
 /// Re-export of [wasm-bindgen].
 ///
 /// [wasm-bindgen]: https://rustwasm.github.io/docs/wasm-bindgen/
-#[cfg(not(target_os = "solana"))]
-pub use wasm_bindgen::prelude::wasm_bindgen;
+//#[cfg(not(target_os = "solana"))]
+//pub use wasm_bindgen::prelude::wasm_bindgen;
 
 /// The [config native program][np].
 ///
@@ -562,6 +569,7 @@ pub mod config {
 }
 
 /// A vector of Solana SDK IDs.
+/*
 pub mod sdk_ids {
     use {
         crate::{
@@ -597,6 +605,7 @@ pub mod sdk_ids {
         };
     }
 }
+*/
 
 /// Same as [`declare_id`] except that it reports that this ID has been deprecated.
 pub use solana_sdk_macro::program_declare_deprecated_id as declare_deprecated_id;

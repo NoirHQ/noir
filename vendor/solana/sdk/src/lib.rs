@@ -29,82 +29,87 @@
 //! [json]: https://solana.com/docs/rpc
 //! [`clap`]: https://docs.rs/clap
 
-#![allow(incomplete_features)]
-#![cfg_attr(RUSTC_WITH_SPECIALIZATION, feature(specialization))]
-#![cfg_attr(RUSTC_NEEDS_PROC_MACRO_HYGIENE, feature(proc_macro_hygiene))]
+//#![allow(incomplete_features)]
+//#![cfg_attr(RUSTC_WITH_SPECIALIZATION, feature(specialization))]
+//#![cfg_attr(RUSTC_NEEDS_PROC_MACRO_HYGIENE, feature(proc_macro_hygiene))]
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
 
 // Allows macro expansion of `use ::solana_sdk::*` to work within this crate
 extern crate self as solana_sdk;
 
-#[cfg(feature = "full")]
-pub use signer::signers;
+//#[cfg(feature = "full")]
+//pub use signer::signers;
 // These solana_program imports could be *-imported, but that causes a bunch of
 // confusing duplication in the docs due to a rustdoc bug. #26211
-#[allow(deprecated)]
-pub use solana_program::address_lookup_table_account;
-#[cfg(not(target_os = "solana"))]
-pub use solana_program::program_stubs;
-pub use solana_program::{
-    account_info, address_lookup_table, alt_bn128, big_mod_exp, blake3, borsh, borsh0_10, borsh0_9,
-    borsh1, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable, clock, config,
-    custom_heap_default, custom_panic_default, debug_account_data, declare_deprecated_sysvar_id,
-    declare_sysvar_id, decode_error, ed25519_program, epoch_rewards, epoch_schedule,
-    fee_calculator, impl_sysvar_get, incinerator, instruction, keccak, lamports,
-    loader_instruction, loader_upgradeable_instruction, loader_v4, loader_v4_instruction, message,
-    msg, native_token, nonce, poseidon, program, program_error, program_memory, program_option,
-    program_pack, rent, sanitize, sdk_ids, secp256k1_program, secp256k1_recover, serde_varint,
-    serialize_utils, short_vec, slot_hashes, slot_history, stable_layout, stake, stake_history,
-    syscalls, system_instruction, system_program, sysvar, unchecked_div_by_const, vote,
-    wasm_bindgen,
-};
+//#[allow(deprecated)]
+//pub use solana_program::address_lookup_table_account;
+//#[cfg(not(target_os = "solana"))]
+//pub use solana_program::program_stubs;
+//pub use solana_program::{
+//    account_info, address_lookup_table, alt_bn128, big_mod_exp, blake3, borsh, borsh0_10, borsh0_9,
+//    borsh1, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable, clock, config,
+//    custom_heap_default, custom_panic_default, debug_account_data, declare_deprecated_sysvar_id,
+//    declare_sysvar_id, decode_error, ed25519_program, epoch_rewards, epoch_schedule,
+//    fee_calculator, impl_sysvar_get, incinerator, instruction, keccak, lamports,
+//    loader_instruction, loader_upgradeable_instruction, loader_v4, loader_v4_instruction, message,
+//    msg, native_token, nonce, poseidon, program, program_error, program_memory, program_option,
+//    program_pack, rent, sanitize, sdk_ids, secp256k1_program, secp256k1_recover, serde_varint,
+//    serialize_utils, short_vec, slot_hashes, slot_history, stable_layout, stake, stake_history,
+//    syscalls, system_instruction, system_program, sysvar, unchecked_div_by_const, vote,
+//    wasm_bindgen,
+//};
+pub use solana_program::{instruction, sanitize, short_vec};
 
-pub mod account;
-pub mod account_utils;
-pub mod client;
-pub mod commitment_config;
-pub mod compute_budget;
-pub mod derivation_path;
-pub mod deserialize_utils;
-pub mod ed25519_instruction;
-pub mod entrypoint;
-pub mod entrypoint_deprecated;
-pub mod epoch_info;
-pub mod epoch_rewards_hasher;
-pub mod example_mocks;
-pub mod exit;
-pub mod feature;
-pub mod feature_set;
-pub mod fee;
-pub mod genesis_config;
-pub mod hard_forks;
-pub mod hash;
-pub mod inflation;
-pub mod inner_instruction;
-pub mod log;
-pub mod native_loader;
-pub mod net;
-pub mod nonce_account;
-pub mod offchain_message;
-pub mod packet;
-pub mod poh_config;
-pub mod precompiles;
-pub mod program_utils;
+//pub mod account;
+//pub mod account_utils;
+//pub mod client;
+//pub mod commitment_config;
+//pub mod compute_budget;
+//pub mod derivation_path;
+//pub mod deserialize_utils;
+//pub mod ed25519_instruction;
+//pub mod entrypoint;
+//pub mod entrypoint_deprecated;
+//pub mod epoch_info;
+//pub mod epoch_rewards_hasher;
+//pub mod example_mocks;
+//pub mod exit;
+//pub mod feature;
+//pub mod feature_set;
+//pub mod fee;
+//pub mod genesis_config;
+//pub mod hard_forks;
+//pub mod hash;
+//pub mod inflation;
+//pub mod inner_instruction;
+//pub mod log;
+//pub mod native_loader;
+//pub mod net;
+//pub mod nonce_account;
+//pub mod offchain_message;
+//pub mod packet;
+//pub mod poh_config;
+//pub mod precompiles;
+//pub mod program_utils;
 pub mod pubkey;
-pub mod quic;
-pub mod recent_blockhashes_account;
-pub mod reward_type;
-pub mod rpc_port;
-pub mod secp256k1_instruction;
-pub mod shred_version;
-pub mod signature;
-pub mod signer;
-pub mod simple_vote_transaction_checker;
-pub mod system_transaction;
-pub mod timing;
-pub mod transaction;
-pub mod transaction_context;
-pub mod transport;
-pub mod wasm;
+//pub mod quic;
+//pub mod recent_blockhashes_account;
+//pub mod reward_type;
+//pub mod rpc_port;
+//pub mod secp256k1_instruction;
+//pub mod shred_version;
+//pub mod signature;
+//pub mod signer;
+//pub mod simple_vote_transaction_checker;
+//pub mod system_transaction;
+//pub mod timing;
+//pub mod transaction;
+//pub mod transaction_context;
+//pub mod transport;
+//pub mod wasm;
 
 /// Same as `declare_id` except report that this id has been deprecated.
 pub use solana_sdk_macro::declare_deprecated_id;
@@ -175,8 +180,8 @@ extern crate serde_derive;
 pub extern crate bs58;
 extern crate log as logger;
 
-#[macro_use]
-extern crate solana_frozen_abi_macro;
+//#[macro_use]
+//extern crate solana_frozen_abi_macro;
 
 #[cfg(test)]
 mod tests {

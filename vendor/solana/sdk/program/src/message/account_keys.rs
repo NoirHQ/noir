@@ -4,7 +4,8 @@ use {
         message::{v0::LoadedAddresses, CompileError},
         pubkey::Pubkey,
     },
-    std::{collections::BTreeMap, iter::zip, ops::Index},
+    alloc::collections::BTreeMap,
+    core::{iter::zip, ops::Index},
 };
 
 /// Collection of static and dynamically loaded keys used to load accounts

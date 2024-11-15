@@ -6,7 +6,7 @@
 //!
 //! [`sysvar::epoch_rewards`]: crate::sysvar::epoch_rewards
 
-use std::ops::AddAssign;
+use core::ops::AddAssign;
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Default, Clone, Copy, AbiExample)]
 pub struct EpochRewards {
     /// total rewards for the current epoch, in lamports

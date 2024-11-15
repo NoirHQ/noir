@@ -11,7 +11,7 @@
 
 use crate::{
     address_lookup_table_account::AddressLookupTableAccount,
-    bpf_loader_upgradeable,
+    bincode, bpf_loader_upgradeable,
     hash::Hash,
     instruction::{CompiledInstruction, Instruction},
     message::{

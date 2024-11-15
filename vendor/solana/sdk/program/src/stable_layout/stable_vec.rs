@@ -1,6 +1,6 @@
 //! `Vec`, with a stable memory layout
 
-use std::{marker::PhantomData, mem::ManuallyDrop, ptr::NonNull};
+use core::{marker::PhantomData, mem::ManuallyDrop, ptr::NonNull};
 
 /// `Vec`, with a stable memory layout
 ///

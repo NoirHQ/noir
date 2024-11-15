@@ -4,11 +4,11 @@ use thiserror::Error;
 
 #[derive(PartialEq, Debug, Error, Eq, Clone)]
 pub enum SanitizeError {
-    #[error("index out of bounds")]
+    #[cfg_attr(feature = "std", error("index out of bounds"))]
     IndexOutOfBounds,
-    #[error("value out of bounds")]
+    #[cfg_attr(feature = "std", error("value out of bounds"))]
     ValueOutOfBounds,
-    #[error("invalid value")]
+    #[cfg_attr(feature = "std", error("invalid value"))]
     InvalidValue,
 }
 

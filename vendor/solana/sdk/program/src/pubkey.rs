@@ -2,15 +2,15 @@
 
 #![allow(clippy::arithmetic_side_effects)]
 use {
-    crate::{decode_error::DecodeError, hash::hashv, wasm_bindgen},
+    crate::{decode_error::DecodeError, hash::hashv /*wasm_bindgen*/},
     borsh::{BorshDeserialize, BorshSchema, BorshSerialize},
     bytemuck::{Pod, Zeroable},
-    num_derive::{FromPrimitive, ToPrimitive},
-    std::{
+    core::{
         convert::{Infallible, TryFrom},
         fmt, mem,
         str::FromStr,
     },
+    num_derive::{FromPrimitive, ToPrimitive},
     thiserror::Error,
 };
 
@@ -28,11 +28,17 @@ const PDA_MARKER: &[u8; 21] = b"ProgramDerivedAddress";
 #[derive(Error, Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub enum PubkeyError {
     /// Length of the seed is too long for address generation
-    #[error("Length of the seed is too long for address generation")]
+    #[cfg_attr(
+        feature = "std",
+        error("Length of the seed is too long for address generation")
+    )]
     MaxSeedLengthExceeded,
-    #[error("Provided seeds do not result in a valid address")]
+    #[cfg_attr(
+        feature = "std",
+        error("Provided seeds do not result in a valid address")
+    )]
     InvalidSeeds,
-    #[error("Provided owner is not allowed")]
+    #[cfg_attr(feature = "std", error("Provided owner is not allowed"))]
     IllegalOwner,
 }
 impl<T> DecodeError<T> for PubkeyError {
@@ -64,7 +70,7 @@ impl From<u64> for PubkeyError {
 /// [ed25519]: https://ed25519.cr.yp.to/
 /// [pdas]: https://solana.com/docs/core/cpi#program-derived-addresses
 /// [`Keypair`]: https://docs.rs/solana-sdk/latest/solana_sdk/signer/keypair/struct.Keypair.html
-#[wasm_bindgen]
+//#[wasm_bindgen]
 #[repr(transparent)]
 #[derive(
     AbiExample,
@@ -91,9 +97,9 @@ impl crate::sanitize::Sanitize for Pubkey {}
 
 #[derive(Error, Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub enum ParsePubkeyError {
-    #[error("String is the wrong size")]
+    #[cfg_attr(feature = "std", error("String is the wrong size"))]
     WrongSize,
-    #[error("Invalid Base58 string")]
+    #[cfg_attr(feature = "std", error("Invalid Base58 string"))]
     Invalid,
 }
 
@@ -135,7 +141,7 @@ impl From<[u8; 32]> for Pubkey {
 }
 
 impl TryFrom<&[u8]> for Pubkey {
-    type Error = std::array::TryFromSliceError;
+    type Error = core::array::TryFromSliceError;
 
     #[inline]
     fn try_from(pubkey: &[u8]) -> Result<Self, Self::Error> {
@@ -161,13 +167,16 @@ impl TryFrom<&str> for Pubkey {
 
 #[allow(clippy::used_underscore_binding)]
 pub fn bytes_are_curve_point<T: AsRef<[u8]>>(_bytes: T) -> bool {
-    #[cfg(not(target_os = "solana"))]
+    //#[cfg(not(target_os = "solana"))]
+    #[cfg(feature = "std")]
     {
         curve25519_dalek::edwards::CompressedEdwardsY::from_slice(_bytes.as_ref())
+            .unwrap()
             .decompress()
             .is_some()
     }
-    #[cfg(target_os = "solana")]
+    //#[cfg(target_os = "solana")]
+    #[cfg(not(feature = "std"))]
     unimplemented!();
 }
 
@@ -184,8 +193,14 @@ impl Pubkey {
         Self(pubkey_array)
     }
 
+    // NOTE: This function doesn't do runtime checks.
+    pub const fn parse(s: &str) -> Self {
+        Self(bs58::decode(s.as_bytes()).into_array_const_unwrap())
+    }
+
     #[deprecated(since = "1.3.9", note = "Please use 'Pubkey::new_unique' instead")]
-    #[cfg(not(target_os = "solana"))]
+    //#[cfg(not(target_os = "solana"))]
+    #[cfg(feature = "std")]
     pub fn new_rand() -> Self {
         // Consider removing Pubkey::new_rand() entirely in the v1.5 or v1.6 timeframe
         Pubkey::from(rand::random::<[u8; 32]>())
@@ -193,11 +208,11 @@ impl Pubkey {
 
     /// unique Pubkey for tests and benchmarks.
     pub fn new_unique() -> Self {
-        use crate::atomic_u64::AtomicU64;
+        use core::sync::atomic::AtomicU64;
         static I: AtomicU64 = AtomicU64::new(1);
 
         let mut b = [0u8; 32];
-        let i = I.fetch_add(1);
+        let i = I.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
         // use big endian representation to ensure that recent unique pubkeys
         // are always greater than less recent unique pubkeys
         b[0..8].copy_from_slice(&i.to_be_bytes());
@@ -500,8 +515,8 @@ impl Pubkey {
         // not supported
         #[cfg(not(target_os = "solana"))]
         {
-            let mut bump_seed = [std::u8::MAX];
-            for _ in 0..std::u8::MAX {
+            let mut bump_seed = [core::u8::MAX];
+            for _ in 0..core::u8::MAX {
                 {
                     let mut seeds_with_bump = seeds.to_vec();
                     seeds_with_bump.push(&bump_seed);
@@ -519,7 +534,7 @@ impl Pubkey {
         #[cfg(target_os = "solana")]
         {
             let mut bytes = [0; 32];
-            let mut bump_seed = std::u8::MAX;
+            let mut bump_seed = core::u8::MAX;
             let result = unsafe {
                 crate::syscalls::sol_try_find_program_address(
                     seeds as *const _ as *const u8,
@@ -671,6 +686,7 @@ impl fmt::Display for Pubkey {
     }
 }
 
+/*
 impl borsh0_10::de::BorshDeserialize for Pubkey {
     fn deserialize_reader<R: borsh0_10::maybestd::io::Read>(
         reader: &mut R,
@@ -735,6 +751,7 @@ macro_rules! impl_borsh_serialize {
 }
 impl_borsh_serialize!(borsh0_10);
 impl_borsh_serialize!(borsh0_9);
+*/
 
 #[cfg(test)]
 mod tests {
@@ -944,6 +961,7 @@ mod tests {
                 let is_on_curve = curve25519_dalek::edwards::CompressedEdwardsY::from_slice(
                     &program_address.to_bytes(),
                 )
+                .unwrap()
                 .decompress()
                 .is_some();
                 assert!(!is_on_curve);

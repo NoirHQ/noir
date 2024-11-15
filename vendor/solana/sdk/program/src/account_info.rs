@@ -2,13 +2,18 @@
 
 use {
     crate::{
-        clock::Epoch, debug_account_data::*, entrypoint::MAX_PERMITTED_DATA_INCREASE,
-        program_error::ProgramError, program_memory::sol_memset, pubkey::Pubkey,
+        bincode::{self, DecodeError, EncodeError},
+        clock::Epoch,
+        debug_account_data::*,
+        entrypoint::MAX_PERMITTED_DATA_INCREASE,
+        program_error::ProgramError,
+        program_memory::sol_memset,
+        pubkey::Pubkey,
     },
-    std::{
+    alloc::rc::Rc,
+    core::{
         cell::{Ref, RefCell, RefMut},
         fmt,
-        rc::Rc,
         slice::from_raw_parts_mut,
     },
 };
@@ -186,7 +191,7 @@ impl<'a> AccountInfo<'a> {
     pub fn assign(&self, new_owner: &Pubkey) {
         // Set the non-mut owner field
         unsafe {
-            std::ptr::write_volatile(
+            core::ptr::write_volatile(
                 self.owner as *const Pubkey as *mut [u8; 32],
                 new_owner.to_bytes(),
             );
@@ -215,13 +220,13 @@ impl<'a> AccountInfo<'a> {
         }
     }
 
-    pub fn deserialize_data<T: serde::de::DeserializeOwned>(&self) -> Result<T, bincode::Error> {
+    pub fn deserialize_data<T: serde::de::DeserializeOwned>(&self) -> Result<T, DecodeError> {
         bincode::deserialize(&self.data.borrow())
     }
 
-    pub fn serialize_data<T: serde::Serialize>(&self, state: &T) -> Result<(), bincode::Error> {
+    pub fn serialize_data<T: serde::Serialize>(&self, state: &T) -> Result<(), EncodeError> {
         if bincode::serialized_size(state)? > self.data_len() as u64 {
-            return Err(Box::new(bincode::ErrorKind::SizeLimit));
+            return Err(EncodeError::UnexpectedEnd);
         }
         bincode::serialize_into(&mut self.data.borrow_mut()[..], state)
     }
@@ -376,7 +381,7 @@ pub fn next_account_info<'a, 'b, I: Iterator<Item = &'a AccountInfo<'b>>>(
 /// # Ok::<(), ProgramError>(())
 /// ```
 pub fn next_account_infos<'a, 'b: 'a>(
-    iter: &mut std::slice::Iter<'a, AccountInfo<'b>>,
+    iter: &mut core::slice::Iter<'a, AccountInfo<'b>>,
     count: usize,
 ) -> Result<&'a [AccountInfo<'b>], ProgramError> {
     let accounts = iter.as_slice();

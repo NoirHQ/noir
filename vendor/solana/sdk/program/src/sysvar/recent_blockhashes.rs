@@ -175,7 +175,7 @@ mod tests {
     fn test_size_of() {
         let entry = Entry::new(&Hash::default(), 0);
         assert_eq!(
-            bincode::serialized_size(&RecentBlockhashes(vec![entry; MAX_ENTRIES])).unwrap()
+            crate::bincode::serialized_size(&RecentBlockhashes(vec![entry; MAX_ENTRIES])).unwrap()
                 as usize,
             RecentBlockhashes::size_of()
         );

@@ -15,6 +15,10 @@
 
 pub mod solana_rpc_client {
     pub mod rpc_client {
+        #[cfg(not(feature = "std"))]
+        use hashbrown::HashMap;
+        #[cfg(feature = "std")]
+        use std::collections::HashMap;
         use {
             super::super::{
                 solana_rpc_client_api::client_error::Result as ClientResult,
@@ -23,7 +27,8 @@ pub mod solana_rpc_client {
                     transaction::Transaction,
                 },
             },
-            std::{cell::RefCell, collections::HashMap, rc::Rc},
+            alloc::rc::Rc,
+            core::cell::RefCell,
         };
 
         #[derive(Default)]

@@ -17,6 +17,7 @@
 //! Calling via the RPC client:
 //!
 //! ```
+//! # use solana_program::bincode;
 //! # use solana_program::example_mocks::solana_sdk;
 //! # use solana_program::example_mocks::solana_rpc_client;
 //! # use solana_sdk::account::Account;
@@ -76,7 +77,7 @@ mod tests {
         }
 
         assert_eq!(
-            bincode::serialized_size(&stake_history).unwrap() as usize,
+            crate::bincode::serialized_size(&stake_history).unwrap() as usize,
             StakeHistory::size_of()
         );
     }
