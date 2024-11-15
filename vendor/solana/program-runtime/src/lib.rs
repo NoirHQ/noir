@@ -19,6 +19,6 @@ pub mod compute_budget_processor;
 pub mod log_collector;
 //pub mod message_processor;
 pub mod prioritization_fee;
-//pub mod stable_log;
+pub mod stable_log;
 //pub mod sysvar_cache;
 //pub mod timings;

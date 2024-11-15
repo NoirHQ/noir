@@ -12,6 +12,8 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
+base64 = { version = "0.22.1", default-features = false }
+itertools = { version = "0.13.0", default-features = false }
 log = { version = "0.4.21", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
@@ -21,6 +23,8 @@ solana-sdk = { workspace = true, features = ["full"] }
 [features]
 default = ["std"]
 std = [
+	"base64/std",
+	"itertools/use_std",
 	"log/std",
 	"serde/std",
 	"solana_rbpf/std",
