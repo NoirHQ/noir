@@ -7,7 +7,7 @@ use {
         sysvar_cache::SysvarCache,
         timings::{ExecuteDetailsTimings, ExecuteTimings},
     },
-    alloc::{rc::Rc, sync::Arc},
+    alloc::{rc::Rc, sync::Arc, vec::Vec},
     core::cell::RefCell,
     serde::{Deserialize, Serialize},
     // solana_measure::measure::Measure,

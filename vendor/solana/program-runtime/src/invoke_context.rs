@@ -10,7 +10,7 @@ use {
         sysvar_cache::SysvarCache,
         timings::{ExecuteDetailsTimings, ExecuteTimings},
     },
-    alloc::{rc::Rc, sync::Arc},
+    alloc::{boxed::Box, rc::Rc, sync::Arc, vec, vec::Vec},
     core::{alloc::Layout, cell::RefCell, fmt, fmt::Debug, sync::atomic::Ordering},
     solana_rbpf::{
         ebpf::MM_HEAP_START,

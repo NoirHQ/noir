@@ -89,7 +89,7 @@ macro_rules! ic_logger_msg {
         );
         if let Some(log_collector) = $log_collector.as_ref() {
             if let Ok(mut log_collector) = log_collector.try_borrow_mut() {
-                log_collector.log(&format!($fmt, $($arg)*));
+                log_collector.log(&alloc::format!($fmt, $($arg)*));
             }
         }
     };

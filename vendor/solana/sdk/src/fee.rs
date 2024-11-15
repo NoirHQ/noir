@@ -1,8 +1,11 @@
 //! Fee structures.
 
-use crate::native_token::sol_to_lamports;
 #[cfg(not(target_os = "solana"))]
 use solana_program::message::SanitizedMessage;
+use {
+    crate::native_token::sol_to_lamports,
+    alloc::{vec, vec::Vec},
+};
 
 /// A fee and its associated compute unit limit
 #[derive(Debug, Default, Clone, Eq, PartialEq)]

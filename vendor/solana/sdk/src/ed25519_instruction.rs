@@ -6,6 +6,7 @@
 
 use {
     crate::{feature_set::FeatureSet, instruction::Instruction, precompiles::PrecompileError},
+    alloc::{vec, vec::Vec},
     bytemuck::{bytes_of, Pod, Zeroable},
     ed25519_dalek::{Signature, Signer, Verifier},
 };

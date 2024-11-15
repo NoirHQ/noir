@@ -19,6 +19,8 @@
 //! For more information on how features are picked up, see comments for `Feature`.
 
 use {
+    alloc::vec::Vec,
+    hashbrown::{HashMap, HashSet},
     lazy_static::lazy_static,
     solana_program::{epoch_schedule::EpochSchedule, stake_history::Epoch},
     solana_sdk::{
@@ -26,7 +28,6 @@ use {
         hash::{Hash, Hasher},
         pubkey::Pubkey,
     },
-    std::collections::{HashMap, HashSet},
 };
 
 pub mod deprecate_rewards_sysvar {

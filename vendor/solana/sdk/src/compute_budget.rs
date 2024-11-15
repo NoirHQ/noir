@@ -4,6 +4,7 @@
 
 use {
     crate::instruction::Instruction,
+    alloc::vec,
     borsh::{BorshDeserialize, BorshSerialize},
 };
 

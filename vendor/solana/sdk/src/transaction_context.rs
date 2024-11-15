@@ -21,7 +21,7 @@ use {
         instruction::InstructionError,
         pubkey::Pubkey,
     },
-    alloc::rc::Rc,
+    alloc::{rc::Rc, boxed::Box, vec, vec::Vec},
     core::{
         cell::{Ref, RefCell, RefMut},
         pin::Pin,

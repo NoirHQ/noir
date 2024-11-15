@@ -1,4 +1,5 @@
 use {
+    alloc::{vec, vec::Vec},
     core::{
         fmt,
         ops::{Index, IndexMut},

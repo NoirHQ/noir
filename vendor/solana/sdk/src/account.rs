@@ -10,7 +10,7 @@ use {
         loader_v4,
         pubkey::Pubkey,
     },
-    alloc::{rc::Rc, sync::Arc},
+    alloc::{rc::Rc, sync::Arc, vec, vec::Vec},
     core::{
         cell::{Ref, RefCell},
         fmt,
@@ -135,7 +135,7 @@ impl From<AccountSharedData> for Account {
         let account_data = Arc::make_mut(&mut other.data);
         Self {
             lamports: other.lamports,
-            data: std::mem::take(account_data),
+            data: core::mem::take(account_data),
             owner: other.owner,
             executable: other.executable,
             rent_epoch: other.rent_epoch,
