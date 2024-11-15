@@ -1,7 +1,10 @@
 pub use log;
 
-// use std::{cell::RefCell, rc::Rc};
-use alloc::rc::Rc;
+use alloc::{
+    rc::Rc,
+    string::{String, ToString},
+    vec::Vec,
+};
 use core::cell::RefCell;
 
 const LOG_MESSAGES_BYTES_LIMIT: usize = 10 * 1000;

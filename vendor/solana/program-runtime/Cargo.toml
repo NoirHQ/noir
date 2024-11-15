@@ -15,10 +15,12 @@ publish = false
 base64 = { version = "0.22.1", default-features = false }
 enum-iterator = "2.1.0"
 hashbrown = "0.15"
-itertools = { version = "0.13.0", default-features = false }
+itertools = { version = "0.13.0", default-features = false, features = ["use_alloc"] }
 log = { version = "0.4.21", default-features = false }
+percentage = "0.1.0"
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
+solana-program = { workspace = true }
 solana_rbpf = { git = "https://github.com/code0xff/rbpf", branch = "no_std" }
 solana-sdk = { workspace = true, features = ["full"] }
 
@@ -29,6 +31,7 @@ std = [
 	"itertools/use_std",
 	"log/std",
 	"serde/std",
+	"solana-program/std",
 	"solana_rbpf/std",
 	"solana-sdk/std",
 ]

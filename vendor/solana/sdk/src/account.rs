@@ -10,19 +10,18 @@ use {
         loader_v4,
         pubkey::Pubkey,
     },
-    serde::{
-        ser::{Serialize, Serializer},
-        Deserialize,
-    },
-    solana_program::{account_info::AccountInfo, debug_account_data::*, sysvar::Sysvar},
-    std::{
+    alloc::{rc::Rc, sync::Arc},
+    core::{
         cell::{Ref, RefCell},
         fmt,
         mem::MaybeUninit,
         ptr,
-        rc::Rc,
-        sync::Arc,
     },
+    serde::{
+        ser::{Serialize, Serializer},
+        Deserialize,
+    },
+    solana_program::{account_info::AccountInfo, bincode, debug_account_data::*, sysvar::Sysvar},
 };
 
 /// An Account with data that is stored on chain
@@ -431,7 +430,7 @@ fn shared_new_data<T: serde::Serialize, U: WritableAccount>(
     lamports: u64,
     state: &T,
     owner: &Pubkey,
-) -> Result<U, bincode::Error> {
+) -> Result<U, bincode::EncodeError> {
     let data = bincode::serialize(state)?;
     Ok(U::create(
         lamports,
@@ -445,7 +444,7 @@ fn shared_new_ref_data<T: serde::Serialize, U: WritableAccount>(
     lamports: u64,
     state: &T,
     owner: &Pubkey,
-) -> Result<RefCell<U>, bincode::Error> {
+) -> Result<RefCell<U>, bincode::EncodeError> {
     Ok(RefCell::new(shared_new_data::<T, U>(
         lamports, state, owner,
     )?))
@@ -456,7 +455,7 @@ fn shared_new_data_with_space<T: serde::Serialize, U: WritableAccount>(
     state: &T,
     space: usize,
     owner: &Pubkey,
-) -> Result<U, bincode::Error> {
+) -> Result<U, bincode::EncodeError> {
     let mut account = shared_new::<U>(lamports, space, owner);
 
     shared_serialize_data(&mut account, state)?;
@@ -468,7 +467,7 @@ fn shared_new_ref_data_with_space<T: serde::Serialize, U: WritableAccount>(
     state: &T,
     space: usize,
     owner: &Pubkey,
-) -> Result<RefCell<U>, bincode::Error> {
+) -> Result<RefCell<U>, bincode::EncodeError> {
     Ok(RefCell::new(shared_new_data_with_space::<T, U>(
         lamports, state, space, owner,
     )?))
@@ -476,16 +475,16 @@ fn shared_new_ref_data_with_space<T: serde::Serialize, U: WritableAccount>(
 
 fn shared_deserialize_data<T: serde::de::DeserializeOwned, U: ReadableAccount>(
     account: &U,
-) -> Result<T, bincode::Error> {
+) -> Result<T, bincode::DecodeError> {
     bincode::deserialize(account.data())
 }
 
 fn shared_serialize_data<T: serde::Serialize, U: WritableAccount>(
     account: &mut U,
     state: &T,
-) -> Result<(), bincode::Error> {
+) -> Result<(), bincode::EncodeError> {
     if bincode::serialized_size(state)? > account.data().len() as u64 {
-        return Err(Box::new(bincode::ErrorKind::SizeLimit));
+        return Err(bincode::EncodeError::UnexpectedEnd);
     }
     bincode::serialize_into(account.data_as_mut_slice(), state)
 }
@@ -501,14 +500,14 @@ impl Account {
         lamports: u64,
         state: &T,
         owner: &Pubkey,
-    ) -> Result<Self, bincode::Error> {
+    ) -> Result<Self, bincode::EncodeError> {
         shared_new_data(lamports, state, owner)
     }
     pub fn new_ref_data<T: serde::Serialize>(
         lamports: u64,
         state: &T,
         owner: &Pubkey,
-    ) -> Result<RefCell<Self>, bincode::Error> {
+    ) -> Result<RefCell<Self>, bincode::EncodeError> {
         shared_new_ref_data(lamports, state, owner)
     }
     pub fn new_data_with_space<T: serde::Serialize>(
@@ -516,7 +515,7 @@ impl Account {
         state: &T,
         space: usize,
         owner: &Pubkey,
-    ) -> Result<Self, bincode::Error> {
+    ) -> Result<Self, bincode::EncodeError> {
         shared_new_data_with_space(lamports, state, space, owner)
     }
     pub fn new_ref_data_with_space<T: serde::Serialize>(
@@ -524,16 +523,21 @@ impl Account {
         state: &T,
         space: usize,
         owner: &Pubkey,
-    ) -> Result<RefCell<Self>, bincode::Error> {
+    ) -> Result<RefCell<Self>, bincode::EncodeError> {
         shared_new_ref_data_with_space(lamports, state, space, owner)
     }
     pub fn new_rent_epoch(lamports: u64, space: usize, owner: &Pubkey, rent_epoch: Epoch) -> Self {
         shared_new_rent_epoch(lamports, space, owner, rent_epoch)
     }
-    pub fn deserialize_data<T: serde::de::DeserializeOwned>(&self) -> Result<T, bincode::Error> {
+    pub fn deserialize_data<T: serde::de::DeserializeOwned>(
+        &self,
+    ) -> Result<T, bincode::DecodeError> {
         shared_deserialize_data(self)
     }
-    pub fn serialize_data<T: serde::Serialize>(&mut self, state: &T) -> Result<(), bincode::Error> {
+    pub fn serialize_data<T: serde::Serialize>(
+        &mut self,
+        state: &T,
+    ) -> Result<(), bincode::EncodeError> {
         shared_serialize_data(self, state)
     }
 }
@@ -603,7 +607,7 @@ impl AccountSharedData {
     }
 
     #[cfg_attr(feature = "dev-context-only-utils", qualifiers(pub))]
-    fn set_data(&mut self, data: Vec<u8>) {
+    pub fn set_data(&mut self, data: Vec<u8>) {
         self.data = Arc::new(data);
     }
 
@@ -621,14 +625,14 @@ impl AccountSharedData {
         lamports: u64,
         state: &T,
         owner: &Pubkey,
-    ) -> Result<Self, bincode::Error> {
+    ) -> Result<Self, bincode::EncodeError> {
         shared_new_data(lamports, state, owner)
     }
     pub fn new_ref_data<T: serde::Serialize>(
         lamports: u64,
         state: &T,
         owner: &Pubkey,
-    ) -> Result<RefCell<Self>, bincode::Error> {
+    ) -> Result<RefCell<Self>, bincode::EncodeError> {
         shared_new_ref_data(lamports, state, owner)
     }
     pub fn new_data_with_space<T: serde::Serialize>(
@@ -636,7 +640,7 @@ impl AccountSharedData {
         state: &T,
         space: usize,
         owner: &Pubkey,
-    ) -> Result<Self, bincode::Error> {
+    ) -> Result<Self, bincode::EncodeError> {
         shared_new_data_with_space(lamports, state, space, owner)
     }
     pub fn new_ref_data_with_space<T: serde::Serialize>(
@@ -644,16 +648,21 @@ impl AccountSharedData {
         state: &T,
         space: usize,
         owner: &Pubkey,
-    ) -> Result<RefCell<Self>, bincode::Error> {
+    ) -> Result<RefCell<Self>, bincode::EncodeError> {
         shared_new_ref_data_with_space(lamports, state, space, owner)
     }
     pub fn new_rent_epoch(lamports: u64, space: usize, owner: &Pubkey, rent_epoch: Epoch) -> Self {
         shared_new_rent_epoch(lamports, space, owner, rent_epoch)
     }
-    pub fn deserialize_data<T: serde::de::DeserializeOwned>(&self) -> Result<T, bincode::Error> {
+    pub fn deserialize_data<T: serde::de::DeserializeOwned>(
+        &self,
+    ) -> Result<T, bincode::DecodeError> {
         shared_deserialize_data(self)
     }
-    pub fn serialize_data<T: serde::Serialize>(&mut self, state: &T) -> Result<(), bincode::Error> {
+    pub fn serialize_data<T: serde::Serialize>(
+        &mut self,
+        state: &T,
+    ) -> Result<(), bincode::EncodeError> {
         shared_serialize_data(self, state)
     }
 }

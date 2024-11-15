@@ -4,6 +4,8 @@ use solana_sdk::sysvar::{
 };
 use {
     crate::invoke_context::InvokeContext,
+    alloc::sync::Arc,
+    solana_program::bincode,
     solana_sdk::{
         instruction::InstructionError,
         pubkey::Pubkey,
@@ -13,7 +15,6 @@ use {
         },
         transaction_context::{IndexOfAccount, InstructionContext, TransactionContext},
     },
-    std::sync::Arc,
 };
 
 #[cfg(RUSTC_WITH_SPECIALIZATION)]

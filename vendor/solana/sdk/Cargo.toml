@@ -16,18 +16,25 @@ publish = false
 #bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
 borsh = { version = "1.5", default-features = false, features = ["derive", "unstable__schema"] }
 bs58 = { version = "0.5", default-features = false }
-#bytemuck = { version = "1.19", features = ["derive"] }
+bytemuck = { version = "1.19", features = ["derive"] }
+ed25519-dalek = { version = "2.1.1", default-features = false, features = ["alloc"] }
 #curve25519-dalek = { version = "4.1", optional = true }
-#itertools = { version = "0.13.0", default-features = false, features = ["use_alloc"] }
+generic-array = { version = "1.1.0", default-features = false, features = ["alloc", "serde"] }
+hashbrown = "0.15"
+itertools = { version = "0.13.0", default-features = false, features = ["use_alloc"] }
+lazy_static = { version = "1.5.0", default-features = false, features = ["spin_no_std"] }
+libsecp256k1 = { version = "0.7", default-features = false }
 log = { version = "0.4", default-features = false }
 #num-derive = "0.4.2"
 #num-traits = { version = "0.2", default-features = false }
 rand = { version = "0.8", optional = true }
 rustversion = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+serde_bytes = { version = "0.11.15", default-features = false, features = ["alloc"] }
 serde_derive = "1.0"
 serde_json = { version = "1.0", optional = true }
 #sha2 = { version = "0.10", default-features = false }
+sha3 = { version = "0.10.8", default-features = false }
 thiserror = { version = "2.0", default-features = false }
 
 solana-program = { workspace = true }
@@ -39,14 +46,20 @@ default = ["std", "full"]
 std = [
 	"borsh/std",
 	"bs58/std",
+	"ed25519-dalek/std",
+	"itertools/use_std",
+	"libsecp256k1/std",
 	"log/std",
 	"rand",
 	"serde/std",
+	"serde_bytes/std",
 	"serde_json",
+	"sha3/std",
 	"solana-program/std",
 	"thiserror/std",
 ]
 full = []
+dev-context-only-utils = []
 serde = [
 	"dep:serde",
 ]

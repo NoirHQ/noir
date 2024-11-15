@@ -61,16 +61,20 @@ extern crate self as solana_sdk;
 //    syscalls, system_instruction, system_program, sysvar, unchecked_div_by_const, vote,
 //    wasm_bindgen,
 //};
-pub use solana_program::{borsh1, clock, instruction, message, native_token, sanitize, short_vec};
+pub use solana_program::{
+    borsh1, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable, clock, decode_error,
+    ed25519_program, epoch_schedule, hash, instruction, lamports, loader_v4, message, native_token,
+    rent, sanitize, secp256k1_program, short_vec, stable_layout, system_instruction, sysvar,
+};
 
-//pub mod account;
+pub mod account;
 //pub mod account_utils;
 //pub mod client;
 //pub mod commitment_config;
 pub mod compute_budget;
 //pub mod derivation_path;
 //pub mod deserialize_utils;
-//pub mod ed25519_instruction;
+pub mod ed25519_instruction;
 pub mod entrypoint;
 //pub mod entrypoint_deprecated;
 //pub mod epoch_info;
@@ -78,7 +82,7 @@ pub mod entrypoint;
 //pub mod example_mocks;
 //pub mod exit;
 //pub mod feature;
-//pub mod feature_set;
+pub mod feature_set;
 pub mod fee;
 //pub mod genesis_config;
 //pub mod hard_forks;
@@ -86,28 +90,28 @@ pub mod fee;
 //pub mod inflation;
 //pub mod inner_instruction;
 //pub mod log;
-//pub mod native_loader;
+pub mod native_loader;
 //pub mod net;
 //pub mod nonce_account;
 //pub mod offchain_message;
 //pub mod packet;
 //pub mod poh_config;
-//pub mod precompiles;
+pub mod precompiles;
 //pub mod program_utils;
 pub mod pubkey;
 //pub mod quic;
 //pub mod recent_blockhashes_account;
 //pub mod reward_type;
 //pub mod rpc_port;
-//pub mod secp256k1_instruction;
+pub mod secp256k1_instruction;
 //pub mod shred_version;
-//pub mod signature;
+pub mod signature;
 //pub mod signer;
 //pub mod simple_vote_transaction_checker;
 //pub mod system_transaction;
 //pub mod timing;
 pub mod transaction;
-//pub mod transaction_context;
+pub mod transaction_context;
 //pub mod transport;
 //pub mod wasm;
 

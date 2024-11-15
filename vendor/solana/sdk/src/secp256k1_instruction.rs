@@ -795,8 +795,10 @@ use {
         instruction::Instruction,
         precompiles::PrecompileError,
     },
-    digest::Digest,
     serde_derive::{Deserialize, Serialize},
+    // digest::Digest,
+    sha3::Digest,
+    solana_program::bincode,
 };
 
 pub const HASHED_PUBKEY_SERIALIZED_SIZE: usize = 20;
@@ -843,65 +845,65 @@ pub struct SecpSignatureOffsets {
 /// `message_arr` is hashed with the [`keccak`] hash function prior to signing.
 ///
 /// [`keccak`]: crate::keccak
-pub fn new_secp256k1_instruction(
-    priv_key: &libsecp256k1::SecretKey,
-    message_arr: &[u8],
-) -> Instruction {
-    let secp_pubkey = libsecp256k1::PublicKey::from_secret_key(priv_key);
-    let eth_pubkey = construct_eth_pubkey(&secp_pubkey);
-    let mut hasher = sha3::Keccak256::new();
-    hasher.update(message_arr);
-    let message_hash = hasher.finalize();
-    let mut message_hash_arr = [0u8; 32];
-    message_hash_arr.copy_from_slice(message_hash.as_slice());
-    let message = libsecp256k1::Message::parse(&message_hash_arr);
-    let (signature, recovery_id) = libsecp256k1::sign(&message, priv_key);
-    let signature_arr = signature.serialize();
-    assert_eq!(signature_arr.len(), SIGNATURE_SERIALIZED_SIZE);
+// pub fn new_secp256k1_instruction(
+//     priv_key: &libsecp256k1::SecretKey,
+//     message_arr: &[u8],
+// ) -> Instruction {
+//     let secp_pubkey = libsecp256k1::PublicKey::from_secret_key(priv_key);
+//     let eth_pubkey = construct_eth_pubkey(&secp_pubkey);
+//     let mut hasher = sha3::Keccak256::new();
+//     hasher.update(message_arr);
+//     let message_hash = hasher.finalize();
+//     let mut message_hash_arr = [0u8; 32];
+//     message_hash_arr.copy_from_slice(message_hash.as_slice());
+//     let message = libsecp256k1::Message::parse(&message_hash_arr);
+//     let (signature, recovery_id) = libsecp256k1::sign(&message, priv_key);
+//     let signature_arr = signature.serialize();
+//     assert_eq!(signature_arr.len(), SIGNATURE_SERIALIZED_SIZE);
 
-    let instruction_data_len = DATA_START
-        .saturating_add(eth_pubkey.len())
-        .saturating_add(signature_arr.len())
-        .saturating_add(message_arr.len())
-        .saturating_add(1);
-    let mut instruction_data = vec![0; instruction_data_len];
+//     let instruction_data_len = DATA_START
+//         .saturating_add(eth_pubkey.len())
+//         .saturating_add(signature_arr.len())
+//         .saturating_add(message_arr.len())
+//         .saturating_add(1);
+//     let mut instruction_data = vec![0; instruction_data_len];
 
-    let eth_address_offset = DATA_START;
-    instruction_data[eth_address_offset..eth_address_offset.saturating_add(eth_pubkey.len())]
-        .copy_from_slice(&eth_pubkey);
+//     let eth_address_offset = DATA_START;
+//     instruction_data[eth_address_offset..eth_address_offset.saturating_add(eth_pubkey.len())]
+//         .copy_from_slice(&eth_pubkey);
 
-    let signature_offset = DATA_START.saturating_add(eth_pubkey.len());
-    instruction_data[signature_offset..signature_offset.saturating_add(signature_arr.len())]
-        .copy_from_slice(&signature_arr);
+//     let signature_offset = DATA_START.saturating_add(eth_pubkey.len());
+//     instruction_data[signature_offset..signature_offset.saturating_add(signature_arr.len())]
+//         .copy_from_slice(&signature_arr);
 
-    instruction_data[signature_offset.saturating_add(signature_arr.len())] =
-        recovery_id.serialize();
+//     instruction_data[signature_offset.saturating_add(signature_arr.len())] =
+//         recovery_id.serialize();
 
-    let message_data_offset = signature_offset
-        .saturating_add(signature_arr.len())
-        .saturating_add(1);
-    instruction_data[message_data_offset..].copy_from_slice(message_arr);
+//     let message_data_offset = signature_offset
+//         .saturating_add(signature_arr.len())
+//         .saturating_add(1);
+//     instruction_data[message_data_offset..].copy_from_slice(message_arr);
 
-    let num_signatures = 1;
-    instruction_data[0] = num_signatures;
-    let offsets = SecpSignatureOffsets {
-        signature_offset: signature_offset as u16,
-        signature_instruction_index: 0,
-        eth_address_offset: eth_address_offset as u16,
-        eth_address_instruction_index: 0,
-        message_data_offset: message_data_offset as u16,
-        message_data_size: message_arr.len() as u16,
-        message_instruction_index: 0,
-    };
-    let writer = std::io::Cursor::new(&mut instruction_data[1..DATA_START]);
-    bincode::serialize_into(writer, &offsets).unwrap();
+//     let num_signatures = 1;
+//     instruction_data[0] = num_signatures;
+//     let offsets = SecpSignatureOffsets {
+//         signature_offset: signature_offset as u16,
+//         signature_instruction_index: 0,
+//         eth_address_offset: eth_address_offset as u16,
+//         eth_address_instruction_index: 0,
+//         message_data_offset: message_data_offset as u16,
+//         message_data_size: message_arr.len() as u16,
+//         message_instruction_index: 0,
+//     };
+//     let writer = std::io::Cursor::new(&mut instruction_data[1..DATA_START]);
+//     bincode::serialize_into(writer, &offsets).unwrap();
 
-    Instruction {
-        program_id: solana_sdk::secp256k1_program::id(),
-        accounts: vec![],
-        data: instruction_data,
-    }
-}
+//     Instruction {
+//         program_id: solana_sdk::secp256k1_program::id(),
+//         accounts: vec![],
+//         data: instruction_data,
+//     }
+// }
 
 /// Creates an Ethereum address from a secp256k1 public key.
 pub fn construct_eth_pubkey(
@@ -1035,284 +1037,284 @@ fn get_data_slice<'a>(
     Ok(&instruction_datas[signature_index][start..end])
 }
 
-#[cfg(test)]
-pub mod test {
-    use {
-        super::*,
-        crate::{
-            feature_set,
-            hash::Hash,
-            keccak,
-            secp256k1_instruction::{
-                new_secp256k1_instruction, SecpSignatureOffsets, SIGNATURE_OFFSETS_SERIALIZED_SIZE,
-            },
-            signature::{Keypair, Signer},
-            transaction::Transaction,
-        },
-        rand0_7::{thread_rng, Rng},
-    };
+// #[cfg(test)]
+// pub mod test {
+//     use {
+//         super::*,
+//         crate::{
+//             feature_set,
+//             hash::Hash,
+//             keccak,
+//             secp256k1_instruction::{
+//                 new_secp256k1_instruction, SecpSignatureOffsets, SIGNATURE_OFFSETS_SERIALIZED_SIZE,
+//             },
+//             signature::{Keypair, Signer},
+//             transaction::Transaction,
+//         },
+//         rand0_7::{thread_rng, Rng},
+//     };
 
-    fn test_case(
-        num_signatures: u8,
-        offsets: &SecpSignatureOffsets,
-    ) -> Result<(), PrecompileError> {
-        let mut instruction_data = vec![0u8; DATA_START];
-        instruction_data[0] = num_signatures;
-        let writer = std::io::Cursor::new(&mut instruction_data[1..]);
-        bincode::serialize_into(writer, &offsets).unwrap();
-        let feature_set = FeatureSet::all_enabled();
-        verify(&instruction_data, &[&[0u8; 100]], &feature_set)
-    }
+//     fn test_case(
+//         num_signatures: u8,
+//         offsets: &SecpSignatureOffsets,
+//     ) -> Result<(), PrecompileError> {
+//         let mut instruction_data = vec![0u8; DATA_START];
+//         instruction_data[0] = num_signatures;
+//         let writer = std::io::Cursor::new(&mut instruction_data[1..]);
+//         bincode::serialize_into(writer, &offsets).unwrap();
+//         let feature_set = FeatureSet::all_enabled();
+//         verify(&instruction_data, &[&[0u8; 100]], &feature_set)
+//     }
 
-    #[test]
-    fn test_invalid_offsets() {
-        solana_logger::setup();
+//     #[test]
+//     fn test_invalid_offsets() {
+//         solana_logger::setup();
 
-        let mut instruction_data = vec![0u8; DATA_START];
-        let offsets = SecpSignatureOffsets::default();
-        instruction_data[0] = 1;
-        let writer = std::io::Cursor::new(&mut instruction_data[1..]);
-        bincode::serialize_into(writer, &offsets).unwrap();
-        instruction_data.truncate(instruction_data.len() - 1);
-        let feature_set = FeatureSet::all_enabled();
+//         let mut instruction_data = vec![0u8; DATA_START];
+//         let offsets = SecpSignatureOffsets::default();
+//         instruction_data[0] = 1;
+//         let writer = std::io::Cursor::new(&mut instruction_data[1..]);
+//         bincode::serialize_into(writer, &offsets).unwrap();
+//         instruction_data.truncate(instruction_data.len() - 1);
+//         let feature_set = FeatureSet::all_enabled();
 
-        assert_eq!(
-            verify(&instruction_data, &[&[0u8; 100]], &feature_set),
-            Err(PrecompileError::InvalidInstructionDataSize)
-        );
+//         assert_eq!(
+//             verify(&instruction_data, &[&[0u8; 100]], &feature_set),
+//             Err(PrecompileError::InvalidInstructionDataSize)
+//         );
 
-        let offsets = SecpSignatureOffsets {
-            signature_instruction_index: 1,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidInstructionDataSize)
-        );
+//         let offsets = SecpSignatureOffsets {
+//             signature_instruction_index: 1,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidInstructionDataSize)
+//         );
 
-        let offsets = SecpSignatureOffsets {
-            message_instruction_index: 1,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidDataOffsets)
-        );
+//         let offsets = SecpSignatureOffsets {
+//             message_instruction_index: 1,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidDataOffsets)
+//         );
 
-        let offsets = SecpSignatureOffsets {
-            eth_address_instruction_index: 1,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidDataOffsets)
-        );
-    }
+//         let offsets = SecpSignatureOffsets {
+//             eth_address_instruction_index: 1,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidDataOffsets)
+//         );
+//     }
 
-    #[test]
-    fn test_message_data_offsets() {
-        let offsets = SecpSignatureOffsets {
-            message_data_offset: 99,
-            message_data_size: 1,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidSignature)
-        );
+//     #[test]
+//     fn test_message_data_offsets() {
+//         let offsets = SecpSignatureOffsets {
+//             message_data_offset: 99,
+//             message_data_size: 1,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidSignature)
+//         );
 
-        let offsets = SecpSignatureOffsets {
-            message_data_offset: 100,
-            message_data_size: 1,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidSignature)
-        );
+//         let offsets = SecpSignatureOffsets {
+//             message_data_offset: 100,
+//             message_data_size: 1,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidSignature)
+//         );
 
-        let offsets = SecpSignatureOffsets {
-            message_data_offset: 100,
-            message_data_size: 1000,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidSignature)
-        );
+//         let offsets = SecpSignatureOffsets {
+//             message_data_offset: 100,
+//             message_data_size: 1000,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidSignature)
+//         );
 
-        let offsets = SecpSignatureOffsets {
-            message_data_offset: std::u16::MAX,
-            message_data_size: std::u16::MAX,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidSignature)
-        );
-    }
+//         let offsets = SecpSignatureOffsets {
+//             message_data_offset: std::u16::MAX,
+//             message_data_size: std::u16::MAX,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidSignature)
+//         );
+//     }
 
-    #[test]
-    fn test_eth_offset() {
-        let offsets = SecpSignatureOffsets {
-            eth_address_offset: std::u16::MAX,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidSignature)
-        );
+//     #[test]
+//     fn test_eth_offset() {
+//         let offsets = SecpSignatureOffsets {
+//             eth_address_offset: std::u16::MAX,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidSignature)
+//         );
 
-        let offsets = SecpSignatureOffsets {
-            eth_address_offset: 100 - HASHED_PUBKEY_SERIALIZED_SIZE as u16 + 1,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidSignature)
-        );
-    }
+//         let offsets = SecpSignatureOffsets {
+//             eth_address_offset: 100 - HASHED_PUBKEY_SERIALIZED_SIZE as u16 + 1,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidSignature)
+//         );
+//     }
 
-    #[test]
-    fn test_signature_offset() {
-        let offsets = SecpSignatureOffsets {
-            signature_offset: std::u16::MAX,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidSignature)
-        );
+//     #[test]
+//     fn test_signature_offset() {
+//         let offsets = SecpSignatureOffsets {
+//             signature_offset: std::u16::MAX,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidSignature)
+//         );
 
-        let offsets = SecpSignatureOffsets {
-            signature_offset: 100 - SIGNATURE_SERIALIZED_SIZE as u16 + 1,
-            ..SecpSignatureOffsets::default()
-        };
-        assert_eq!(
-            test_case(1, &offsets),
-            Err(PrecompileError::InvalidSignature)
-        );
-    }
+//         let offsets = SecpSignatureOffsets {
+//             signature_offset: 100 - SIGNATURE_SERIALIZED_SIZE as u16 + 1,
+//             ..SecpSignatureOffsets::default()
+//         };
+//         assert_eq!(
+//             test_case(1, &offsets),
+//             Err(PrecompileError::InvalidSignature)
+//         );
+//     }
 
-    #[test]
-    fn test_count_is_zero_but_sig_data_exists() {
-        solana_logger::setup();
+//     #[test]
+//     fn test_count_is_zero_but_sig_data_exists() {
+//         solana_logger::setup();
 
-        let mut instruction_data = vec![0u8; DATA_START];
-        let offsets = SecpSignatureOffsets::default();
-        instruction_data[0] = 0;
-        let writer = std::io::Cursor::new(&mut instruction_data[1..]);
-        bincode::serialize_into(writer, &offsets).unwrap();
-        let feature_set = FeatureSet::all_enabled();
+//         let mut instruction_data = vec![0u8; DATA_START];
+//         let offsets = SecpSignatureOffsets::default();
+//         instruction_data[0] = 0;
+//         let writer = std::io::Cursor::new(&mut instruction_data[1..]);
+//         bincode::serialize_into(writer, &offsets).unwrap();
+//         let feature_set = FeatureSet::all_enabled();
 
-        assert_eq!(
-            verify(&instruction_data, &[&[0u8; 100]], &feature_set),
-            Err(PrecompileError::InvalidInstructionDataSize)
-        );
-    }
+//         assert_eq!(
+//             verify(&instruction_data, &[&[0u8; 100]], &feature_set),
+//             Err(PrecompileError::InvalidInstructionDataSize)
+//         );
+//     }
 
-    #[test]
-    fn test_secp256k1() {
-        solana_logger::setup();
-        let offsets = SecpSignatureOffsets::default();
-        assert_eq!(
-            bincode::serialized_size(&offsets).unwrap() as usize,
-            SIGNATURE_OFFSETS_SERIALIZED_SIZE
-        );
+//     #[test]
+//     fn test_secp256k1() {
+//         solana_logger::setup();
+//         let offsets = SecpSignatureOffsets::default();
+//         assert_eq!(
+//             bincode::serialized_size(&offsets).unwrap() as usize,
+//             SIGNATURE_OFFSETS_SERIALIZED_SIZE
+//         );
 
-        let secp_privkey = libsecp256k1::SecretKey::random(&mut thread_rng());
-        let message_arr = b"hello";
-        let mut secp_instruction = new_secp256k1_instruction(&secp_privkey, message_arr);
-        let mint_keypair = Keypair::new();
-        let feature_set = feature_set::FeatureSet::all_enabled();
+//         let secp_privkey = libsecp256k1::SecretKey::random(&mut thread_rng());
+//         let message_arr = b"hello";
+//         let mut secp_instruction = new_secp256k1_instruction(&secp_privkey, message_arr);
+//         let mint_keypair = Keypair::new();
+//         let feature_set = feature_set::FeatureSet::all_enabled();
 
-        let tx = Transaction::new_signed_with_payer(
-            &[secp_instruction.clone()],
-            Some(&mint_keypair.pubkey()),
-            &[&mint_keypair],
-            Hash::default(),
-        );
+//         let tx = Transaction::new_signed_with_payer(
+//             &[secp_instruction.clone()],
+//             Some(&mint_keypair.pubkey()),
+//             &[&mint_keypair],
+//             Hash::default(),
+//         );
 
-        assert!(tx.verify_precompiles(&feature_set).is_ok());
+//         assert!(tx.verify_precompiles(&feature_set).is_ok());
 
-        let index = thread_rng().gen_range(0, secp_instruction.data.len());
-        secp_instruction.data[index] = secp_instruction.data[index].wrapping_add(12);
-        let tx = Transaction::new_signed_with_payer(
-            &[secp_instruction],
-            Some(&mint_keypair.pubkey()),
-            &[&mint_keypair],
-            Hash::default(),
-        );
-        assert!(tx.verify_precompiles(&feature_set).is_err());
-    }
+//         let index = thread_rng().gen_range(0, secp_instruction.data.len());
+//         secp_instruction.data[index] = secp_instruction.data[index].wrapping_add(12);
+//         let tx = Transaction::new_signed_with_payer(
+//             &[secp_instruction],
+//             Some(&mint_keypair.pubkey()),
+//             &[&mint_keypair],
+//             Hash::default(),
+//         );
+//         assert!(tx.verify_precompiles(&feature_set).is_err());
+//     }
 
-    // Signatures are malleable.
-    #[test]
-    fn test_malleability() {
-        solana_logger::setup();
+//     // Signatures are malleable.
+//     #[test]
+//     fn test_malleability() {
+//         solana_logger::setup();
 
-        let secret_key = libsecp256k1::SecretKey::random(&mut thread_rng());
-        let public_key = libsecp256k1::PublicKey::from_secret_key(&secret_key);
-        let eth_address = construct_eth_pubkey(&public_key);
+//         let secret_key = libsecp256k1::SecretKey::random(&mut thread_rng());
+//         let public_key = libsecp256k1::PublicKey::from_secret_key(&secret_key);
+//         let eth_address = construct_eth_pubkey(&public_key);
 
-        let message = b"hello";
-        let message_hash = {
-            let mut hasher = keccak::Hasher::default();
-            hasher.hash(message);
-            hasher.result()
-        };
+//         let message = b"hello";
+//         let message_hash = {
+//             let mut hasher = keccak::Hasher::default();
+//             hasher.hash(message);
+//             hasher.result()
+//         };
 
-        let secp_message = libsecp256k1::Message::parse(&message_hash.0);
-        let (signature, recovery_id) = libsecp256k1::sign(&secp_message, &secret_key);
+//         let secp_message = libsecp256k1::Message::parse(&message_hash.0);
+//         let (signature, recovery_id) = libsecp256k1::sign(&secp_message, &secret_key);
 
-        // Flip the S value in the signature to make a different but valid signature.
-        let mut alt_signature = signature;
-        alt_signature.s = -alt_signature.s;
-        let alt_recovery_id = libsecp256k1::RecoveryId::parse(recovery_id.serialize() ^ 1).unwrap();
+//         // Flip the S value in the signature to make a different but valid signature.
+//         let mut alt_signature = signature;
+//         alt_signature.s = -alt_signature.s;
+//         let alt_recovery_id = libsecp256k1::RecoveryId::parse(recovery_id.serialize() ^ 1).unwrap();
 
-        let mut data: Vec<u8> = vec![];
-        let mut both_offsets = vec![];
+//         let mut data: Vec<u8> = vec![];
+//         let mut both_offsets = vec![];
 
-        // Verify both signatures of the same message.
-        let sigs = [(signature, recovery_id), (alt_signature, alt_recovery_id)];
-        for (signature, recovery_id) in sigs.iter() {
-            let signature_offset = data.len();
-            data.extend(signature.serialize());
-            data.push(recovery_id.serialize());
-            let eth_address_offset = data.len();
-            data.extend(eth_address);
-            let message_data_offset = data.len();
-            data.extend(message);
+//         // Verify both signatures of the same message.
+//         let sigs = [(signature, recovery_id), (alt_signature, alt_recovery_id)];
+//         for (signature, recovery_id) in sigs.iter() {
+//             let signature_offset = data.len();
+//             data.extend(signature.serialize());
+//             data.push(recovery_id.serialize());
+//             let eth_address_offset = data.len();
+//             data.extend(eth_address);
+//             let message_data_offset = data.len();
+//             data.extend(message);
 
-            let data_start = 1 + SIGNATURE_OFFSETS_SERIALIZED_SIZE * 2;
+//             let data_start = 1 + SIGNATURE_OFFSETS_SERIALIZED_SIZE * 2;
 
-            let offsets = SecpSignatureOffsets {
-                signature_offset: (signature_offset + data_start) as u16,
-                signature_instruction_index: 0,
-                eth_address_offset: (eth_address_offset + data_start) as u16,
-                eth_address_instruction_index: 0,
-                message_data_offset: (message_data_offset + data_start) as u16,
-                message_data_size: message.len() as u16,
-                message_instruction_index: 0,
-            };
+//             let offsets = SecpSignatureOffsets {
+//                 signature_offset: (signature_offset + data_start) as u16,
+//                 signature_instruction_index: 0,
+//                 eth_address_offset: (eth_address_offset + data_start) as u16,
+//                 eth_address_instruction_index: 0,
+//                 message_data_offset: (message_data_offset + data_start) as u16,
+//                 message_data_size: message.len() as u16,
+//                 message_instruction_index: 0,
+//             };
 
-            both_offsets.push(offsets);
-        }
+//             both_offsets.push(offsets);
+//         }
 
-        let mut instruction_data: Vec<u8> = vec![2];
+//         let mut instruction_data: Vec<u8> = vec![2];
 
-        for offsets in both_offsets {
-            let offsets = bincode::serialize(&offsets).unwrap();
-            instruction_data.extend(offsets);
-        }
+//         for offsets in both_offsets {
+//             let offsets = bincode::serialize(&offsets).unwrap();
+//             instruction_data.extend(offsets);
+//         }
 
-        instruction_data.extend(data);
+//         instruction_data.extend(data);
 
-        verify(
-            &instruction_data,
-            &[&instruction_data],
-            &FeatureSet::all_enabled(),
-        )
-        .unwrap();
-    }
-}
+//         verify(
+//             &instruction_data,
+//             &[&instruction_data],
+//             &FeatureSet::all_enabled(),
+//         )
+//         .unwrap();
+//     }
+// }
