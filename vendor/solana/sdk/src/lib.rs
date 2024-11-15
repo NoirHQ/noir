@@ -61,7 +61,7 @@ extern crate self as solana_sdk;
 //    syscalls, system_instruction, system_program, sysvar, unchecked_div_by_const, vote,
 //    wasm_bindgen,
 //};
-pub use solana_program::{borsh1, instruction, message, native_token, sanitize, short_vec};
+pub use solana_program::{borsh1, clock, instruction, message, native_token, sanitize, short_vec};
 
 //pub mod account;
 //pub mod account_utils;

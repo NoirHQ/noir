@@ -8,8 +8,8 @@ extern crate alloc;
 //#[macro_use]
 //extern crate eager;
 
-//#[macro_use]
-//extern crate solana_metrics;
+// #[macro_use]
+// extern crate solana_metrics;
 
 pub use solana_rbpf;
 pub mod compute_budget;
@@ -21,4 +21,4 @@ pub mod log_collector;
 pub mod prioritization_fee;
 pub mod stable_log;
 //pub mod sysvar_cache;
-//pub mod timings;
+pub mod timings;
