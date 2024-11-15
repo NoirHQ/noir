@@ -61,17 +61,17 @@ extern crate self as solana_sdk;
 //    syscalls, system_instruction, system_program, sysvar, unchecked_div_by_const, vote,
 //    wasm_bindgen,
 //};
-pub use solana_program::{instruction, sanitize, short_vec};
+pub use solana_program::{borsh1, instruction, message, native_token, sanitize, short_vec};
 
 //pub mod account;
 //pub mod account_utils;
 //pub mod client;
 //pub mod commitment_config;
-//pub mod compute_budget;
+pub mod compute_budget;
 //pub mod derivation_path;
 //pub mod deserialize_utils;
 //pub mod ed25519_instruction;
-//pub mod entrypoint;
+pub mod entrypoint;
 //pub mod entrypoint_deprecated;
 //pub mod epoch_info;
 //pub mod epoch_rewards_hasher;
@@ -79,7 +79,7 @@ pub use solana_program::{instruction, sanitize, short_vec};
 //pub mod exit;
 //pub mod feature;
 //pub mod feature_set;
-//pub mod fee;
+pub mod fee;
 //pub mod genesis_config;
 //pub mod hard_forks;
 //pub mod hash;
@@ -106,7 +106,7 @@ pub mod pubkey;
 //pub mod simple_vote_transaction_checker;
 //pub mod system_transaction;
 //pub mod timing;
-//pub mod transaction;
+pub mod transaction;
 //pub mod transaction_context;
 //pub mod transport;
 //pub mod wasm;
@@ -180,8 +180,8 @@ extern crate serde_derive;
 pub extern crate bs58;
 extern crate log as logger;
 
-//#[macro_use]
-//extern crate solana_frozen_abi_macro;
+#[macro_use]
+extern crate solana_frozen_abi_macro;
 
 #[cfg(test)]
 mod tests {

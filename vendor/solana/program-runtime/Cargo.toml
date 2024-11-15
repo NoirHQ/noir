@@ -14,11 +14,13 @@ publish = false
 [dependencies]
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
+solana_rbpf = { git = "https://github.com/code0xff/rbpf", branch = "no_std" }
 solana-sdk = { workspace = true, features = ["full"] }
 
 [features]
 default = ["std"]
 std = [
+	"solana_rbpf/std",
 	"solana-sdk/std",
 ]
 serde = [
