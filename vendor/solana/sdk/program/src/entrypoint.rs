@@ -4,16 +4,14 @@
 //!
 //! [`bpf_loader`]: crate::bpf_loader
 
-extern crate alloc;
 use {
     crate::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey},
-    alloc::vec::Vec,
-    std::{
+    alloc::{rc::Rc, vec::Vec},
+    core::{
         alloc::Layout,
         cell::RefCell,
         mem::size_of,
         ptr::null_mut,
-        rc::Rc,
         result::Result as ResultGeneric,
         slice::{from_raw_parts, from_raw_parts_mut},
     },
@@ -235,7 +233,7 @@ pub struct BumpAllocator {
 /// operating on the prescribed `HEAP_START_ADDRESS` and `HEAP_LENGTH`. Any
 /// other use may overflow and is thus unsupported and at one's own risk.
 #[allow(clippy::arithmetic_side_effects)]
-unsafe impl std::alloc::GlobalAlloc for BumpAllocator {
+unsafe impl core::alloc::GlobalAlloc for BumpAllocator {
     #[inline]
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let pos_ptr = self.start as *mut usize;

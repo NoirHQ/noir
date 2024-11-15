@@ -5,8 +5,8 @@
 use {
     crate::sanitize::Sanitize,
     borsh::{BorshDeserialize, BorshSchema, BorshSerialize},
+    core::{convert::TryFrom, fmt, mem, str::FromStr},
     sha3::{Digest, Keccak256},
-    std::{convert::TryFrom, fmt, mem, str::FromStr},
     thiserror::Error,
 };
 
@@ -76,9 +76,9 @@ impl fmt::Display for Hash {
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum ParseHashError {
-    #[error("string decoded to wrong size for hash")]
+    #[cfg_attr(feature = "std", error("string decoded to wrong size for hash"))]
     WrongSize,
-    #[error("failed to decoded string to hash")]
+    #[cfg_attr(feature = "std", error("failed to decoded string to hash"))]
     Invalid,
 }
 
@@ -111,11 +111,12 @@ impl Hash {
 
     /// unique Hash for tests and benchmarks.
     pub fn new_unique() -> Self {
-        use crate::atomic_u64::AtomicU64;
+        //use crate::atomic_u64::AtomicU64;
+        use core::sync::atomic::AtomicU64;
         static I: AtomicU64 = AtomicU64::new(1);
 
         let mut b = [0u8; HASH_BYTES];
-        let i = I.fetch_add(1);
+        let i = I.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
         b[0..8].copy_from_slice(&i.to_le_bytes());
         Self::new(&b)
     }

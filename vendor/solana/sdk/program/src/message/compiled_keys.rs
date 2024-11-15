@@ -5,7 +5,7 @@ use crate::{
 };
 use {
     crate::{instruction::Instruction, message::MessageHeader, pubkey::Pubkey},
-    std::collections::BTreeMap,
+    alloc::collections::BTreeMap,
     thiserror::Error,
 };
 
@@ -19,11 +19,17 @@ pub(crate) struct CompiledKeys {
 #[cfg_attr(target_os = "solana", allow(dead_code))]
 #[derive(PartialEq, Debug, Error, Eq, Clone)]
 pub enum CompileError {
-    #[error("account index overflowed during compilation")]
+    #[cfg_attr(feature = "std", error("account index overflowed during compilation"))]
     AccountIndexOverflow,
-    #[error("address lookup table index overflowed during compilation")]
+    #[cfg_attr(
+        feature = "std",
+        error("address lookup table index overflowed during compilation")
+    )]
     AddressTableLookupIndexOverflow,
-    #[error("encountered unknown account key `{0}` during instruction compilation")]
+    #[cfg_attr(
+        feature = "std",
+        error("encountered unknown account key `{0}` during instruction compilation")
+    )]
     UnknownInstructionKey(Pubkey),
 }
 
@@ -106,7 +112,7 @@ impl CompiledKeys {
             num_readonly_unsigned_accounts: try_into_u8(readonly_non_signer_keys.len())?,
         };
 
-        let static_account_keys = std::iter::empty()
+        let static_account_keys = core::iter::empty()
             .chain(writable_signer_keys)
             .chain(readonly_signer_keys)
             .chain(writable_non_signer_keys)

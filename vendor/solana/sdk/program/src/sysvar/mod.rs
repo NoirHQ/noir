@@ -82,8 +82,8 @@
 //! [sysvardoc]: https://docs.solanalabs.com/runtime/sysvars
 
 use {
-    crate::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey},
-    lazy_static::lazy_static,
+    crate::{account_info::AccountInfo, bincode, program_error::ProgramError, pubkey::Pubkey},
+    /*lazy_static::lazy_static,*/
 };
 
 pub mod clock;
@@ -99,6 +99,7 @@ pub mod slot_hashes;
 pub mod slot_history;
 pub mod stake_history;
 
+/*
 lazy_static! {
     // This will be deprecated and so this list shouldn't be modified
     pub static ref ALL_IDS: Vec<Pubkey> = vec![
@@ -116,6 +117,23 @@ lazy_static! {
         instructions::id(),
     ];
 }
+*/
+
+// TODO: Lazy initialization.
+pub static ALL_IDS: &[Pubkey] = &[
+    clock::id(),
+    epoch_schedule::id(),
+    #[allow(deprecated)]
+    fees::const_id(),
+    #[allow(deprecated)]
+    recent_blockhashes::const_id(),
+    rent::id(),
+    rewards::id(),
+    slot_hashes::id(),
+    slot_history::id(),
+    stake_history::id(),
+    instructions::id(),
+];
 
 /// Returns `true` of the given `Pubkey` is a sysvar account.
 pub fn is_sysvar_id(id: &Pubkey) -> bool {

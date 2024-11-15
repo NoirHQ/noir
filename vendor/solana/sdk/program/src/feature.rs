@@ -12,8 +12,8 @@
 //!    active them.  When this occurs, the activation slot is recorded in the feature account
 
 use crate::{
-    account_info::AccountInfo, clock::Slot, instruction::Instruction, program_error::ProgramError,
-    pubkey::Pubkey, rent::Rent, system_instruction,
+    account_info::AccountInfo, bincode, clock::Slot, instruction::Instruction,
+    program_error::ProgramError, pubkey::Pubkey, rent::Rent, system_instruction,
 };
 
 crate::declare_id!("Feature111111111111111111111111111111111111");

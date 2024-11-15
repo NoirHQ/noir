@@ -377,7 +377,10 @@ pub fn extend_program(
 
 #[cfg(test)]
 mod tests {
-    use {super::*, bincode::serialized_size};
+    use {
+        super::*,
+        crate::bincode::{self, serialized_size},
+    };
 
     #[test]
     fn test_state_size_of_uninitialized() {

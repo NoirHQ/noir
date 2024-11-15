@@ -6,7 +6,7 @@ use {
         pubkey::Pubkey,
         stable_layout::stable_vec::StableVec,
     },
-    std::fmt::Debug,
+    core::fmt::Debug,
 };
 
 /// `Instruction`, with a stable memory layout

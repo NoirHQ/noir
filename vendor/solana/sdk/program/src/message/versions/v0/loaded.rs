@@ -1,10 +1,14 @@
+#[cfg(not(feature = "std"))]
+use hashbrown::HashSet;
+#[cfg(feature = "std")]
+use std::collections::HashSet;
 use {
     crate::{
         bpf_loader_upgradeable,
         message::{legacy::is_builtin_key_or_sysvar, v0, AccountKeys},
         pubkey::Pubkey,
     },
-    std::{borrow::Cow, collections::HashSet},
+    alloc::borrow::Cow,
 };
 
 /// Combination of a version #0 message and its loaded addresses
@@ -82,7 +86,7 @@ impl<'a> LoadedMessage<'a> {
             .enumerate()
             .map(|(i, _key)| self.is_writable_internal(i))
             .collect::<Vec<_>>();
-        let _ = std::mem::replace(
+        let _ = core::mem::replace(
             &mut self.is_writable_account_cache,
             is_writable_account_cache,
         );
@@ -256,7 +260,7 @@ mod tests {
 
     #[test]
     fn test_is_writable() {
-        solana_logger::setup();
+        //solana_logger::setup();
         let create_message_with_keys = |keys: Vec<Pubkey>| {
             LoadedMessage::new(
                 v0::Message {

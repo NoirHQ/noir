@@ -6,27 +6,39 @@ use {
 #[derive(Debug, Error, PartialEq, Eq, Clone)]
 pub enum AddressLoaderError {
     /// Address loading from lookup tables is disabled
-    #[error("Address loading from lookup tables is disabled")]
+    #[cfg_attr(
+        feature = "std",
+        error("Address loading from lookup tables is disabled")
+    )]
     Disabled,
 
     /// Failed to load slot hashes sysvar
-    #[error("Failed to load slot hashes sysvar")]
+    #[cfg_attr(feature = "std", error("Failed to load slot hashes sysvar"))]
     SlotHashesSysvarNotFound,
 
     /// Attempted to lookup addresses from a table that does not exist
-    #[error("Attempted to lookup addresses from a table that does not exist")]
+    #[cfg_attr(
+        feature = "std",
+        error("Attempted to lookup addresses from a table that does not exist")
+    )]
     LookupTableAccountNotFound,
 
     /// Attempted to lookup addresses from an account owned by the wrong program
-    #[error("Attempted to lookup addresses from an account owned by the wrong program")]
+    #[cfg_attr(
+        feature = "std",
+        error("Attempted to lookup addresses from an account owned by the wrong program")
+    )]
     InvalidAccountOwner,
 
     /// Attempted to lookup addresses from an invalid account
-    #[error("Attempted to lookup addresses from an invalid account")]
+    #[cfg_attr(
+        feature = "std",
+        error("Attempted to lookup addresses from an invalid account")
+    )]
     InvalidAccountData,
 
     /// Address lookup contains an invalid index
-    #[error("Address lookup contains an invalid index")]
+    #[cfg_attr(feature = "std", error("Address lookup contains an invalid index"))]
     InvalidLookupIndex,
 }
 

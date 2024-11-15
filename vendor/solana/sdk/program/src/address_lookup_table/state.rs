@@ -1,14 +1,15 @@
 use {
-    serde::{Deserialize, Serialize},
-    solana_frozen_abi_macro::{AbiEnumVisitor, AbiExample},
-    solana_program::{
+    crate::{
         address_lookup_table::error::AddressLookupError,
+        bincode,
         clock::Slot,
         instruction::InstructionError,
         pubkey::Pubkey,
         slot_hashes::{SlotHashes, MAX_ENTRIES},
     },
-    std::borrow::Cow,
+    alloc::borrow::Cow,
+    serde::{Deserialize, Serialize},
+    solana_frozen_abi_macro::{AbiEnumVisitor, AbiExample},
 };
 
 /// The maximum number of addresses that a lookup table can hold

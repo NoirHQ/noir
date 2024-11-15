@@ -13,18 +13,19 @@
 
 use {
     crate::{
-        bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable,
+        bincode, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable,
         hash::Hash,
         instruction::{CompiledInstruction, Instruction},
         message::{compiled_keys::CompiledKeys, MessageHeader},
         pubkey::Pubkey,
         sanitize::{Sanitize, SanitizeError},
-        short_vec, system_instruction, system_program, sysvar, wasm_bindgen,
+        short_vec, system_instruction, system_program, sysvar, /*wasm_bindgen,*/
     },
-    lazy_static::lazy_static,
-    std::{convert::TryFrom, str::FromStr},
+    /*lazy_static::lazy_static,*/
+    core::{convert::TryFrom /*str::FromStr*/},
 };
 
+/*
 lazy_static! {
     // This will be deprecated and so this list shouldn't be modified
     pub static ref BUILTIN_PROGRAMS_KEYS: [Pubkey; 10] = {
@@ -43,7 +44,23 @@ lazy_static! {
         ]
     };
 }
+*/
 
+// TODO: Lazy initialization.
+pub static BUILTIN_PROGRAMS_KEYS: &[Pubkey; 10] = &[
+    Pubkey::parse("Config1111111111111111111111111111111111111"),
+    Pubkey::parse("Feature111111111111111111111111111111111111"),
+    Pubkey::parse("NativeLoader1111111111111111111111111111111"),
+    Pubkey::parse("Stake11111111111111111111111111111111111111"),
+    Pubkey::parse("StakeConfig11111111111111111111111111111111"),
+    Pubkey::parse("Vote111111111111111111111111111111111111111"),
+    system_program::id(),
+    bpf_loader::id(),
+    bpf_loader_deprecated::id(),
+    bpf_loader_upgradeable::id(),
+];
+
+/*
 lazy_static! {
     // Each element of a key is a u8. We use key[0] as an index into this table of 256 boolean
     // elements, to store whether or not the first element of any key is present in the static
@@ -57,6 +74,25 @@ lazy_static! {
         temp_table
     };
 }
+*/
+
+// TODO: Lazy initialization.
+pub static MAYBE_BUILTIN_KEY_OR_SYSVAR: &[bool; 256] = &{
+    let mut temp_table: [bool; 256] = [false; 256];
+    let mut i = 0;
+    while i < BUILTIN_PROGRAMS_KEYS.len() {
+        let key = BUILTIN_PROGRAMS_KEYS[i];
+        temp_table[key.0[0] as usize] = true;
+        i += 1;
+    }
+    i = 0;
+    while i < sysvar::ALL_IDS.len() {
+        let key = sysvar::ALL_IDS[i];
+        temp_table[key.0[0] as usize] = true;
+        i += 1;
+    }
+    temp_table
+};
 
 pub fn is_builtin_key_or_sysvar(key: &Pubkey) -> bool {
     if MAYBE_BUILTIN_KEY_OR_SYSVAR[key.0[0] as usize] {
@@ -103,18 +139,18 @@ fn compile_instructions(ixs: &[Instruction], keys: &[Pubkey]) -> Vec<CompiledIns
 /// redundantly specifying the fee-payer is not strictly required.
 // NOTE: Serialization-related changes must be paired with the custom serialization
 // for versioned messages in the `RemainingLegacyMessage` struct.
-#[wasm_bindgen]
+//#[wasm_bindgen]
 #[frozen_abi(digest = "2KnLEqfLcTBQqitE22Pp8JYkaqVVbAkGbCfdeHoyxcAU")]
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Clone, AbiExample)]
 #[serde(rename_all = "camelCase")]
 pub struct Message {
     /// The message header, identifying signed and read-only `account_keys`.
     // NOTE: Serialization-related changes must be paired with the direct read at sigverify.
-    #[wasm_bindgen(skip)]
+    //#[wasm_bindgen(skip)]
     pub header: MessageHeader,
 
     /// All the account keys used by this transaction.
-    #[wasm_bindgen(skip)]
+    //#[wasm_bindgen(skip)]
     #[serde(with = "short_vec")]
     pub account_keys: Vec<Pubkey>,
 
@@ -123,13 +159,13 @@ pub struct Message {
 
     /// Programs that will be executed in sequence and committed in one atomic transaction if all
     /// succeed.
-    #[wasm_bindgen(skip)]
+    //#[wasm_bindgen(skip)]
     #[serde(with = "short_vec")]
     pub instructions: Vec<CompiledInstruction>,
 }
 
 impl Sanitize for Message {
-    fn sanitize(&self) -> std::result::Result<(), SanitizeError> {
+    fn sanitize(&self) -> core::result::Result<(), SanitizeError> {
         // signing area and read-only non-signing area should not overlap
         if self.header.num_required_signatures as usize
             + self.header.num_readonly_unsigned_accounts as usize
@@ -622,7 +658,7 @@ mod tests {
     use {
         super::*,
         crate::{hash, instruction::AccountMeta, message::MESSAGE_HEADER_LENGTH},
-        std::collections::HashSet,
+        std::{collections::HashSet, str::FromStr},
     };
 
     #[test]

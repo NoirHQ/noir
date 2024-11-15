@@ -15,7 +15,7 @@ pub fn sol_to_lamports(sol: f64) -> u64 {
     (sol * LAMPORTS_PER_SOL as f64) as u64
 }
 
-use std::fmt::{Debug, Display, Formatter, Result};
+use core::fmt::{Debug, Display, Formatter, Result};
 pub struct Sol(pub u64);
 
 impl Sol {

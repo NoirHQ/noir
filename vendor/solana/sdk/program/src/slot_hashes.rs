@@ -9,7 +9,7 @@
 pub use crate::clock::Slot;
 use {
     crate::hash::Hash,
-    std::{
+    core::{
         iter::FromIterator,
         ops::Deref,
         sync::atomic::{AtomicUsize, Ordering},

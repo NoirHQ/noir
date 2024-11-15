@@ -2,12 +2,12 @@
 
 #![allow(clippy::arithmetic_side_effects)]
 use {
+    core::{convert::TryFrom, fmt, marker::PhantomData},
     serde::{
         de::{self, Deserializer, SeqAccess, Visitor},
         ser::{self, SerializeTuple, Serializer},
         Deserialize, Serialize,
     },
-    std::{convert::TryFrom, fmt, marker::PhantomData},
 };
 
 /// Same as u16, but serialized with 1 to 3 bytes. If the value is above
@@ -15,7 +15,7 @@ use {
 /// bytes. Each byte follows the same pattern until the 3rd byte. The 3rd
 /// byte, if needed, uses all 8 bits to store the last byte of the original
 /// value.
-#[derive(AbiExample)]
+//#[derive(AbiExample)]
 pub struct ShortU16(pub u16);
 
 impl Serialize for ShortU16 {
@@ -101,9 +101,9 @@ fn visit_byte(elem: u8, val: u16, nth_byte: usize) -> VisitResult {
     }
 
     let shift = u32::try_from(nth_byte)
-        .unwrap_or(std::u32::MAX)
+        .unwrap_or(core::u32::MAX)
         .saturating_mul(7);
-    let elem_val = elem_val.checked_shl(shift).unwrap_or(std::u32::MAX);
+    let elem_val = elem_val.checked_shl(shift).unwrap_or(core::u32::MAX);
 
     let new_val = val | elem_val;
     let val = u16::try_from(new_val).map_err(|_| VisitError::Overflow(new_val))?;
@@ -170,7 +170,7 @@ pub fn serialize<S: Serializer, T: Serialize>(
     let mut seq = serializer.serialize_tuple(1)?;
 
     let len = elements.len();
-    if len > std::u16::MAX as usize {
+    if len > core::u16::MAX as usize {
         return Err(ser::Error::custom("length larger than u16"));
     }
     let short_len = ShortU16(len as u16);
@@ -227,7 +227,7 @@ where
     T: Deserialize<'de>,
 {
     let visitor = ShortVecVisitor { _t: PhantomData };
-    deserializer.deserialize_tuple(std::usize::MAX, visitor)
+    deserializer.deserialize_tuple(core::usize::MAX, visitor)
 }
 
 pub struct ShortVec<T>(pub Vec<T>);
@@ -269,13 +269,13 @@ pub fn decode_shortu16_len(bytes: &[u8]) -> Result<(usize, usize), ()> {
 mod tests {
     use {
         super::*,
+        crate::bincode::{deserialize, serialize},
         assert_matches::assert_matches,
-        bincode::{deserialize, serialize},
     };
 
     /// Return the serialized length.
     fn encode_len(len: u16) -> Vec<u8> {
-        bincode::serialize(&ShortU16(len)).unwrap()
+        serialize(&ShortU16(len)).unwrap()
     }
 
     fn assert_len_encoding(len: u16, bytes: &[u8]) {

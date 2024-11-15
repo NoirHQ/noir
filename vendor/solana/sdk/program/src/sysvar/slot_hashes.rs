@@ -17,6 +17,7 @@
 //! Calling via the RPC client:
 //!
 //! ```
+//! # use solana_program::bincode;
 //! # use solana_program::example_mocks::solana_sdk;
 //! # use solana_program::example_mocks::solana_rpc_client;
 //! # use solana_sdk::account::Account;
@@ -73,7 +74,7 @@ mod tests {
     fn test_size_of() {
         assert_eq!(
             SlotHashes::size_of(),
-            bincode::serialized_size(
+            crate::bincode::serialized_size(
                 &(0..MAX_ENTRIES)
                     .map(|slot| (slot as Slot, Hash::default()))
                     .collect::<SlotHashes>()

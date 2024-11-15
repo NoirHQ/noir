@@ -4,7 +4,7 @@
 //! This implementation mostly matches `std::option` except iterators since the iteration
 //! trait requires returning `std::option::Option`
 
-use std::{
+use core::{
     convert, mem,
     ops::{Deref, DerefMut},
 };
@@ -171,7 +171,7 @@ impl<T> COption<T> {
     /// assert_eq!(x.expect("the world is ending"), "value");
     /// ```
     ///
-    /// ```ignore{.should_panic}
+    /// ```ignore,should_panic
     /// let x: COption<&str> = COption::None;
     /// x.expect("the world is ending"); // panics with `the world is ending`
     /// ```
@@ -203,7 +203,7 @@ impl<T> COption<T> {
     /// assert_eq!(x.unwrap(), "air");
     /// ```
     ///
-    /// ```ignore{.should_panic}
+    /// ```ignore,should_panic
     /// let x: COption<&str> = COption::None;
     /// assert_eq!(x.unwrap(), "air"); // fails
     /// ```

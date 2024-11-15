@@ -32,6 +32,11 @@ members = [
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
 	"vendor/no_std/bv",
+	"vendor/solana/frozen-abi/macro",
+	"vendor/solana/program-runtime",
+	"vendor/solana/sdk",
+	"vendor/solana/sdk/macro",
+	"vendor/solana/sdk/program",
 ]
 default-members = [
 	"core-primitives",
@@ -71,6 +76,11 @@ pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = fals
 pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
+solana-frozen-abi-macro = { path = "vendor/solana/frozen-abi/macro" }
+solana-program = { path = "vendor/solana/sdk/program", default-features = false }
+solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
+solana-sdk = { path = "vendor/solana/sdk", default-features = false }
+solana-sdk-macro = { path = "vendor/solana/sdk/macro" }
 
 # no_std
 bv = { path = "vendor/no_std/bv", default-features = false }

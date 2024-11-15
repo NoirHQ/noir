@@ -2,12 +2,12 @@
 
 #![allow(clippy::arithmetic_side_effects)]
 use {
+    core::{fmt, marker::PhantomData},
     serde::{
         de::{Error as _, SeqAccess, Visitor},
         ser::SerializeTuple,
         Deserializer, Serializer,
     },
-    std::{fmt, marker::PhantomData},
 };
 
 pub trait VarInt: Sized {
@@ -56,7 +56,7 @@ where
     T: VarInt,
 {
     deserializer.deserialize_tuple(
-        (std::mem::size_of::<T>() * 8 + 6) / 7,
+        (core::mem::size_of::<T>() * 8 + 6) / 7,
         VarIntVisitor {
             phantom: PhantomData,
         },
@@ -120,7 +120,10 @@ impl_var_int!(u64);
 
 #[cfg(test)]
 mod tests {
-    use {crate::short_vec::ShortU16, rand::Rng};
+    use {
+        crate::{bincode, short_vec::ShortU16},
+        rand::Rng,
+    };
 
     #[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
     struct Dummy {
@@ -199,14 +202,14 @@ mod tests {
         assert!(out.is_err());
         assert_eq!(
             format!("{out:?}"),
-            r#"Err(Custom("Invalid Trailing Zeros"))"#
+            r#"Err(OtherString("Invalid Trailing Zeros"))"#
         );
         let buffer = [0x80, 0x0];
         let out = bincode::deserialize::<Dummy>(&buffer);
         assert!(out.is_err());
         assert_eq!(
             format!("{out:?}"),
-            r#"Err(Custom("Invalid Trailing Zeros"))"#
+            r#"Err(OtherString("Invalid Trailing Zeros"))"#
         );
     }
 
@@ -215,7 +218,10 @@ mod tests {
         let buffer = [0xe4, 0xd7, 0x88, 0xf6, 0x6f, 0xd4, 0xb9, 0x59];
         let out = bincode::deserialize::<Dummy>(&buffer);
         assert!(out.is_err());
-        assert_eq!(format!("{out:?}"), r#"Err(Custom("Last Byte Truncated"))"#);
+        assert_eq!(
+            format!("{out:?}"),
+            r#"Err(OtherString("Last Byte Truncated"))"#
+        );
     }
 
     #[test]
@@ -223,7 +229,10 @@ mod tests {
         let buffer = [0x84, 0xdf, 0x96, 0xfa, 0xef];
         let out = bincode::deserialize::<Dummy>(&buffer);
         assert!(out.is_err());
-        assert_eq!(format!("{out:?}"), r#"Err(Custom("Left Shift Overflows"))"#);
+        assert_eq!(
+            format!("{out:?}"),
+            r#"Err(OtherString("Left Shift Overflows"))"#
+        );
     }
 
     #[test]
@@ -231,7 +240,10 @@ mod tests {
         let buffer = [0x84, 0xdf, 0x96, 0xfa];
         let out = bincode::deserialize::<Dummy>(&buffer);
         assert!(out.is_err());
-        assert_eq!(format!("{out:?}"), r#"Err(Io(Kind(UnexpectedEof)))"#);
+        assert_eq!(
+            format!("{out:?}"),
+            r#"Err(UnexpectedEnd { additional: 1 })"#
+        );
     }
 
     #[test]

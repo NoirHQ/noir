@@ -55,23 +55,35 @@ use {
 
 #[derive(Error, Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub enum SystemError {
-    #[error("an account with the same address already exists")]
+    #[cfg_attr(
+        feature = "std",
+        error("an account with the same address already exists")
+    )]
     AccountAlreadyInUse,
-    #[error("account does not have enough SOL to perform the operation")]
+    #[cfg_attr(
+        feature = "std",
+        error("account does not have enough SOL to perform the operation")
+    )]
     ResultWithNegativeLamports,
-    #[error("cannot assign account to this program id")]
+    #[cfg_attr(feature = "std", error("cannot assign account to this program id"))]
     InvalidProgramId,
-    #[error("cannot allocate account data of this length")]
+    #[cfg_attr(feature = "std", error("cannot allocate account data of this length"))]
     InvalidAccountDataLength,
-    #[error("length of requested seed is too long")]
+    #[cfg_attr(feature = "std", error("length of requested seed is too long"))]
     MaxSeedLengthExceeded,
-    #[error("provided address does not match addressed derived from seed")]
+    #[cfg_attr(
+        feature = "std",
+        error("provided address does not match addressed derived from seed")
+    )]
     AddressWithSeedMismatch,
-    #[error("advancing stored nonce requires a populated RecentBlockhashes sysvar")]
+    #[cfg_attr(
+        feature = "std",
+        error("advancing stored nonce requires a populated RecentBlockhashes sysvar")
+    )]
     NonceNoRecentBlockhashes,
-    #[error("stored nonce is still in recent_blockhashes")]
+    #[cfg_attr(feature = "std", error("stored nonce is still in recent_blockhashes"))]
     NonceBlockhashNotExpired,
-    #[error("specified nonce does not match stored nonce")]
+    #[cfg_attr(feature = "std", error("specified nonce does not match stored nonce"))]
     NonceUnexpectedBlockhashValue,
 }
 

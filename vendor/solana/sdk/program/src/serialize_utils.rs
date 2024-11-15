@@ -2,6 +2,7 @@
 
 #![allow(clippy::arithmetic_side_effects)]
 use crate::{pubkey::Pubkey, sanitize::SanitizeError};
+use alloc::vec::Vec;
 
 pub fn append_u16(buf: &mut Vec<u8>, data: u16) {
     let start = buf.len();
@@ -33,7 +34,7 @@ pub fn read_u8(current: &mut usize, data: &[u8]) -> Result<u8, SanitizeError> {
 }
 
 pub fn read_pubkey(current: &mut usize, data: &[u8]) -> Result<Pubkey, SanitizeError> {
-    let len = std::mem::size_of::<Pubkey>();
+    let len = core::mem::size_of::<Pubkey>();
     if data.len() < *current + len {
         return Err(SanitizeError::IndexOutOfBounds);
     }

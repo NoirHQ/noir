@@ -42,7 +42,7 @@ pub struct LoaderV4State {
 impl LoaderV4State {
     /// Size of a serialized program account.
     pub const fn program_data_offset() -> usize {
-        std::mem::size_of::<Self>()
+        core::mem::size_of::<Self>()
     }
 }
 

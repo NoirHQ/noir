@@ -1,5 +1,6 @@
 use {
     crate::{
+        bincode,
         hash::Hash,
         instruction::CompiledInstruction,
         message::{legacy::Message as LegacyMessage, v0::MessageAddressTableLookup, MessageHeader},
@@ -7,12 +8,12 @@ use {
         sanitize::{Sanitize, SanitizeError},
         short_vec,
     },
+    core::fmt,
     serde::{
         de::{self, Deserializer, SeqAccess, Unexpected, Visitor},
         ser::{SerializeTuple, Serializer},
         Deserialize, Serialize,
     },
-    std::fmt,
 };
 
 mod sanitized;

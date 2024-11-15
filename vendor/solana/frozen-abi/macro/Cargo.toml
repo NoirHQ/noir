@@ -1,0 +1,20 @@
+[package]
+name = "solana-frozen-abi-macro"
+description = "Solana Frozen ABI Macro"
+version = "1.18.26"
+authors = [
+	"Solana Labs Maintainers <maintainers@solanalabs.com>",
+	"Haderech Pte. Ltd.",
+]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/noirhq/noir.git"
+publish = false
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = "2.0"
