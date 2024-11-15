@@ -3,6 +3,8 @@
 #![deny(clippy::indexing_slicing)]
 #![recursion_limit = "2048"]
 
+extern crate alloc;
+
 //#[macro_use]
 //extern crate eager;
 
@@ -14,7 +16,7 @@ pub mod compute_budget;
 pub mod compute_budget_processor;
 //pub mod invoke_context;
 //pub mod loaded_programs;
-//pub mod log_collector;
+pub mod log_collector;
 //pub mod message_processor;
 pub mod prioritization_fee;
 //pub mod stable_log;
