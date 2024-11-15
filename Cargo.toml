@@ -31,6 +31,7 @@ members = [
 	"vendor/composable/cosmwasm/runtime-api",
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
+	"vendor/no_std/bv",
 ]
 default-members = [
 	"core-primitives",
@@ -70,6 +71,9 @@ pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = fals
 pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
+
+# no_std
+bv = { path = "vendor/no_std/bv", default-features = false }
 
 [profile.release]
 panic = "unwind"
