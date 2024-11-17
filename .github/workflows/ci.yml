@@ -2,11 +2,13 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'sidecar/**'
+    paths:
+      - '**.rs'
+      - '**.toml'
   pull_request:
-    paths-ignore:
-      - 'sidecar/**'
+    paths:
+      - '**.rs'
+      - '**.toml'
 
 env:
   CARGO_TERM_COLOR: always
