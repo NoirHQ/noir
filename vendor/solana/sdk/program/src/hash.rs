@@ -5,6 +5,7 @@
 
 use {
     crate::{sanitize::Sanitize /*wasm_bindgen*/},
+    alloc::string::ToString,
     borsh::{BorshDeserialize, BorshSchema, BorshSerialize},
     bytemuck::{Pod, Zeroable},
     core::{convert::TryFrom, fmt, mem, str::FromStr},

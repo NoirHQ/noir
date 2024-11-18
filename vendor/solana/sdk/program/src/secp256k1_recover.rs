@@ -25,6 +25,7 @@
 //! [`ecrecover`]: https://docs.soliditylang.org/en/v0.8.14/units-and-global-variables.html?highlight=ecrecover#mathematical-and-cryptographic-functions
 
 use {
+    alloc::string::ToString,
     borsh::{BorshDeserialize, BorshSchema, BorshSerialize},
     core::convert::TryFrom,
     thiserror::Error,

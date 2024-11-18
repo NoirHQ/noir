@@ -111,7 +111,7 @@ impl FeeRateGovernor {
         if me.target_signatures_per_slot > 0 {
             // lamports_per_signature can range from 50% to 1000% of
             // target_lamports_per_signature
-            me.min_lamports_per_signature = std::cmp::max(1, me.target_lamports_per_signature / 2);
+            me.min_lamports_per_signature = core::cmp::max(1, me.target_lamports_per_signature / 2);
             me.max_lamports_per_signature = me.target_lamports_per_signature * 10;
 
             // What the cluster should charge at `latest_signatures_per_slot`
@@ -119,7 +119,7 @@ impl FeeRateGovernor {
                 me.max_lamports_per_signature
                     .min(me.min_lamports_per_signature.max(
                         me.target_lamports_per_signature
-                            * std::cmp::min(latest_signatures_per_slot, std::u32::MAX as u64)
+                            * core::cmp::min(latest_signatures_per_slot, core::u32::MAX as u64)
                             / me.target_signatures_per_slot,
                     ));
 
@@ -137,7 +137,7 @@ impl FeeRateGovernor {
                 // Adjust fee by 5% of target_lamports_per_signature to produce a smooth
                 // increase/decrease in fees over time.
                 let gap_adjust =
-                    std::cmp::max(1, me.target_lamports_per_signature / 20) as i64 * gap.signum();
+                    core::cmp::max(1, me.target_lamports_per_signature / 20) as i64 * gap.signum();
 
                 trace!(
                     "lamports_per_signature gap is {}, adjusting by {}",

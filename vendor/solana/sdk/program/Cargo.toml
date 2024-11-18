@@ -15,7 +15,6 @@ publish = false
 base64 = { version = "0.22", default-features = false, features = ["alloc"] }
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
 bitflags = { version = "2.6", default-features = false }
-bitvec = { version = "1.0", default-features = false, features = ["alloc"] }
 blake3 = { version = "1.5", default-features = false, features = ["traits-preview"] }
 borsh = { version = "1.5", default-features = false, features = ["derive", "unstable__schema"] }
 bs58 = { version = "0.5", default-features = false }
@@ -53,7 +52,6 @@ std = [
 	"base64/std",
 	"bincode/std",
 	"bitflags/std",
-	"bitvec/std",
 	"blake3/std",
 	"borsh/std",
 	"bs58/std",
@@ -72,5 +70,4 @@ std = [
 ]
 serde = [
 	"dep:serde",
-	"bitvec/serde",
 ]

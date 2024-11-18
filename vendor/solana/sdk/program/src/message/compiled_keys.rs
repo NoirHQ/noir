@@ -5,7 +5,7 @@ use crate::{
 };
 use {
     crate::{instruction::Instruction, message::MessageHeader, pubkey::Pubkey},
-    alloc::collections::BTreeMap,
+    alloc::{collections::BTreeMap, vec::Vec},
     thiserror::Error,
 };
 

@@ -62,9 +62,11 @@ extern crate self as solana_sdk;
 //    wasm_bindgen,
 //};
 pub use solana_program::{
-    borsh1, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable, clock, decode_error,
-    ed25519_program, epoch_schedule, hash, instruction, lamports, loader_v4, message, native_token,
-    rent, sanitize, secp256k1_program, short_vec, stable_layout, system_instruction, sysvar,
+    account_info, blake3, borsh1, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable, clock,
+    decode_error, ed25519_program, epoch_schedule, hash, instruction, keccak, lamports,
+    loader_upgradeable_instruction, loader_v4, message, native_token, program, program_stubs, rent,
+    sanitize, secp256k1_program, secp256k1_recover, short_vec, stable_layout, syscalls,
+    system_instruction, system_program, sysvar,
 };
 
 pub mod account;
@@ -94,10 +96,10 @@ pub mod native_loader;
 //pub mod net;
 //pub mod nonce_account;
 //pub mod offchain_message;
-//pub mod packet;
+pub mod packet;
 //pub mod poh_config;
 pub mod precompiles;
-//pub mod program_utils;
+pub mod program_utils;
 pub mod pubkey;
 //pub mod quic;
 //pub mod recent_blockhashes_account;

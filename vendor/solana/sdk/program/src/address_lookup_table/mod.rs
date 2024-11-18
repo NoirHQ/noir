@@ -10,6 +10,8 @@ pub mod program {
     crate::declare_id!("AddressLookupTab1e1111111111111111111111111");
 }
 
+use alloc::vec::Vec;
+
 /// The definition of address lookup table accounts.
 ///
 /// As used by the `crate::message::v0` message format.

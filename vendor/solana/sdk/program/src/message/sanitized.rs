@@ -17,7 +17,8 @@ use {
         solana_program::{system_instruction::SystemInstruction, system_program},
         sysvar::instructions::{BorrowedAccountMeta, BorrowedInstruction},
     },
-    std::{borrow::Cow, convert::TryFrom},
+    alloc::{borrow::Cow, vec::Vec},
+    core::convert::TryFrom,
     thiserror::Error,
 };
 

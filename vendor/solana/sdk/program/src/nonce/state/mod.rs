@@ -8,6 +8,7 @@ use hashbrown::HashSet;
 use std::collections::HashSet;
 use {
     crate::{hash::Hash, pubkey::Pubkey},
+    alloc::boxed::Box,
     serde_derive::{Deserialize, Serialize},
 };
 

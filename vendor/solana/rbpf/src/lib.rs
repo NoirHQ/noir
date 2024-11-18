@@ -17,6 +17,7 @@
 )]
 #![deny(clippy::arithmetic_side_effects)]
 #![deny(clippy::ptr_as_ptr)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;

@@ -49,6 +49,11 @@ use {
         system_program,
         sysvar::{recent_blockhashes, rent},
     },
+    alloc::{
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    },
     num_derive::{FromPrimitive, ToPrimitive},
     thiserror::Error,
 };

@@ -2,13 +2,14 @@
 //!
 //! Input: a single literal base58 string representation of a program's id
 
+extern crate alloc;
 extern crate proc_macro;
 
 use {
+    core::convert::TryFrom,
     proc_macro::TokenStream,
     proc_macro2::{Delimiter, Span, TokenTree},
     quote::{quote, ToTokens},
-    std::convert::TryFrom,
     syn::{
         bracketed,
         parse::{Parse, ParseStream, Result},
@@ -372,7 +373,7 @@ impl ToTokens for Pubkeys {
             });
         } else {
             tokens.extend(quote! {
-                pub fn #method() -> ::std::vec::Vec<#pubkey_type> {
+                pub fn #method() -> ::alloc::vec::Vec<#pubkey_type> {
                     vec![#pubkeys]
                 }
             });
@@ -424,7 +425,7 @@ pub fn derive_clone_zeroed(input: proc_macro::TokenStream) -> proc_macro::TokenS
                 syn::Fields::Named(ref fields) => fields.named.iter().map(|f| {
                     let name = &f.ident;
                     quote! {
-                        std::ptr::addr_of_mut!((*ptr).#name).write(self.#name);
+                        core::ptr::addr_of_mut!((*ptr).#name).write(self.#name);
                     }
                 }),
                 _ => unimplemented!(),
@@ -438,9 +439,9 @@ pub fn derive_clone_zeroed(input: proc_macro::TokenStream) -> proc_macro::TokenS
                     // guarantee zeroed padding.
                     #[allow(clippy::incorrect_clone_impl_on_copy_type)]
                     fn clone(&self) -> Self {
-                        let mut value = std::mem::MaybeUninit::<Self>::uninit();
+                        let mut value = core::mem::MaybeUninit::<Self>::uninit();
                         unsafe {
-                            std::ptr::write_bytes(&mut value, 0, 1);
+                            core::ptr::write_bytes(&mut value, 0, 1);
                             let ptr = value.as_mut_ptr();
                             #(#clone_statements)*
                             value.assume_init()

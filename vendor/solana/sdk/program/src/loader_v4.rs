@@ -8,6 +8,7 @@ use crate::{
     pubkey::Pubkey,
     system_instruction,
 };
+use alloc::{vec, vec::Vec};
 
 crate::declare_id!("LoaderV411111111111111111111111111111111111");
 

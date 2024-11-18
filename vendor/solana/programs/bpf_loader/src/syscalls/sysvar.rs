@@ -1,6 +1,6 @@
 use super::*;
 
-fn get_sysvar<T: std::fmt::Debug + Sysvar + SysvarId + Clone>(
+fn get_sysvar<T: core::fmt::Debug + Sysvar + SysvarId + Clone>(
     sysvar: Result<Arc<T>, InstructionError>,
     var_addr: u64,
     check_aligned: bool,

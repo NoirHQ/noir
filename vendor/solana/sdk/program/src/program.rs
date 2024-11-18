@@ -9,7 +9,11 @@
 //! [cpi]: https://solana.com/docs/core/cpi
 
 use crate::{
-    account_info::AccountInfo, entrypoint::ProgramResult, instruction::Instruction, pubkey::Pubkey,
+    account_info::AccountInfo,
+    alloc::{vec, vec::Vec},
+    entrypoint::ProgramResult,
+    instruction::Instruction,
+    pubkey::Pubkey,
     stable_layout::stable_instruction::StableInstruction,
 };
 

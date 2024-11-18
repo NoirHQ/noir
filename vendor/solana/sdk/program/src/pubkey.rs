@@ -3,6 +3,7 @@
 #![allow(clippy::arithmetic_side_effects)]
 use {
     crate::{decode_error::DecodeError, hash::hashv /*wasm_bindgen*/},
+    alloc::{string::ToString, vec::Vec},
     borsh::{BorshDeserialize, BorshSchema, BorshSerialize},
     bytemuck::{Pod, Zeroable},
     core::{

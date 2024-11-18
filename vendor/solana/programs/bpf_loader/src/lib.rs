@@ -1,16 +1,24 @@
 #![deny(clippy::arithmetic_side_effects)]
 #![deny(clippy::indexing_slicing)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
 
 pub mod serialization;
 pub mod syscalls;
 
 use {
-    solana_measure::measure::Measure,
+    alloc::{boxed::Box, rc::Rc, sync::Arc, vec, vec::Vec},
+    core::{cell::RefCell, mem, sync::atomic::Ordering},
+    // solana_measure::measure::Measure,
     solana_program_runtime::{
         ic_logger_msg, ic_msg,
         invoke_context::{BpfAllocator, InvokeContext, SerializedAccountMetadata, SyscallContext},
         loaded_programs::{
-            LoadProgramMetrics, LoadedProgram, LoadedProgramType, DELAY_VISIBILITY_SLOT_OFFSET,
+            // LoadProgramMetrics,
+            LoadedProgram,
+            LoadedProgramType,
+            DELAY_VISIBILITY_SLOT_OFFSET,
         },
         log_collector::LogCollector,
         stable_log,
@@ -29,7 +37,8 @@ use {
     },
     solana_sdk::{
         account::WritableAccount,
-        bpf_loader, bpf_loader_deprecated,
+        bpf_loader,
+        bpf_loader_deprecated,
         bpf_loader_upgradeable::{self, UpgradeableLoaderState},
         clock::Slot,
         entrypoint::{MAX_PERMITTED_DATA_INCREASE, SUCCESS},
@@ -42,15 +51,9 @@ use {
         native_loader,
         program_utils::limited_deserialize,
         pubkey::Pubkey,
-        saturating_add_assign,
+        // saturating_add_assign,
         system_instruction::{self, MAX_PERMITTED_DATA_LENGTH},
         transaction_context::{IndexOfAccount, InstructionContext, TransactionContext},
-    },
-    std::{
-        cell::RefCell,
-        mem,
-        rc::Rc,
-        sync::{atomic::Ordering, Arc},
     },
     syscalls::{create_program_runtime_environment_v1, morph_into_deployment_environment_v1},
 };
@@ -62,7 +65,7 @@ pub const UPGRADEABLE_LOADER_COMPUTE_UNITS: u64 = 2_370;
 #[allow(clippy::too_many_arguments)]
 pub fn load_program_from_bytes(
     log_collector: Option<Rc<RefCell<LogCollector>>>,
-    load_program_metrics: &mut LoadProgramMetrics,
+    // load_program_metrics: &mut LoadProgramMetrics,
     programdata: &[u8],
     loader_key: &Pubkey,
     account_size: usize,
@@ -82,7 +85,7 @@ pub fn load_program_from_bytes(
                 None,
                 programdata,
                 account_size,
-                load_program_metrics,
+                // load_program_metrics,
             )
         }
     } else {
@@ -94,7 +97,7 @@ pub fn load_program_from_bytes(
             None,
             programdata,
             account_size,
-            load_program_metrics,
+            // load_program_metrics,
         )
     }
     .map_err(|err| {
@@ -107,8 +110,8 @@ pub fn load_program_from_bytes(
 macro_rules! deploy_program {
     ($invoke_context:expr, $program_id:expr, $loader_key:expr,
      $account_size:expr, $slot:expr, $drop:expr, $new_programdata:expr $(,)?) => {{
-        let mut load_program_metrics = LoadProgramMetrics::default();
-        let mut register_syscalls_time = Measure::start("register_syscalls_time");
+        // let mut load_program_metrics = LoadProgramMetrics::default();
+        // let mut register_syscalls_time = Measure::start("register_syscalls_time");
         let deployment_slot: Slot = $slot;
         let environments = $invoke_context.get_environments_for_slot(
             deployment_slot.saturating_add(DELAY_VISIBILITY_SLOT_OFFSET)
@@ -123,10 +126,10 @@ macro_rules! deploy_program {
             ic_msg!($invoke_context, "Failed to register syscalls: {}", e);
             InstructionError::ProgramEnvironmentSetupFailure
         })?;
-        register_syscalls_time.stop();
-        load_program_metrics.register_syscalls_us = register_syscalls_time.as_us();
+        // register_syscalls_time.stop();
+        // load_program_metrics.register_syscalls_us = register_syscalls_time.as_us();
         // Verify using stricter deployment_program_runtime_environment
-        let mut load_elf_time = Measure::start("load_elf_time");
+        // let mut load_elf_time = Measure::start("load_elf_time");
         let executable = Executable::<InvokeContext>::load(
             $new_programdata,
             Arc::new(deployment_program_runtime_environment),
@@ -134,19 +137,19 @@ macro_rules! deploy_program {
             ic_logger_msg!($invoke_context.get_log_collector(), "{}", err);
             InstructionError::InvalidAccountData
         })?;
-        load_elf_time.stop();
-        load_program_metrics.load_elf_us = load_elf_time.as_us();
-        let mut verify_code_time = Measure::start("verify_code_time");
+        // load_elf_time.stop();
+        // load_program_metrics.load_elf_us = load_elf_time.as_us();
+        // let mut verify_code_time = Measure::start("verify_code_time");
         executable.verify::<RequisiteVerifier>().map_err(|err| {
             ic_logger_msg!($invoke_context.get_log_collector(), "{}", err);
             InstructionError::InvalidAccountData
         })?;
-        verify_code_time.stop();
-        load_program_metrics.verify_code_us = verify_code_time.as_us();
+        // verify_code_time.stop();
+        // load_program_metrics.verify_code_us = verify_code_time.as_us();
         // Reload but with environments.program_runtime_v1
         let executor = load_program_from_bytes(
             $invoke_context.get_log_collector(),
-            &mut load_program_metrics,
+            // &mut load_program_metrics,
             $new_programdata,
             $loader_key,
             $account_size,
@@ -165,8 +168,8 @@ macro_rules! deploy_program {
             );
         }
         $drop
-        load_program_metrics.program_id = $program_id.to_string();
-        load_program_metrics.submit_datapoint(&mut $invoke_context.timings);
+        // load_program_metrics.program_id = $program_id.to_string();
+        // load_program_metrics.submit_datapoint(&mut $invoke_context.timings);
         $invoke_context.programs_modified_by_tx.replenish($program_id, Arc::new(executor));
     }};
 }
@@ -224,7 +227,7 @@ pub fn create_vm<'a, 'b>(
     invoke_context: &'a mut InvokeContext<'b>,
     stack: &mut AlignedMemory<HOST_ALIGN>,
     heap: &mut AlignedMemory<HOST_ALIGN>,
-) -> Result<EbpfVm<'a, InvokeContext<'b>>, Box<dyn std::error::Error>> {
+) -> Result<EbpfVm<'a, InvokeContext<'b>>, Box<dyn core::error::Error>> {
     let stack_size = stack.len();
     let heap_size = heap.len();
     let accounts = Rc::clone(invoke_context.transaction_context.accounts());
@@ -302,7 +305,7 @@ macro_rules! create_vm {
 #[macro_export]
 macro_rules! mock_create_vm {
     ($vm:ident, $additional_regions:expr, $accounts_metadata:expr, $invoke_context:expr $(,)?) => {
-        let loader = std::sync::Arc::new(BuiltinProgram::new_mock());
+        let loader = alloc::sync::Arc::new(BuiltinProgram::new_mock());
         let function_registry = solana_rbpf::program::FunctionRegistry::default();
         let executable = solana_rbpf::elf::Executable::<InvokeContext>::from_text_bytes(
             &[0x95, 0, 0, 0, 0, 0, 0, 0],
@@ -330,7 +333,7 @@ fn create_memory_mapping<'a, 'b, C: ContextObject>(
     heap: &'b mut AlignedMemory<{ HOST_ALIGN }>,
     additional_regions: Vec<MemoryRegion>,
     cow_cb: Option<MemoryCowCallback>,
-) -> Result<MemoryMapping<'a>, Box<dyn std::error::Error>> {
+) -> Result<MemoryMapping<'a>, Box<dyn core::error::Error>> {
     let config = executable.get_config();
     let sbpf_version = executable.get_sbpf_version();
     let regions: Vec<MemoryRegion> = vec![
@@ -367,14 +370,14 @@ declare_builtin_function!(
         _arg3: u64,
         _arg4: u64,
         _memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Box<dyn std::error::Error>> {
+    ) -> Result<u64, Box<dyn core::error::Error>> {
         process_instruction_inner(invoke_context)
     }
 );
 
 pub fn process_instruction_inner(
     invoke_context: &mut InvokeContext,
-) -> Result<u64, Box<dyn std::error::Error>> {
+) -> Result<u64, Box<dyn core::error::Error>> {
     let log_collector = invoke_context.get_log_collector();
     let transaction_context = &invoke_context.transaction_context;
     let instruction_context = transaction_context.get_current_instruction_context()?;
@@ -404,7 +407,7 @@ pub fn process_instruction_inner(
             Err(InstructionError::IncorrectProgramId)
         }
         .map(|_| 0)
-        .map_err(|error| Box::new(error) as Box<dyn std::error::Error>);
+        .map_err(|error| Box::new(error) as Box<dyn core::error::Error>);
     }
 
     // Program Invocation
@@ -413,7 +416,7 @@ pub fn process_instruction_inner(
         return Err(Box::new(InstructionError::IncorrectProgramId));
     }
 
-    let mut get_or_create_executor_time = Measure::start("get_or_create_executor_time");
+    // let mut get_or_create_executor_time = Measure::start("get_or_create_executor_time");
     let executor = invoke_context
         .find_program_in_cache(program_account.get_key())
         .ok_or_else(|| {
@@ -421,11 +424,11 @@ pub fn process_instruction_inner(
             InstructionError::InvalidAccountData
         })?;
     drop(program_account);
-    get_or_create_executor_time.stop();
-    saturating_add_assign!(
-        invoke_context.timings.get_or_create_executor_us,
-        get_or_create_executor_time.as_us()
-    );
+    // get_or_create_executor_time.stop();
+    // saturating_add_assign!(
+    //     invoke_context.timings.get_or_create_executor_us,
+    //     get_or_create_executor_time.as_us()
+    // );
 
     executor.ix_usage_counter.fetch_add(1, Ordering::Relaxed);
     match &executor.program {
@@ -433,11 +436,11 @@ pub fn process_instruction_inner(
         | LoadedProgramType::Closed
         | LoadedProgramType::DelayVisibility => {
             ic_logger_msg!(log_collector, "Program is not deployed");
-            Err(Box::new(InstructionError::InvalidAccountData) as Box<dyn std::error::Error>)
+            Err(Box::new(InstructionError::InvalidAccountData) as Box<dyn core::error::Error>)
         }
         LoadedProgramType::LegacyV0(executable) => execute(executable, invoke_context),
         LoadedProgramType::LegacyV1(executable) => execute(executable, invoke_context),
-        _ => Err(Box::new(InstructionError::IncorrectProgramId) as Box<dyn std::error::Error>),
+        _ => Err(Box::new(InstructionError::IncorrectProgramId) as Box<dyn core::error::Error>),
     }
     .map(|_| 0)
 }
@@ -1317,7 +1320,7 @@ fn common_close_account(
 fn execute<'a, 'b: 'a>(
     executable: &'a Executable<InvokeContext<'static>>,
     invoke_context: &'a mut InvokeContext<'b>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn core::error::Error>> {
     // We dropped the lifetime tracking in the Executor by setting it to 'static,
     // thus we need to reintroduce the correct lifetime of InvokeContext here again.
     let executable = unsafe { mem::transmute::<_, &'a Executable<InvokeContext<'b>>>(executable) };
@@ -1340,13 +1343,13 @@ fn execute<'a, 'b: 'a>(
         .feature_set
         .is_active(&bpf_account_data_direct_mapping::id());
 
-    let mut serialize_time = Measure::start("serialize");
+    // let mut serialize_time = Measure::start("serialize");
     let (parameter_bytes, regions, accounts_metadata) = serialization::serialize_parameters(
         invoke_context.transaction_context,
         instruction_context,
         !direct_mapping,
     )?;
-    serialize_time.stop();
+    // serialize_time.stop();
 
     // save the account addresses so in case we hit an AccessViolation error we
     // can map to a more specific error
@@ -1365,8 +1368,8 @@ fn execute<'a, 'b: 'a>(
         })
         .collect::<Vec<_>>();
 
-    let mut create_vm_time = Measure::start("create_vm");
-    let mut execute_time;
+    // let mut create_vm_time = Measure::start("create_vm");
+    // let mut execute_time;
     let execution_result = {
         let compute_meter_prev = invoke_context.get_remaining();
         create_vm!(vm, executable, regions, accounts_metadata, invoke_context,);
@@ -1377,9 +1380,9 @@ fn execute<'a, 'b: 'a>(
                 return Err(Box::new(InstructionError::ProgramEnvironmentSetupFailure));
             }
         };
-        create_vm_time.stop();
+        // create_vm_time.stop();
 
-        execute_time = Measure::start("execute");
+        // execute_time = Measure::start("execute");
         let (compute_units_consumed, result) = vm.execute_program(executable, !use_jit);
         drop(vm);
         ic_logger_msg!(
@@ -1397,7 +1400,7 @@ fn execute<'a, 'b: 'a>(
         match result {
             ProgramResult::Ok(status) if status != SUCCESS => {
                 let error: InstructionError = status.into();
-                Err(Box::new(error) as Box<dyn std::error::Error>)
+                Err(Box::new(error) as Box<dyn core::error::Error>)
             }
             ProgramResult::Err(mut error) => {
                 if direct_mapping {
@@ -1444,7 +1447,7 @@ fn execute<'a, 'b: 'a>(
             _ => Ok(()),
         }
     };
-    execute_time.stop();
+    // execute_time.stop();
 
     fn deserialize_parameters(
         invoke_context: &mut InvokeContext,
@@ -1462,21 +1465,21 @@ fn execute<'a, 'b: 'a>(
         )
     }
 
-    let mut deserialize_time = Measure::start("deserialize");
+    // let mut deserialize_time = Measure::start("deserialize");
     let execute_or_deserialize_result = execution_result.and_then(|_| {
         deserialize_parameters(invoke_context, parameter_bytes.as_slice(), !direct_mapping)
-            .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
+            .map_err(|error| Box::new(error) as Box<dyn core::error::Error>)
     });
-    deserialize_time.stop();
+    // deserialize_time.stop();
 
     // Update the timings
-    let timings = &mut invoke_context.timings;
-    timings.serialize_us = timings.serialize_us.saturating_add(serialize_time.as_us());
-    timings.create_vm_us = timings.create_vm_us.saturating_add(create_vm_time.as_us());
-    timings.execute_us = timings.execute_us.saturating_add(execute_time.as_us());
-    timings.deserialize_us = timings
-        .deserialize_us
-        .saturating_add(deserialize_time.as_us());
+    // let timings = &mut invoke_context.timings;
+    // timings.serialize_us = timings.serialize_us.saturating_add(serialize_time.as_us());
+    // timings.create_vm_us = timings.create_vm_us.saturating_add(create_vm_time.as_us());
+    // timings.execute_us = timings.execute_us.saturating_add(execute_time.as_us());
+    // timings.deserialize_us = timings
+    //     .deserialize_us
+    //     .saturating_add(deserialize_time.as_us());
 
     execute_or_deserialize_result
 }
@@ -1488,7 +1491,7 @@ pub mod test_utils {
     };
 
     pub fn load_all_invoked_programs(invoke_context: &mut InvokeContext) {
-        let mut load_program_metrics = LoadProgramMetrics::default();
+        // let mut load_program_metrics = LoadProgramMetrics::default();
         let program_runtime_environment = create_program_runtime_environment_v1(
             &invoke_context.feature_set,
             invoke_context.get_compute_budget(),
@@ -1513,7 +1516,7 @@ pub mod test_utils {
 
                 if let Ok(loaded_program) = load_program_from_bytes(
                     None,
-                    &mut load_program_metrics,
+                    // &mut load_program_metrics,
                     account.data(),
                     owner,
                     account.data().len(),

@@ -23,6 +23,7 @@ use crate::{
     sanitize::SanitizeError,
     short_vec,
 };
+use alloc::vec::Vec;
 pub use loaded::*;
 
 mod loaded;

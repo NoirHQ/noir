@@ -34,6 +34,7 @@ members = [
 	"vendor/no_std/bv",
 	"vendor/solana/frozen-abi/macro",
 	"vendor/solana/program-runtime",
+	"vendor/solana/programs/bpf_loader",
 	"vendor/solana/rbpf",
 	"vendor/solana/sdk",
 	"vendor/solana/sdk/macro",
@@ -77,6 +78,7 @@ pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = fals
 pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
+solana-bpf-loader-program = { path = "vendor/solana/programs/bpf_loader" }
 solana-frozen-abi-macro = { path = "vendor/solana/frozen-abi/macro" }
 solana-program = { path = "vendor/solana/sdk/program", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }

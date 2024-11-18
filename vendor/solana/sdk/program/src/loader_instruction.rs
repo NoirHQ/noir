@@ -7,6 +7,7 @@ use crate::{
     pubkey::Pubkey,
     sysvar::rent,
 };
+use alloc::{vec, vec::Vec};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub enum LoaderInstruction {

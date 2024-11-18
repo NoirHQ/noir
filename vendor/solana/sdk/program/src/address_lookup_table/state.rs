@@ -7,7 +7,7 @@ use {
         pubkey::Pubkey,
         slot_hashes::{SlotHashes, MAX_ENTRIES},
     },
-    alloc::borrow::Cow,
+    alloc::{borrow::Cow, vec, vec::Vec},
     serde::{Deserialize, Serialize},
     solana_frozen_abi_macro::{AbiEnumVisitor, AbiExample},
 };

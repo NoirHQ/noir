@@ -31,6 +31,7 @@
 
 use crate::{
     account_info::AccountInfo,
+    alloc::vec::Vec,
     instruction::{AccountMeta, Instruction},
     program_error::ProgramError,
     pubkey::Pubkey,

@@ -3,6 +3,10 @@
 #![allow(clippy::arithmetic_side_effects)]
 use {
     crate::{decode_error::DecodeError, instruction::InstructionError, msg, pubkey::PubkeyError},
+    alloc::{
+        format,
+        string::{String, ToString},
+    },
     borsh::io::Error as BorshIoError,
     core::convert::TryFrom,
     num_traits::{FromPrimitive, ToPrimitive},

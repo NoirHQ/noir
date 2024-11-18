@@ -2,6 +2,7 @@
 #![deny(clippy::arithmetic_side_effects)]
 #![deny(clippy::indexing_slicing)]
 #![recursion_limit = "2048"]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
 

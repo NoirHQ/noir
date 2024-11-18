@@ -21,6 +21,7 @@ use {
         sanitize::{Sanitize, SanitizeError},
         short_vec, system_instruction, system_program, sysvar, /*wasm_bindgen,*/
     },
+    alloc::{vec, vec::Vec},
     /*lazy_static::lazy_static,*/
     core::{convert::TryFrom /*str::FromStr*/},
 };

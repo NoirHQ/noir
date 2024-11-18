@@ -1,5 +1,6 @@
 //! `Vec`, with a stable memory layout
 
+use alloc::vec::Vec;
 use core::{marker::PhantomData, mem::ManuallyDrop, ptr::NonNull};
 
 /// `Vec`, with a stable memory layout
@@ -58,7 +59,7 @@ impl<T> AsMut<[T]> for StableVec<T> {
     }
 }
 
-impl<T> std::ops::Deref for StableVec<T> {
+impl<T> core::ops::Deref for StableVec<T> {
     type Target = [T];
 
     #[inline]
@@ -67,16 +68,16 @@ impl<T> std::ops::Deref for StableVec<T> {
     }
 }
 
-impl<T> std::ops::DerefMut for StableVec<T> {
+impl<T> core::ops::DerefMut for StableVec<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut [T] {
         unsafe { core::slice::from_raw_parts_mut(self.as_mut_ptr(), self.len) }
     }
 }
 
-impl<T: std::fmt::Debug> std::fmt::Debug for StableVec<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Debug::fmt(&**self, f)
+impl<T: core::fmt::Debug> core::fmt::Debug for StableVec<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::Debug::fmt(&**self, f)
     }
 }
 

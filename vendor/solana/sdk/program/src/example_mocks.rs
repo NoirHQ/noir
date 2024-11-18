@@ -27,7 +27,7 @@ pub mod solana_rpc_client {
                     transaction::Transaction,
                 },
             },
-            alloc::rc::Rc,
+            alloc::{rc::Rc, string::String},
             core::cell::RefCell,
         };
 
@@ -86,7 +86,7 @@ pub mod solana_rpc_client_api {
         #[derive(thiserror::Error, Debug)]
         #[error("mock-error")]
         pub struct ClientError;
-        pub type Result<T> = std::result::Result<T, ClientError>;
+        pub type Result<T> = core::result::Result<T, ClientError>;
     }
 }
 
@@ -129,6 +129,8 @@ pub mod solana_sdk {
 
     pub mod account {
         use crate::{clock::Epoch, pubkey::Pubkey};
+        use alloc::vec::Vec;
+
         #[derive(Clone)]
         pub struct Account {
             pub lamports: u64,
@@ -201,6 +203,7 @@ pub mod solana_sdk {
     }
 
     pub mod transaction {
+        use alloc::{vec, vec::Vec};
         use {
             super::{signature::Signature, signer::SignerError, signers::Signers},
             crate::{
@@ -221,7 +224,7 @@ pub mod solana_sdk {
             pub fn try_new<T: Signers + ?Sized>(
                 message: VersionedMessage,
                 _keypairs: &T,
-            ) -> std::result::Result<Self, SignerError> {
+            ) -> core::result::Result<Self, SignerError> {
                 Ok(VersionedTransaction {
                     signatures: vec![],
                     message,
@@ -296,7 +299,7 @@ pub mod solana_address_lookup_table_program {
     pub mod state {
         use {
             crate::{instruction::InstructionError, pubkey::Pubkey},
-            std::borrow::Cow,
+            alloc::{borrow::Cow, vec, vec::Vec},
         };
 
         pub struct AddressLookupTable<'a> {

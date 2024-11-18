@@ -10,15 +10,15 @@ pub fn limited_deserialize<T>(instruction_data: &[u8]) -> Result<T, InstructionE
 where
     T: serde::de::DeserializeOwned,
 {
-    solana_program::program_utils::limited_deserialize(
+    solana_program::program_utils::limited_deserialize::<T, { crate::packet::PACKET_DATA_SIZE }>(
         instruction_data,
-        crate::packet::PACKET_DATA_SIZE as u64,
     )
 }
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use solana_program::bincode;
 
     #[test]
     fn test_limited_deserialize() {

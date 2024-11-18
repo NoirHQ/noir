@@ -1,3 +1,5 @@
+use solana_rbpf::program::SBPFVersion;
+
 pub use self::{
     cpi::{SyscallInvokeSignedC, SyscallInvokeSignedRust},
     logging::{
@@ -11,6 +13,13 @@ pub use self::{
 };
 #[allow(deprecated)]
 use {
+    alloc::{
+        alloc::Layout, boxed::Box, slice::from_raw_parts_mut, string::String, sync::Arc, vec::Vec,
+    },
+    core::{
+        mem::{align_of, size_of},
+        str::{from_utf8, Utf8Error},
+    },
     solana_program_runtime::{
         compute_budget::ComputeBudget, ic_logger_msg, ic_msg, invoke_context::InvokeContext,
         stable_log, timings::ExecuteTimings,
@@ -23,27 +32,41 @@ use {
     },
     solana_sdk::{
         account_info::AccountInfo,
-        alt_bn128::prelude::{
-            alt_bn128_addition, alt_bn128_multiplication, alt_bn128_pairing, AltBn128Error,
-            ALT_BN128_ADDITION_OUTPUT_LEN, ALT_BN128_MULTIPLICATION_OUTPUT_LEN,
-            ALT_BN128_PAIRING_ELEMENT_LEN, ALT_BN128_PAIRING_OUTPUT_LEN,
-        },
-        big_mod_exp::{big_mod_exp, BigModExpParams},
-        blake3, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable,
+        // alt_bn128::prelude::{
+        //     alt_bn128_addition, alt_bn128_multiplication, alt_bn128_pairing, AltBn128Error,
+        //     ALT_BN128_ADDITION_OUTPUT_LEN, ALT_BN128_MULTIPLICATION_OUTPUT_LEN,
+        //     ALT_BN128_PAIRING_ELEMENT_LEN, ALT_BN128_PAIRING_OUTPUT_LEN,
+        // },
+        // big_mod_exp::{big_mod_exp, BigModExpParams},
+        blake3,
+        bpf_loader,
+        bpf_loader_deprecated,
+        bpf_loader_upgradeable,
         entrypoint::{BPF_ALIGN_OF_U128, MAX_PERMITTED_DATA_INCREASE, SUCCESS},
         feature_set::bpf_account_data_direct_mapping,
         feature_set::FeatureSet,
         feature_set::{
-            self, blake3_syscall_enabled, curve25519_syscall_enabled,
-            disable_deploy_of_alloc_free_syscall, disable_fees_sysvar,
-            enable_alt_bn128_compression_syscall, enable_alt_bn128_syscall,
-            enable_big_mod_exp_syscall, enable_partitioned_epoch_reward, enable_poseidon_syscall,
-            error_on_syscall_bpf_function_hash_collisions, last_restart_slot_sysvar,
-            reject_callx_r10, remaining_compute_units_syscall_enabled, switch_to_new_elf_parser,
+            self,
+            blake3_syscall_enabled,
+            curve25519_syscall_enabled,
+            disable_deploy_of_alloc_free_syscall,
+            disable_fees_sysvar,
+            // enable_alt_bn128_compression_syscall,
+            // enable_alt_bn128_syscall,
+            // enable_big_mod_exp_syscall,
+            enable_partitioned_epoch_reward,
+            // enable_poseidon_syscall,
+            // error_on_syscall_bpf_function_hash_collisions,
+            last_restart_slot_sysvar,
+            // reject_callx_r10,
+            remaining_compute_units_syscall_enabled,
+            // switch_to_new_elf_parser,
         },
         hash::{Hash, Hasher},
         instruction::{AccountMeta, InstructionError, ProcessedSiblingInstruction},
-        keccak, native_loader, poseidon,
+        keccak,
+        native_loader,
+        // poseidon,
         precompiles::is_precompile,
         program::MAX_RETURN_DATA,
         program_stubs::is_nonoverlapping,
@@ -53,13 +76,6 @@ use {
         },
         sysvar::{Sysvar, SysvarId},
         transaction_context::{IndexOfAccount, InstructionAccount},
-    },
-    std::{
-        alloc::Layout,
-        mem::{align_of, size_of},
-        slice::from_raw_parts_mut,
-        str::{from_utf8, Utf8Error},
-        sync::Arc,
     },
     thiserror::Error as ThisError,
 };
@@ -125,7 +141,7 @@ pub enum SyscallError {
     ArithmeticOverflow,
 }
 
-type Error = Box<dyn std::error::Error>;
+type Error = Box<dyn core::error::Error>;
 
 pub trait HasherImpl {
     const NAME: &'static str;
@@ -247,7 +263,7 @@ pub fn morph_into_deployment_environment_v1(
 
     let mut result = FunctionRegistry::<BuiltinFunction<InvokeContext>>::default();
 
-    for (key, (name, value)) in from.get_function_registry().iter() {
+    for (key, (name, value)) in from.get_function_registry(SBPFVersion::V1).iter() {
         // Deployment of programs with sol_alloc_free is disabled. So do not register the syscall.
         if name != *b"sol_alloc_free_" {
             result.register_function(key, name, value)?;
@@ -263,10 +279,10 @@ pub fn create_program_runtime_environment_v1<'a>(
     reject_deployment_of_broken_elfs: bool,
     debugging_features: bool,
 ) -> Result<BuiltinProgram<InvokeContext<'a>>, Error> {
-    let enable_alt_bn128_syscall = feature_set.is_active(&enable_alt_bn128_syscall::id());
-    let enable_alt_bn128_compression_syscall =
-        feature_set.is_active(&enable_alt_bn128_compression_syscall::id());
-    let enable_big_mod_exp_syscall = feature_set.is_active(&enable_big_mod_exp_syscall::id());
+    // let enable_alt_bn128_syscall = feature_set.is_active(&enable_alt_bn128_syscall::id());
+    // let enable_alt_bn128_compression_syscall =
+    //     feature_set.is_active(&enable_alt_bn128_compression_syscall::id());
+    // let enable_big_mod_exp_syscall = feature_set.is_active(&enable_big_mod_exp_syscall::id());
     let blake3_syscall_enabled = feature_set.is_active(&blake3_syscall_enabled::id());
     let curve25519_syscall_enabled = feature_set.is_active(&curve25519_syscall_enabled::id());
     let disable_fees_sysvar = feature_set.is_active(&disable_fees_sysvar::id());
@@ -275,7 +291,7 @@ pub fn create_program_runtime_environment_v1<'a>(
     let disable_deploy_of_alloc_free_syscall = reject_deployment_of_broken_elfs
         && feature_set.is_active(&disable_deploy_of_alloc_free_syscall::id());
     let last_restart_slot_syscall_enabled = feature_set.is_active(&last_restart_slot_sysvar::id());
-    let enable_poseidon_syscall = feature_set.is_active(&enable_poseidon_syscall::id());
+    // let enable_poseidon_syscall = feature_set.is_active(&enable_poseidon_syscall::id());
     let remaining_compute_units_syscall_enabled =
         feature_set.is_active(&remaining_compute_units_syscall_enabled::id());
     // !!! ATTENTION !!!
@@ -294,14 +310,15 @@ pub fn create_program_runtime_environment_v1<'a>(
         reject_broken_elfs: reject_deployment_of_broken_elfs,
         noop_instruction_rate: 256,
         sanitize_user_provided_values: true,
-        external_internal_function_hash_collision: feature_set
-            .is_active(&error_on_syscall_bpf_function_hash_collisions::id()),
-        reject_callx_r10: feature_set.is_active(&reject_callx_r10::id()),
-        enable_sbpf_v1: true,
-        enable_sbpf_v2: false,
+        // external_internal_function_hash_collision: feature_set
+        //     .is_active(&error_on_syscall_bpf_function_hash_collisions::id()),
+        // reject_callx_r10: feature_set.is_active(&reject_callx_r10::id()),
+        // enable_sbpf_v1: true,
+        // enable_sbpf_v2: false,
         optimize_rodata: false,
-        new_elf_parser: feature_set.is_active(&switch_to_new_elf_parser::id()),
+        // new_elf_parser: feature_set.is_active(&switch_to_new_elf_parser::id()),
         aligned_memory_mapping: !feature_set.is_active(&bpf_account_data_direct_mapping::id()),
+        enabled_sbpf_versions: SBPFVersion::V1..=SBPFVersion::V2,
         // Warning, do not use `Config::default()` so that configuration here is explicit.
     };
     let mut result = FunctionRegistry::<BuiltinFunction<InvokeContext>>::default();
@@ -346,24 +363,24 @@ pub fn create_program_runtime_environment_v1<'a>(
     )?;
 
     // Elliptic Curve Operations
-    register_feature_gated_function!(
-        result,
-        curve25519_syscall_enabled,
-        *b"sol_curve_validate_point",
-        SyscallCurvePointValidation::vm,
-    )?;
-    register_feature_gated_function!(
-        result,
-        curve25519_syscall_enabled,
-        *b"sol_curve_group_op",
-        SyscallCurveGroupOps::vm,
-    )?;
-    register_feature_gated_function!(
-        result,
-        curve25519_syscall_enabled,
-        *b"sol_curve_multiscalar_mul",
-        SyscallCurveMultiscalarMultiplication::vm,
-    )?;
+    // register_feature_gated_function!(
+    //     result,
+    //     curve25519_syscall_enabled,
+    //     *b"sol_curve_validate_point",
+    //     SyscallCurvePointValidation::vm,
+    // )?;
+    // register_feature_gated_function!(
+    //     result,
+    //     curve25519_syscall_enabled,
+    //     *b"sol_curve_group_op",
+    //     SyscallCurveGroupOps::vm,
+    // )?;
+    // register_feature_gated_function!(
+    //     result,
+    //     curve25519_syscall_enabled,
+    //     *b"sol_curve_multiscalar_mul",
+    //     SyscallCurveMultiscalarMultiplication::vm,
+    // )?;
 
     // Sysvars
     result.register_function_hashed(*b"sol_get_clock_sysvar", SyscallGetClockSysvar::vm)?;
@@ -425,28 +442,28 @@ pub fn create_program_runtime_environment_v1<'a>(
     )?;
 
     // Alt_bn128
-    register_feature_gated_function!(
-        result,
-        enable_alt_bn128_syscall,
-        *b"sol_alt_bn128_group_op",
-        SyscallAltBn128::vm,
-    )?;
+    // register_feature_gated_function!(
+    //     result,
+    //     enable_alt_bn128_syscall,
+    //     *b"sol_alt_bn128_group_op",
+    //     SyscallAltBn128::vm,
+    // )?;
 
     // Big_mod_exp
-    register_feature_gated_function!(
-        result,
-        enable_big_mod_exp_syscall,
-        *b"sol_big_mod_exp",
-        SyscallBigModExp::vm,
-    )?;
+    // register_feature_gated_function!(
+    //     result,
+    //     enable_big_mod_exp_syscall,
+    //     *b"sol_big_mod_exp",
+    //     SyscallBigModExp::vm,
+    // )?;
 
     // Poseidon
-    register_feature_gated_function!(
-        result,
-        enable_poseidon_syscall,
-        *b"sol_poseidon",
-        SyscallPoseidon::vm,
-    )?;
+    // register_feature_gated_function!(
+    //     result,
+    //     enable_poseidon_syscall,
+    //     *b"sol_poseidon",
+    //     SyscallPoseidon::vm,
+    // )?;
 
     // Accessing remaining compute units
     register_feature_gated_function!(
@@ -457,12 +474,12 @@ pub fn create_program_runtime_environment_v1<'a>(
     )?;
 
     // Alt_bn128_compression
-    register_feature_gated_function!(
-        result,
-        enable_alt_bn128_compression_syscall,
-        *b"sol_alt_bn128_compression",
-        SyscallAltBn128Compression::vm,
-    )?;
+    // register_feature_gated_function!(
+    //     result,
+    //     enable_alt_bn128_compression_syscall,
+    //     *b"sol_alt_bn128_compression",
+    //     SyscallAltBn128Compression::vm,
+    // )?;
 
     // Log data
     result.register_function_hashed(*b"sol_log_data", SyscallLogData::vm)?;
@@ -497,7 +514,7 @@ fn translate_type_inner<'a, T>(
 ) -> Result<&'a mut T, Error> {
     let host_addr = translate(memory_mapping, access_type, vm_addr, size_of::<T>() as u64)?;
     if !check_aligned {
-        Ok(unsafe { std::mem::transmute::<u64, &mut T>(host_addr) })
+        Ok(unsafe { core::mem::transmute::<u64, &mut T>(host_addr) })
     } else if !address_is_aligned::<T>(host_addr) {
         Err(SyscallError::UnalignedPointer.into())
     } else {
@@ -765,8 +782,8 @@ declare_builtin_function!(
             invoke_context.get_check_aligned(),
         )?;
 
-        let mut bump_seed = [std::u8::MAX];
-        for _ in 0..std::u8::MAX {
+        let mut bump_seed = [u8::MAX];
+        for _ in 0..u8::MAX {
             {
                 let mut seeds_with_bump = seeds.to_vec();
                 seeds_with_bump.push(&bump_seed);
@@ -782,14 +799,14 @@ declare_builtin_function!(
                     let address = translate_slice_mut::<u8>(
                         memory_mapping,
                         address_addr,
-                        std::mem::size_of::<Pubkey>() as u64,
+                        core::mem::size_of::<Pubkey>() as u64,
                         invoke_context.get_check_aligned(),
                     )?;
                     if !is_nonoverlapping(
                         bump_seed_ref as *const _ as usize,
-                        std::mem::size_of_val(bump_seed_ref),
+                        core::mem::size_of_val(bump_seed_ref),
                         address.as_ptr() as usize,
-                        std::mem::size_of::<Pubkey>(),
+                        core::mem::size_of::<Pubkey>(),
                     ) {
                         return Err(SyscallError::CopyOverlapping.into());
                     }
@@ -864,375 +881,375 @@ declare_builtin_function!(
     }
 );
 
-declare_builtin_function!(
-    // Elliptic Curve Point Validation
-    //
-    // Currently, only curve25519 Edwards and Ristretto representations are supported
-    SyscallCurvePointValidation,
-    fn rust(
-        invoke_context: &mut InvokeContext,
-        curve_id: u64,
-        point_addr: u64,
-        _arg3: u64,
-        _arg4: u64,
-        _arg5: u64,
-        memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Error> {
-        use solana_zk_token_sdk::curve25519::{curve_syscall_traits::*, edwards, ristretto};
-        match curve_id {
-            CURVE25519_EDWARDS => {
-                let cost = invoke_context
-                    .get_compute_budget()
-                    .curve25519_edwards_validate_point_cost;
-                consume_compute_meter(invoke_context, cost)?;
+// declare_builtin_function!(
+//     // Elliptic Curve Point Validation
+//     //
+//     // Currently, only curve25519 Edwards and Ristretto representations are supported
+//     SyscallCurvePointValidation,
+//     fn rust(
+//         invoke_context: &mut InvokeContext,
+//         curve_id: u64,
+//         point_addr: u64,
+//         _arg3: u64,
+//         _arg4: u64,
+//         _arg5: u64,
+//         memory_mapping: &mut MemoryMapping,
+//     ) -> Result<u64, Error> {
+//         use solana_zk_token_sdk::curve25519::{curve_syscall_traits::*, edwards, ristretto};
+//         match curve_id {
+//             CURVE25519_EDWARDS => {
+//                 let cost = invoke_context
+//                     .get_compute_budget()
+//                     .curve25519_edwards_validate_point_cost;
+//                 consume_compute_meter(invoke_context, cost)?;
 
-                let point = translate_type::<edwards::PodEdwardsPoint>(
-                    memory_mapping,
-                    point_addr,
-                    invoke_context.get_check_aligned(),
-                )?;
+//                 let point = translate_type::<edwards::PodEdwardsPoint>(
+//                     memory_mapping,
+//                     point_addr,
+//                     invoke_context.get_check_aligned(),
+//                 )?;
 
-                if edwards::validate_edwards(point) {
-                    Ok(0)
-                } else {
-                    Ok(1)
-                }
-            }
-            CURVE25519_RISTRETTO => {
-                let cost = invoke_context
-                    .get_compute_budget()
-                    .curve25519_ristretto_validate_point_cost;
-                consume_compute_meter(invoke_context, cost)?;
+//                 if edwards::validate_edwards(point) {
+//                     Ok(0)
+//                 } else {
+//                     Ok(1)
+//                 }
+//             }
+//             CURVE25519_RISTRETTO => {
+//                 let cost = invoke_context
+//                     .get_compute_budget()
+//                     .curve25519_ristretto_validate_point_cost;
+//                 consume_compute_meter(invoke_context, cost)?;
 
-                let point = translate_type::<ristretto::PodRistrettoPoint>(
-                    memory_mapping,
-                    point_addr,
-                    invoke_context.get_check_aligned(),
-                )?;
+//                 let point = translate_type::<ristretto::PodRistrettoPoint>(
+//                     memory_mapping,
+//                     point_addr,
+//                     invoke_context.get_check_aligned(),
+//                 )?;
 
-                if ristretto::validate_ristretto(point) {
-                    Ok(0)
-                } else {
-                    Ok(1)
-                }
-            }
-            _ => Ok(1),
-        }
-    }
-);
+//                 if ristretto::validate_ristretto(point) {
+//                     Ok(0)
+//                 } else {
+//                     Ok(1)
+//                 }
+//             }
+//             _ => Ok(1),
+//         }
+//     }
+// );
 
-declare_builtin_function!(
-    // Elliptic Curve Group Operations
-    //
-    // Currently, only curve25519 Edwards and Ristretto representations are supported
-    SyscallCurveGroupOps,
-    fn rust(
-        invoke_context: &mut InvokeContext,
-        curve_id: u64,
-        group_op: u64,
-        left_input_addr: u64,
-        right_input_addr: u64,
-        result_point_addr: u64,
-        memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Error> {
-        use solana_zk_token_sdk::curve25519::{
-            curve_syscall_traits::*, edwards, ristretto, scalar,
-        };
-        match curve_id {
-            CURVE25519_EDWARDS => match group_op {
-                ADD => {
-                    let cost = invoke_context
-                        .get_compute_budget()
-                        .curve25519_edwards_add_cost;
-                    consume_compute_meter(invoke_context, cost)?;
+// declare_builtin_function!(
+//     // Elliptic Curve Group Operations
+//     //
+//     // Currently, only curve25519 Edwards and Ristretto representations are supported
+//     SyscallCurveGroupOps,
+//     fn rust(
+//         invoke_context: &mut InvokeContext,
+//         curve_id: u64,
+//         group_op: u64,
+//         left_input_addr: u64,
+//         right_input_addr: u64,
+//         result_point_addr: u64,
+//         memory_mapping: &mut MemoryMapping,
+//     ) -> Result<u64, Error> {
+//         use solana_zk_token_sdk::curve25519::{
+//             curve_syscall_traits::*, edwards, ristretto, scalar,
+//         };
+//         match curve_id {
+//             CURVE25519_EDWARDS => match group_op {
+//                 ADD => {
+//                     let cost = invoke_context
+//                         .get_compute_budget()
+//                         .curve25519_edwards_add_cost;
+//                     consume_compute_meter(invoke_context, cost)?;
 
-                    let left_point = translate_type::<edwards::PodEdwardsPoint>(
-                        memory_mapping,
-                        left_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
-                    let right_point = translate_type::<edwards::PodEdwardsPoint>(
-                        memory_mapping,
-                        right_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
+//                     let left_point = translate_type::<edwards::PodEdwardsPoint>(
+//                         memory_mapping,
+//                         left_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
+//                     let right_point = translate_type::<edwards::PodEdwardsPoint>(
+//                         memory_mapping,
+//                         right_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
 
-                    if let Some(result_point) = edwards::add_edwards(left_point, right_point) {
-                        *translate_type_mut::<edwards::PodEdwardsPoint>(
-                            memory_mapping,
-                            result_point_addr,
-                            invoke_context.get_check_aligned(),
-                        )? = result_point;
-                        Ok(0)
-                    } else {
-                        Ok(1)
-                    }
-                }
-                SUB => {
-                    let cost = invoke_context
-                        .get_compute_budget()
-                        .curve25519_edwards_subtract_cost;
-                    consume_compute_meter(invoke_context, cost)?;
+//                     if let Some(result_point) = edwards::add_edwards(left_point, right_point) {
+//                         *translate_type_mut::<edwards::PodEdwardsPoint>(
+//                             memory_mapping,
+//                             result_point_addr,
+//                             invoke_context.get_check_aligned(),
+//                         )? = result_point;
+//                         Ok(0)
+//                     } else {
+//                         Ok(1)
+//                     }
+//                 }
+//                 SUB => {
+//                     let cost = invoke_context
+//                         .get_compute_budget()
+//                         .curve25519_edwards_subtract_cost;
+//                     consume_compute_meter(invoke_context, cost)?;
 
-                    let left_point = translate_type::<edwards::PodEdwardsPoint>(
-                        memory_mapping,
-                        left_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
-                    let right_point = translate_type::<edwards::PodEdwardsPoint>(
-                        memory_mapping,
-                        right_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
+//                     let left_point = translate_type::<edwards::PodEdwardsPoint>(
+//                         memory_mapping,
+//                         left_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
+//                     let right_point = translate_type::<edwards::PodEdwardsPoint>(
+//                         memory_mapping,
+//                         right_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
 
-                    if let Some(result_point) = edwards::subtract_edwards(left_point, right_point) {
-                        *translate_type_mut::<edwards::PodEdwardsPoint>(
-                            memory_mapping,
-                            result_point_addr,
-                            invoke_context.get_check_aligned(),
-                        )? = result_point;
-                        Ok(0)
-                    } else {
-                        Ok(1)
-                    }
-                }
-                MUL => {
-                    let cost = invoke_context
-                        .get_compute_budget()
-                        .curve25519_edwards_multiply_cost;
-                    consume_compute_meter(invoke_context, cost)?;
+//                     if let Some(result_point) = edwards::subtract_edwards(left_point, right_point) {
+//                         *translate_type_mut::<edwards::PodEdwardsPoint>(
+//                             memory_mapping,
+//                             result_point_addr,
+//                             invoke_context.get_check_aligned(),
+//                         )? = result_point;
+//                         Ok(0)
+//                     } else {
+//                         Ok(1)
+//                     }
+//                 }
+//                 MUL => {
+//                     let cost = invoke_context
+//                         .get_compute_budget()
+//                         .curve25519_edwards_multiply_cost;
+//                     consume_compute_meter(invoke_context, cost)?;
 
-                    let scalar = translate_type::<scalar::PodScalar>(
-                        memory_mapping,
-                        left_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
-                    let input_point = translate_type::<edwards::PodEdwardsPoint>(
-                        memory_mapping,
-                        right_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
+//                     let scalar = translate_type::<scalar::PodScalar>(
+//                         memory_mapping,
+//                         left_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
+//                     let input_point = translate_type::<edwards::PodEdwardsPoint>(
+//                         memory_mapping,
+//                         right_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
 
-                    if let Some(result_point) = edwards::multiply_edwards(scalar, input_point) {
-                        *translate_type_mut::<edwards::PodEdwardsPoint>(
-                            memory_mapping,
-                            result_point_addr,
-                            invoke_context.get_check_aligned(),
-                        )? = result_point;
-                        Ok(0)
-                    } else {
-                        Ok(1)
-                    }
-                }
-                _ => Ok(1),
-            },
+//                     if let Some(result_point) = edwards::multiply_edwards(scalar, input_point) {
+//                         *translate_type_mut::<edwards::PodEdwardsPoint>(
+//                             memory_mapping,
+//                             result_point_addr,
+//                             invoke_context.get_check_aligned(),
+//                         )? = result_point;
+//                         Ok(0)
+//                     } else {
+//                         Ok(1)
+//                     }
+//                 }
+//                 _ => Ok(1),
+//             },
 
-            CURVE25519_RISTRETTO => match group_op {
-                ADD => {
-                    let cost = invoke_context
-                        .get_compute_budget()
-                        .curve25519_ristretto_add_cost;
-                    consume_compute_meter(invoke_context, cost)?;
+//             CURVE25519_RISTRETTO => match group_op {
+//                 ADD => {
+//                     let cost = invoke_context
+//                         .get_compute_budget()
+//                         .curve25519_ristretto_add_cost;
+//                     consume_compute_meter(invoke_context, cost)?;
 
-                    let left_point = translate_type::<ristretto::PodRistrettoPoint>(
-                        memory_mapping,
-                        left_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
-                    let right_point = translate_type::<ristretto::PodRistrettoPoint>(
-                        memory_mapping,
-                        right_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
+//                     let left_point = translate_type::<ristretto::PodRistrettoPoint>(
+//                         memory_mapping,
+//                         left_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
+//                     let right_point = translate_type::<ristretto::PodRistrettoPoint>(
+//                         memory_mapping,
+//                         right_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
 
-                    if let Some(result_point) = ristretto::add_ristretto(left_point, right_point) {
-                        *translate_type_mut::<ristretto::PodRistrettoPoint>(
-                            memory_mapping,
-                            result_point_addr,
-                            invoke_context.get_check_aligned(),
-                        )? = result_point;
-                        Ok(0)
-                    } else {
-                        Ok(1)
-                    }
-                }
-                SUB => {
-                    let cost = invoke_context
-                        .get_compute_budget()
-                        .curve25519_ristretto_subtract_cost;
-                    consume_compute_meter(invoke_context, cost)?;
+//                     if let Some(result_point) = ristretto::add_ristretto(left_point, right_point) {
+//                         *translate_type_mut::<ristretto::PodRistrettoPoint>(
+//                             memory_mapping,
+//                             result_point_addr,
+//                             invoke_context.get_check_aligned(),
+//                         )? = result_point;
+//                         Ok(0)
+//                     } else {
+//                         Ok(1)
+//                     }
+//                 }
+//                 SUB => {
+//                     let cost = invoke_context
+//                         .get_compute_budget()
+//                         .curve25519_ristretto_subtract_cost;
+//                     consume_compute_meter(invoke_context, cost)?;
 
-                    let left_point = translate_type::<ristretto::PodRistrettoPoint>(
-                        memory_mapping,
-                        left_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
-                    let right_point = translate_type::<ristretto::PodRistrettoPoint>(
-                        memory_mapping,
-                        right_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
+//                     let left_point = translate_type::<ristretto::PodRistrettoPoint>(
+//                         memory_mapping,
+//                         left_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
+//                     let right_point = translate_type::<ristretto::PodRistrettoPoint>(
+//                         memory_mapping,
+//                         right_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
 
-                    if let Some(result_point) =
-                        ristretto::subtract_ristretto(left_point, right_point)
-                    {
-                        *translate_type_mut::<ristretto::PodRistrettoPoint>(
-                            memory_mapping,
-                            result_point_addr,
-                            invoke_context.get_check_aligned(),
-                        )? = result_point;
-                        Ok(0)
-                    } else {
-                        Ok(1)
-                    }
-                }
-                MUL => {
-                    let cost = invoke_context
-                        .get_compute_budget()
-                        .curve25519_ristretto_multiply_cost;
-                    consume_compute_meter(invoke_context, cost)?;
+//                     if let Some(result_point) =
+//                         ristretto::subtract_ristretto(left_point, right_point)
+//                     {
+//                         *translate_type_mut::<ristretto::PodRistrettoPoint>(
+//                             memory_mapping,
+//                             result_point_addr,
+//                             invoke_context.get_check_aligned(),
+//                         )? = result_point;
+//                         Ok(0)
+//                     } else {
+//                         Ok(1)
+//                     }
+//                 }
+//                 MUL => {
+//                     let cost = invoke_context
+//                         .get_compute_budget()
+//                         .curve25519_ristretto_multiply_cost;
+//                     consume_compute_meter(invoke_context, cost)?;
 
-                    let scalar = translate_type::<scalar::PodScalar>(
-                        memory_mapping,
-                        left_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
-                    let input_point = translate_type::<ristretto::PodRistrettoPoint>(
-                        memory_mapping,
-                        right_input_addr,
-                        invoke_context.get_check_aligned(),
-                    )?;
+//                     let scalar = translate_type::<scalar::PodScalar>(
+//                         memory_mapping,
+//                         left_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
+//                     let input_point = translate_type::<ristretto::PodRistrettoPoint>(
+//                         memory_mapping,
+//                         right_input_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )?;
 
-                    if let Some(result_point) = ristretto::multiply_ristretto(scalar, input_point) {
-                        *translate_type_mut::<ristretto::PodRistrettoPoint>(
-                            memory_mapping,
-                            result_point_addr,
-                            invoke_context.get_check_aligned(),
-                        )? = result_point;
-                        Ok(0)
-                    } else {
-                        Ok(1)
-                    }
-                }
-                _ => Ok(1),
-            },
+//                     if let Some(result_point) = ristretto::multiply_ristretto(scalar, input_point) {
+//                         *translate_type_mut::<ristretto::PodRistrettoPoint>(
+//                             memory_mapping,
+//                             result_point_addr,
+//                             invoke_context.get_check_aligned(),
+//                         )? = result_point;
+//                         Ok(0)
+//                     } else {
+//                         Ok(1)
+//                     }
+//                 }
+//                 _ => Ok(1),
+//             },
 
-            _ => Ok(1),
-        }
-    }
-);
+//             _ => Ok(1),
+//         }
+//     }
+// );
 
-declare_builtin_function!(
-    // Elliptic Curve Multiscalar Multiplication
-    //
-    // Currently, only curve25519 Edwards and Ristretto representations are supported
-    SyscallCurveMultiscalarMultiplication,
-    fn rust(
-        invoke_context: &mut InvokeContext,
-        curve_id: u64,
-        scalars_addr: u64,
-        points_addr: u64,
-        points_len: u64,
-        result_point_addr: u64,
-        memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Error> {
-        use solana_zk_token_sdk::curve25519::{
-            curve_syscall_traits::*, edwards, ristretto, scalar,
-        };
+// declare_builtin_function!(
+//     // Elliptic Curve Multiscalar Multiplication
+//     //
+//     // Currently, only curve25519 Edwards and Ristretto representations are supported
+//     SyscallCurveMultiscalarMultiplication,
+//     fn rust(
+//         invoke_context: &mut InvokeContext,
+//         curve_id: u64,
+//         scalars_addr: u64,
+//         points_addr: u64,
+//         points_len: u64,
+//         result_point_addr: u64,
+//         memory_mapping: &mut MemoryMapping,
+//     ) -> Result<u64, Error> {
+//         use solana_zk_token_sdk::curve25519::{
+//             curve_syscall_traits::*, edwards, ristretto, scalar,
+//         };
 
-        let restrict_msm_length = invoke_context
-            .feature_set
-            .is_active(&feature_set::curve25519_restrict_msm_length::id());
-        #[allow(clippy::collapsible_if)]
-        if restrict_msm_length {
-            if points_len > 512 {
-                return Err(Box::new(SyscallError::InvalidLength));
-            }
-        }
+//         let restrict_msm_length = invoke_context
+//             .feature_set
+//             .is_active(&feature_set::curve25519_restrict_msm_length::id());
+//         #[allow(clippy::collapsible_if)]
+//         if restrict_msm_length {
+//             if points_len > 512 {
+//                 return Err(Box::new(SyscallError::InvalidLength));
+//             }
+//         }
 
-        match curve_id {
-            CURVE25519_EDWARDS => {
-                let cost = invoke_context
-                    .get_compute_budget()
-                    .curve25519_edwards_msm_base_cost
-                    .saturating_add(
-                        invoke_context
-                            .get_compute_budget()
-                            .curve25519_edwards_msm_incremental_cost
-                            .saturating_mul(points_len.saturating_sub(1)),
-                    );
-                consume_compute_meter(invoke_context, cost)?;
+//         match curve_id {
+//             CURVE25519_EDWARDS => {
+//                 let cost = invoke_context
+//                     .get_compute_budget()
+//                     .curve25519_edwards_msm_base_cost
+//                     .saturating_add(
+//                         invoke_context
+//                             .get_compute_budget()
+//                             .curve25519_edwards_msm_incremental_cost
+//                             .saturating_mul(points_len.saturating_sub(1)),
+//                     );
+//                 consume_compute_meter(invoke_context, cost)?;
 
-                let scalars = translate_slice::<scalar::PodScalar>(
-                    memory_mapping,
-                    scalars_addr,
-                    points_len,
-                    invoke_context.get_check_aligned(),
-                )?;
+//                 let scalars = translate_slice::<scalar::PodScalar>(
+//                     memory_mapping,
+//                     scalars_addr,
+//                     points_len,
+//                     invoke_context.get_check_aligned(),
+//                 )?;
 
-                let points = translate_slice::<edwards::PodEdwardsPoint>(
-                    memory_mapping,
-                    points_addr,
-                    points_len,
-                    invoke_context.get_check_aligned(),
-                )?;
+//                 let points = translate_slice::<edwards::PodEdwardsPoint>(
+//                     memory_mapping,
+//                     points_addr,
+//                     points_len,
+//                     invoke_context.get_check_aligned(),
+//                 )?;
 
-                if let Some(result_point) = edwards::multiscalar_multiply_edwards(scalars, points) {
-                    *translate_type_mut::<edwards::PodEdwardsPoint>(
-                        memory_mapping,
-                        result_point_addr,
-                        invoke_context.get_check_aligned(),
-                    )? = result_point;
-                    Ok(0)
-                } else {
-                    Ok(1)
-                }
-            }
+//                 if let Some(result_point) = edwards::multiscalar_multiply_edwards(scalars, points) {
+//                     *translate_type_mut::<edwards::PodEdwardsPoint>(
+//                         memory_mapping,
+//                         result_point_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )? = result_point;
+//                     Ok(0)
+//                 } else {
+//                     Ok(1)
+//                 }
+//             }
 
-            CURVE25519_RISTRETTO => {
-                let cost = invoke_context
-                    .get_compute_budget()
-                    .curve25519_ristretto_msm_base_cost
-                    .saturating_add(
-                        invoke_context
-                            .get_compute_budget()
-                            .curve25519_ristretto_msm_incremental_cost
-                            .saturating_mul(points_len.saturating_sub(1)),
-                    );
-                consume_compute_meter(invoke_context, cost)?;
+//             CURVE25519_RISTRETTO => {
+//                 let cost = invoke_context
+//                     .get_compute_budget()
+//                     .curve25519_ristretto_msm_base_cost
+//                     .saturating_add(
+//                         invoke_context
+//                             .get_compute_budget()
+//                             .curve25519_ristretto_msm_incremental_cost
+//                             .saturating_mul(points_len.saturating_sub(1)),
+//                     );
+//                 consume_compute_meter(invoke_context, cost)?;
 
-                let scalars = translate_slice::<scalar::PodScalar>(
-                    memory_mapping,
-                    scalars_addr,
-                    points_len,
-                    invoke_context.get_check_aligned(),
-                )?;
+//                 let scalars = translate_slice::<scalar::PodScalar>(
+//                     memory_mapping,
+//                     scalars_addr,
+//                     points_len,
+//                     invoke_context.get_check_aligned(),
+//                 )?;
 
-                let points = translate_slice::<ristretto::PodRistrettoPoint>(
-                    memory_mapping,
-                    points_addr,
-                    points_len,
-                    invoke_context.get_check_aligned(),
-                )?;
+//                 let points = translate_slice::<ristretto::PodRistrettoPoint>(
+//                     memory_mapping,
+//                     points_addr,
+//                     points_len,
+//                     invoke_context.get_check_aligned(),
+//                 )?;
 
-                if let Some(result_point) =
-                    ristretto::multiscalar_multiply_ristretto(scalars, points)
-                {
-                    *translate_type_mut::<ristretto::PodRistrettoPoint>(
-                        memory_mapping,
-                        result_point_addr,
-                        invoke_context.get_check_aligned(),
-                    )? = result_point;
-                    Ok(0)
-                } else {
-                    Ok(1)
-                }
-            }
+//                 if let Some(result_point) =
+//                     ristretto::multiscalar_multiply_ristretto(scalars, points)
+//                 {
+//                     *translate_type_mut::<ristretto::PodRistrettoPoint>(
+//                         memory_mapping,
+//                         result_point_addr,
+//                         invoke_context.get_check_aligned(),
+//                     )? = result_point;
+//                     Ok(0)
+//                 } else {
+//                     Ok(1)
+//                 }
+//             }
 
-            _ => Ok(1),
-        }
-    }
-);
+//             _ => Ok(1),
+//         }
+//     }
+// );
 
 declare_builtin_function!(
     /// Set return data
@@ -1333,7 +1350,7 @@ declare_builtin_function!(
                 to_slice.as_ptr() as usize,
                 length as usize,
                 program_id_result as *const _ as usize,
-                std::mem::size_of::<Pubkey>(),
+                core::mem::size_of::<Pubkey>(),
             ) {
                 return Err(SyscallError::CopyOverlapping.into());
             }
@@ -1417,36 +1434,36 @@ declare_builtin_function!(
 
                 if !is_nonoverlapping(
                     result_header as *const _ as usize,
-                    std::mem::size_of::<ProcessedSiblingInstruction>(),
+                    core::mem::size_of::<ProcessedSiblingInstruction>(),
                     program_id as *const _ as usize,
-                    std::mem::size_of::<Pubkey>(),
+                    core::mem::size_of::<Pubkey>(),
                 ) || !is_nonoverlapping(
                     result_header as *const _ as usize,
-                    std::mem::size_of::<ProcessedSiblingInstruction>(),
+                    core::mem::size_of::<ProcessedSiblingInstruction>(),
                     accounts.as_ptr() as usize,
-                    std::mem::size_of::<AccountMeta>()
+                    core::mem::size_of::<AccountMeta>()
                         .saturating_mul(result_header.accounts_len as usize),
                 ) || !is_nonoverlapping(
                     result_header as *const _ as usize,
-                    std::mem::size_of::<ProcessedSiblingInstruction>(),
+                    core::mem::size_of::<ProcessedSiblingInstruction>(),
                     data.as_ptr() as usize,
                     result_header.data_len as usize,
                 ) || !is_nonoverlapping(
                     program_id as *const _ as usize,
-                    std::mem::size_of::<Pubkey>(),
+                    core::mem::size_of::<Pubkey>(),
                     data.as_ptr() as usize,
                     result_header.data_len as usize,
                 ) || !is_nonoverlapping(
                     program_id as *const _ as usize,
-                    std::mem::size_of::<Pubkey>(),
+                    core::mem::size_of::<Pubkey>(),
                     accounts.as_ptr() as usize,
-                    std::mem::size_of::<AccountMeta>()
+                    core::mem::size_of::<AccountMeta>()
                         .saturating_mul(result_header.accounts_len as usize),
                 ) || !is_nonoverlapping(
                     data.as_ptr() as usize,
                     result_header.data_len as usize,
                     accounts.as_ptr() as usize,
-                    std::mem::size_of::<AccountMeta>()
+                    core::mem::size_of::<AccountMeta>()
                         .saturating_mul(result_header.accounts_len as usize),
                 ) {
                     return Err(SyscallError::CopyOverlapping.into());
@@ -1504,252 +1521,252 @@ declare_builtin_function!(
     }
 );
 
-declare_builtin_function!(
-    /// alt_bn128 group operations
-    SyscallAltBn128,
-    fn rust(
-        invoke_context: &mut InvokeContext,
-        group_op: u64,
-        input_addr: u64,
-        input_size: u64,
-        result_addr: u64,
-        _arg5: u64,
-        memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Error> {
-        use solana_sdk::alt_bn128::prelude::{ALT_BN128_ADD, ALT_BN128_MUL, ALT_BN128_PAIRING};
-        let budget = invoke_context.get_compute_budget();
-        let (cost, output): (u64, usize) = match group_op {
-            ALT_BN128_ADD => (
-                budget.alt_bn128_addition_cost,
-                ALT_BN128_ADDITION_OUTPUT_LEN,
-            ),
-            ALT_BN128_MUL => (
-                budget.alt_bn128_multiplication_cost,
-                ALT_BN128_MULTIPLICATION_OUTPUT_LEN,
-            ),
-            ALT_BN128_PAIRING => {
-                let ele_len = input_size
-                    .checked_div(ALT_BN128_PAIRING_ELEMENT_LEN as u64)
-                    .expect("div by non-zero constant");
-                let cost = budget
-                    .alt_bn128_pairing_one_pair_cost_first
-                    .saturating_add(
-                        budget
-                            .alt_bn128_pairing_one_pair_cost_other
-                            .saturating_mul(ele_len.saturating_sub(1)),
-                    )
-                    .saturating_add(budget.sha256_base_cost)
-                    .saturating_add(input_size)
-                    .saturating_add(ALT_BN128_PAIRING_OUTPUT_LEN as u64);
-                (cost, ALT_BN128_PAIRING_OUTPUT_LEN)
-            }
-            _ => {
-                return Err(SyscallError::InvalidAttribute.into());
-            }
-        };
+// declare_builtin_function!(
+//     /// alt_bn128 group operations
+//     SyscallAltBn128,
+//     fn rust(
+//         invoke_context: &mut InvokeContext,
+//         group_op: u64,
+//         input_addr: u64,
+//         input_size: u64,
+//         result_addr: u64,
+//         _arg5: u64,
+//         memory_mapping: &mut MemoryMapping,
+//     ) -> Result<u64, Error> {
+//         use solana_sdk::alt_bn128::prelude::{ALT_BN128_ADD, ALT_BN128_MUL, ALT_BN128_PAIRING};
+//         let budget = invoke_context.get_compute_budget();
+//         let (cost, output): (u64, usize) = match group_op {
+//             ALT_BN128_ADD => (
+//                 budget.alt_bn128_addition_cost,
+//                 ALT_BN128_ADDITION_OUTPUT_LEN,
+//             ),
+//             ALT_BN128_MUL => (
+//                 budget.alt_bn128_multiplication_cost,
+//                 ALT_BN128_MULTIPLICATION_OUTPUT_LEN,
+//             ),
+//             ALT_BN128_PAIRING => {
+//                 let ele_len = input_size
+//                     .checked_div(ALT_BN128_PAIRING_ELEMENT_LEN as u64)
+//                     .expect("div by non-zero constant");
+//                 let cost = budget
+//                     .alt_bn128_pairing_one_pair_cost_first
+//                     .saturating_add(
+//                         budget
+//                             .alt_bn128_pairing_one_pair_cost_other
+//                             .saturating_mul(ele_len.saturating_sub(1)),
+//                     )
+//                     .saturating_add(budget.sha256_base_cost)
+//                     .saturating_add(input_size)
+//                     .saturating_add(ALT_BN128_PAIRING_OUTPUT_LEN as u64);
+//                 (cost, ALT_BN128_PAIRING_OUTPUT_LEN)
+//             }
+//             _ => {
+//                 return Err(SyscallError::InvalidAttribute.into());
+//             }
+//         };
 
-        consume_compute_meter(invoke_context, cost)?;
+//         consume_compute_meter(invoke_context, cost)?;
 
-        let input = translate_slice::<u8>(
-            memory_mapping,
-            input_addr,
-            input_size,
-            invoke_context.get_check_aligned(),
-        )?;
+//         let input = translate_slice::<u8>(
+//             memory_mapping,
+//             input_addr,
+//             input_size,
+//             invoke_context.get_check_aligned(),
+//         )?;
 
-        let call_result = translate_slice_mut::<u8>(
-            memory_mapping,
-            result_addr,
-            output as u64,
-            invoke_context.get_check_aligned(),
-        )?;
+//         let call_result = translate_slice_mut::<u8>(
+//             memory_mapping,
+//             result_addr,
+//             output as u64,
+//             invoke_context.get_check_aligned(),
+//         )?;
 
-        let calculation = match group_op {
-            ALT_BN128_ADD => alt_bn128_addition,
-            ALT_BN128_MUL => alt_bn128_multiplication,
-            ALT_BN128_PAIRING => alt_bn128_pairing,
-            _ => {
-                return Err(SyscallError::InvalidAttribute.into());
-            }
-        };
+//         let calculation = match group_op {
+//             ALT_BN128_ADD => alt_bn128_addition,
+//             ALT_BN128_MUL => alt_bn128_multiplication,
+//             ALT_BN128_PAIRING => alt_bn128_pairing,
+//             _ => {
+//                 return Err(SyscallError::InvalidAttribute.into());
+//             }
+//         };
 
-        let simplify_alt_bn128_syscall_error_codes = invoke_context
-            .feature_set
-            .is_active(&feature_set::simplify_alt_bn128_syscall_error_codes::id());
+//         let simplify_alt_bn128_syscall_error_codes = invoke_context
+//             .feature_set
+//             .is_active(&feature_set::simplify_alt_bn128_syscall_error_codes::id());
 
-        let result_point = match calculation(input) {
-            Ok(result_point) => result_point,
-            Err(e) => {
-                return if simplify_alt_bn128_syscall_error_codes {
-                    Ok(1)
-                } else {
-                    Ok(e.into())
-                };
-            }
-        };
+//         let result_point = match calculation(input) {
+//             Ok(result_point) => result_point,
+//             Err(e) => {
+//                 return if simplify_alt_bn128_syscall_error_codes {
+//                     Ok(1)
+//                 } else {
+//                     Ok(e.into())
+//                 };
+//             }
+//         };
 
-        // This can never happen and should be removed when the
-        // simplify_alt_bn128_syscall_error_codes feature gets activated
-        if result_point.len() != output && !simplify_alt_bn128_syscall_error_codes {
-            return Ok(AltBn128Error::SliceOutOfBounds.into());
-        }
+//         // This can never happen and should be removed when the
+//         // simplify_alt_bn128_syscall_error_codes feature gets activated
+//         if result_point.len() != output && !simplify_alt_bn128_syscall_error_codes {
+//             return Ok(AltBn128Error::SliceOutOfBounds.into());
+//         }
 
-        call_result.copy_from_slice(&result_point);
-        Ok(SUCCESS)
-    }
-);
+//         call_result.copy_from_slice(&result_point);
+//         Ok(SUCCESS)
+//     }
+// );
 
-declare_builtin_function!(
-    /// Big integer modular exponentiation
-    SyscallBigModExp,
-    fn rust(
-        invoke_context: &mut InvokeContext,
-        params: u64,
-        return_value: u64,
-        _arg3: u64,
-        _arg4: u64,
-        _arg5: u64,
-        memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Error> {
-        let params = &translate_slice::<BigModExpParams>(
-            memory_mapping,
-            params,
-            1,
-            invoke_context.get_check_aligned(),
-        )?
-        .first()
-        .ok_or(SyscallError::InvalidLength)?;
+// declare_builtin_function!(
+//     /// Big integer modular exponentiation
+//     SyscallBigModExp,
+//     fn rust(
+//         invoke_context: &mut InvokeContext,
+//         params: u64,
+//         return_value: u64,
+//         _arg3: u64,
+//         _arg4: u64,
+//         _arg5: u64,
+//         memory_mapping: &mut MemoryMapping,
+//     ) -> Result<u64, Error> {
+//         let params = &translate_slice::<BigModExpParams>(
+//             memory_mapping,
+//             params,
+//             1,
+//             invoke_context.get_check_aligned(),
+//         )?
+//         .first()
+//         .ok_or(SyscallError::InvalidLength)?;
 
-        if params.base_len > 512 || params.exponent_len > 512 || params.modulus_len > 512 {
-            return Err(Box::new(SyscallError::InvalidLength));
-        }
+//         if params.base_len > 512 || params.exponent_len > 512 || params.modulus_len > 512 {
+//             return Err(Box::new(SyscallError::InvalidLength));
+//         }
 
-        let input_len: u64 = std::cmp::max(params.base_len, params.exponent_len);
-        let input_len: u64 = std::cmp::max(input_len, params.modulus_len);
+//         let input_len: u64 = std::cmp::max(params.base_len, params.exponent_len);
+//         let input_len: u64 = std::cmp::max(input_len, params.modulus_len);
 
-        let budget = invoke_context.get_compute_budget();
-        consume_compute_meter(
-            invoke_context,
-            budget.syscall_base_cost.saturating_add(
-                input_len
-                    .saturating_mul(input_len)
-                    .checked_div(budget.big_modular_exponentiation_cost)
-                    .unwrap_or(u64::MAX),
-            ),
-        )?;
+//         let budget = invoke_context.get_compute_budget();
+//         consume_compute_meter(
+//             invoke_context,
+//             budget.syscall_base_cost.saturating_add(
+//                 input_len
+//                     .saturating_mul(input_len)
+//                     .checked_div(budget.big_modular_exponentiation_cost)
+//                     .unwrap_or(u64::MAX),
+//             ),
+//         )?;
 
-        let base = translate_slice::<u8>(
-            memory_mapping,
-            params.base as *const _ as u64,
-            params.base_len,
-            invoke_context.get_check_aligned(),
-        )?;
+//         let base = translate_slice::<u8>(
+//             memory_mapping,
+//             params.base as *const _ as u64,
+//             params.base_len,
+//             invoke_context.get_check_aligned(),
+//         )?;
 
-        let exponent = translate_slice::<u8>(
-            memory_mapping,
-            params.exponent as *const _ as u64,
-            params.exponent_len,
-            invoke_context.get_check_aligned(),
-        )?;
+//         let exponent = translate_slice::<u8>(
+//             memory_mapping,
+//             params.exponent as *const _ as u64,
+//             params.exponent_len,
+//             invoke_context.get_check_aligned(),
+//         )?;
 
-        let modulus = translate_slice::<u8>(
-            memory_mapping,
-            params.modulus as *const _ as u64,
-            params.modulus_len,
-            invoke_context.get_check_aligned(),
-        )?;
+//         let modulus = translate_slice::<u8>(
+//             memory_mapping,
+//             params.modulus as *const _ as u64,
+//             params.modulus_len,
+//             invoke_context.get_check_aligned(),
+//         )?;
 
-        let value = big_mod_exp(base, exponent, modulus);
+//         let value = big_mod_exp(base, exponent, modulus);
 
-        let return_value = translate_slice_mut::<u8>(
-            memory_mapping,
-            return_value,
-            params.modulus_len,
-            invoke_context.get_check_aligned(),
-        )?;
-        return_value.copy_from_slice(value.as_slice());
+//         let return_value = translate_slice_mut::<u8>(
+//             memory_mapping,
+//             return_value,
+//             params.modulus_len,
+//             invoke_context.get_check_aligned(),
+//         )?;
+//         return_value.copy_from_slice(value.as_slice());
 
-        Ok(0)
-    }
-);
+//         Ok(0)
+//     }
+// );
 
-declare_builtin_function!(
-    // Poseidon
-    SyscallPoseidon,
-    fn rust(
-        invoke_context: &mut InvokeContext,
-        parameters: u64,
-        endianness: u64,
-        vals_addr: u64,
-        vals_len: u64,
-        result_addr: u64,
-        memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Error> {
-        let parameters: poseidon::Parameters = parameters.try_into()?;
-        let endianness: poseidon::Endianness = endianness.try_into()?;
+// declare_builtin_function!(
+//     // Poseidon
+//     SyscallPoseidon,
+//     fn rust(
+//         invoke_context: &mut InvokeContext,
+//         parameters: u64,
+//         endianness: u64,
+//         vals_addr: u64,
+//         vals_len: u64,
+//         result_addr: u64,
+//         memory_mapping: &mut MemoryMapping,
+//     ) -> Result<u64, Error> {
+//         let parameters: poseidon::Parameters = parameters.try_into()?;
+//         let endianness: poseidon::Endianness = endianness.try_into()?;
 
-        if vals_len > 12 {
-            ic_msg!(
-                invoke_context,
-                "Poseidon hashing {} sequences is not supported",
-                vals_len,
-            );
-            return Err(SyscallError::InvalidLength.into());
-        }
+//         if vals_len > 12 {
+//             ic_msg!(
+//                 invoke_context,
+//                 "Poseidon hashing {} sequences is not supported",
+//                 vals_len,
+//             );
+//             return Err(SyscallError::InvalidLength.into());
+//         }
 
-        let budget = invoke_context.get_compute_budget();
-        let Some(cost) = budget.poseidon_cost(vals_len) else {
-            ic_msg!(
-                invoke_context,
-                "Overflow while calculating the compute cost"
-            );
-            return Err(SyscallError::ArithmeticOverflow.into());
-        };
-        consume_compute_meter(invoke_context, cost.to_owned())?;
+//         let budget = invoke_context.get_compute_budget();
+//         let Some(cost) = budget.poseidon_cost(vals_len) else {
+//             ic_msg!(
+//                 invoke_context,
+//                 "Overflow while calculating the compute cost"
+//             );
+//             return Err(SyscallError::ArithmeticOverflow.into());
+//         };
+//         consume_compute_meter(invoke_context, cost.to_owned())?;
 
-        let hash_result = translate_slice_mut::<u8>(
-            memory_mapping,
-            result_addr,
-            poseidon::HASH_BYTES as u64,
-            invoke_context.get_check_aligned(),
-        )?;
-        let inputs = translate_slice::<&[u8]>(
-            memory_mapping,
-            vals_addr,
-            vals_len,
-            invoke_context.get_check_aligned(),
-        )?;
-        let inputs = inputs
-            .iter()
-            .map(|input| {
-                translate_slice::<u8>(
-                    memory_mapping,
-                    input.as_ptr() as *const _ as u64,
-                    input.len() as u64,
-                    invoke_context.get_check_aligned(),
-                )
-            })
-            .collect::<Result<Vec<_>, Error>>()?;
+//         let hash_result = translate_slice_mut::<u8>(
+//             memory_mapping,
+//             result_addr,
+//             poseidon::HASH_BYTES as u64,
+//             invoke_context.get_check_aligned(),
+//         )?;
+//         let inputs = translate_slice::<&[u8]>(
+//             memory_mapping,
+//             vals_addr,
+//             vals_len,
+//             invoke_context.get_check_aligned(),
+//         )?;
+//         let inputs = inputs
+//             .iter()
+//             .map(|input| {
+//                 translate_slice::<u8>(
+//                     memory_mapping,
+//                     input.as_ptr() as *const _ as u64,
+//                     input.len() as u64,
+//                     invoke_context.get_check_aligned(),
+//                 )
+//             })
+//             .collect::<Result<Vec<_>, Error>>()?;
 
-        let simplify_alt_bn128_syscall_error_codes = invoke_context
-            .feature_set
-            .is_active(&feature_set::simplify_alt_bn128_syscall_error_codes::id());
+//         let simplify_alt_bn128_syscall_error_codes = invoke_context
+//             .feature_set
+//             .is_active(&feature_set::simplify_alt_bn128_syscall_error_codes::id());
 
-        let hash = match poseidon::hashv(parameters, endianness, inputs.as_slice()) {
-            Ok(hash) => hash,
-            Err(e) => {
-                return if simplify_alt_bn128_syscall_error_codes {
-                    Ok(1)
-                } else {
-                    Ok(e.into())
-                };
-            }
-        };
-        hash_result.copy_from_slice(&hash.to_bytes());
+//         let hash = match poseidon::hashv(parameters, endianness, inputs.as_slice()) {
+//             Ok(hash) => hash,
+//             Err(e) => {
+//                 return if simplify_alt_bn128_syscall_error_codes {
+//                     Ok(1)
+//                 } else {
+//                     Ok(e.into())
+//                 };
+//             }
+//         };
+//         hash_result.copy_from_slice(&hash.to_bytes());
 
-        Ok(SUCCESS)
-    }
-);
+//         Ok(SUCCESS)
+//     }
+// );
 
 declare_builtin_function!(
     /// Read remaining compute units
@@ -1771,126 +1788,126 @@ declare_builtin_function!(
     }
 );
 
-declare_builtin_function!(
-    /// alt_bn128 g1 and g2 compression and decompression
-    SyscallAltBn128Compression,
-    fn rust(
-        invoke_context: &mut InvokeContext,
-        op: u64,
-        input_addr: u64,
-        input_size: u64,
-        result_addr: u64,
-        _arg5: u64,
-        memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Error> {
-        use solana_sdk::alt_bn128::compression::prelude::{
-            alt_bn128_g1_compress, alt_bn128_g1_decompress, alt_bn128_g2_compress,
-            alt_bn128_g2_decompress, ALT_BN128_G1_COMPRESS, ALT_BN128_G1_DECOMPRESS,
-            ALT_BN128_G2_COMPRESS, ALT_BN128_G2_DECOMPRESS, G1, G1_COMPRESSED, G2, G2_COMPRESSED,
-        };
-        let budget = invoke_context.get_compute_budget();
-        let base_cost = budget.syscall_base_cost;
-        let (cost, output): (u64, usize) = match op {
-            ALT_BN128_G1_COMPRESS => (
-                base_cost.saturating_add(budget.alt_bn128_g1_compress),
-                G1_COMPRESSED,
-            ),
-            ALT_BN128_G1_DECOMPRESS => {
-                (base_cost.saturating_add(budget.alt_bn128_g1_decompress), G1)
-            }
-            ALT_BN128_G2_COMPRESS => (
-                base_cost.saturating_add(budget.alt_bn128_g2_compress),
-                G2_COMPRESSED,
-            ),
-            ALT_BN128_G2_DECOMPRESS => {
-                (base_cost.saturating_add(budget.alt_bn128_g2_decompress), G2)
-            }
-            _ => {
-                return Err(SyscallError::InvalidAttribute.into());
-            }
-        };
+// declare_builtin_function!(
+//     /// alt_bn128 g1 and g2 compression and decompression
+//     SyscallAltBn128Compression,
+//     fn rust(
+//         invoke_context: &mut InvokeContext,
+//         op: u64,
+//         input_addr: u64,
+//         input_size: u64,
+//         result_addr: u64,
+//         _arg5: u64,
+//         memory_mapping: &mut MemoryMapping,
+//     ) -> Result<u64, Error> {
+//         use solana_sdk::alt_bn128::compression::prelude::{
+//             alt_bn128_g1_compress, alt_bn128_g1_decompress, alt_bn128_g2_compress,
+//             alt_bn128_g2_decompress, ALT_BN128_G1_COMPRESS, ALT_BN128_G1_DECOMPRESS,
+//             ALT_BN128_G2_COMPRESS, ALT_BN128_G2_DECOMPRESS, G1, G1_COMPRESSED, G2, G2_COMPRESSED,
+//         };
+//         let budget = invoke_context.get_compute_budget();
+//         let base_cost = budget.syscall_base_cost;
+//         let (cost, output): (u64, usize) = match op {
+//             ALT_BN128_G1_COMPRESS => (
+//                 base_cost.saturating_add(budget.alt_bn128_g1_compress),
+//                 G1_COMPRESSED,
+//             ),
+//             ALT_BN128_G1_DECOMPRESS => {
+//                 (base_cost.saturating_add(budget.alt_bn128_g1_decompress), G1)
+//             }
+//             ALT_BN128_G2_COMPRESS => (
+//                 base_cost.saturating_add(budget.alt_bn128_g2_compress),
+//                 G2_COMPRESSED,
+//             ),
+//             ALT_BN128_G2_DECOMPRESS => {
+//                 (base_cost.saturating_add(budget.alt_bn128_g2_decompress), G2)
+//             }
+//             _ => {
+//                 return Err(SyscallError::InvalidAttribute.into());
+//             }
+//         };
 
-        consume_compute_meter(invoke_context, cost)?;
+//         consume_compute_meter(invoke_context, cost)?;
 
-        let input = translate_slice::<u8>(
-            memory_mapping,
-            input_addr,
-            input_size,
-            invoke_context.get_check_aligned(),
-        )?;
+//         let input = translate_slice::<u8>(
+//             memory_mapping,
+//             input_addr,
+//             input_size,
+//             invoke_context.get_check_aligned(),
+//         )?;
 
-        let call_result = translate_slice_mut::<u8>(
-            memory_mapping,
-            result_addr,
-            output as u64,
-            invoke_context.get_check_aligned(),
-        )?;
+//         let call_result = translate_slice_mut::<u8>(
+//             memory_mapping,
+//             result_addr,
+//             output as u64,
+//             invoke_context.get_check_aligned(),
+//         )?;
 
-        let simplify_alt_bn128_syscall_error_codes = invoke_context
-            .feature_set
-            .is_active(&feature_set::simplify_alt_bn128_syscall_error_codes::id());
+//         let simplify_alt_bn128_syscall_error_codes = invoke_context
+//             .feature_set
+//             .is_active(&feature_set::simplify_alt_bn128_syscall_error_codes::id());
 
-        match op {
-            ALT_BN128_G1_COMPRESS => {
-                let result_point = match alt_bn128_g1_compress(input) {
-                    Ok(result_point) => result_point,
-                    Err(e) => {
-                        return if simplify_alt_bn128_syscall_error_codes {
-                            Ok(1)
-                        } else {
-                            Ok(e.into())
-                        };
-                    }
-                };
-                call_result.copy_from_slice(&result_point);
-                Ok(SUCCESS)
-            }
-            ALT_BN128_G1_DECOMPRESS => {
-                let result_point = match alt_bn128_g1_decompress(input) {
-                    Ok(result_point) => result_point,
-                    Err(e) => {
-                        return if simplify_alt_bn128_syscall_error_codes {
-                            Ok(1)
-                        } else {
-                            Ok(e.into())
-                        };
-                    }
-                };
-                call_result.copy_from_slice(&result_point);
-                Ok(SUCCESS)
-            }
-            ALT_BN128_G2_COMPRESS => {
-                let result_point = match alt_bn128_g2_compress(input) {
-                    Ok(result_point) => result_point,
-                    Err(e) => {
-                        return if simplify_alt_bn128_syscall_error_codes {
-                            Ok(1)
-                        } else {
-                            Ok(e.into())
-                        };
-                    }
-                };
-                call_result.copy_from_slice(&result_point);
-                Ok(SUCCESS)
-            }
-            ALT_BN128_G2_DECOMPRESS => {
-                let result_point = match alt_bn128_g2_decompress(input) {
-                    Ok(result_point) => result_point,
-                    Err(e) => {
-                        return if simplify_alt_bn128_syscall_error_codes {
-                            Ok(1)
-                        } else {
-                            Ok(e.into())
-                        };
-                    }
-                };
-                call_result.copy_from_slice(&result_point);
-                Ok(SUCCESS)
-            }
-            _ => Err(SyscallError::InvalidAttribute.into()),
-        }
-    }
-);
+//         match op {
+//             ALT_BN128_G1_COMPRESS => {
+//                 let result_point = match alt_bn128_g1_compress(input) {
+//                     Ok(result_point) => result_point,
+//                     Err(e) => {
+//                         return if simplify_alt_bn128_syscall_error_codes {
+//                             Ok(1)
+//                         } else {
+//                             Ok(e.into())
+//                         };
+//                     }
+//                 };
+//                 call_result.copy_from_slice(&result_point);
+//                 Ok(SUCCESS)
+//             }
+//             ALT_BN128_G1_DECOMPRESS => {
+//                 let result_point = match alt_bn128_g1_decompress(input) {
+//                     Ok(result_point) => result_point,
+//                     Err(e) => {
+//                         return if simplify_alt_bn128_syscall_error_codes {
+//                             Ok(1)
+//                         } else {
+//                             Ok(e.into())
+//                         };
+//                     }
+//                 };
+//                 call_result.copy_from_slice(&result_point);
+//                 Ok(SUCCESS)
+//             }
+//             ALT_BN128_G2_COMPRESS => {
+//                 let result_point = match alt_bn128_g2_compress(input) {
+//                     Ok(result_point) => result_point,
+//                     Err(e) => {
+//                         return if simplify_alt_bn128_syscall_error_codes {
+//                             Ok(1)
+//                         } else {
+//                             Ok(e.into())
+//                         };
+//                     }
+//                 };
+//                 call_result.copy_from_slice(&result_point);
+//                 Ok(SUCCESS)
+//             }
+//             ALT_BN128_G2_DECOMPRESS => {
+//                 let result_point = match alt_bn128_g2_decompress(input) {
+//                     Ok(result_point) => result_point,
+//                     Err(e) => {
+//                         return if simplify_alt_bn128_syscall_error_codes {
+//                             Ok(1)
+//                         } else {
+//                             Ok(e.into())
+//                         };
+//                     }
+//                 };
+//                 call_result.copy_from_slice(&result_point);
+//                 Ok(SUCCESS)
+//             }
+//             _ => Err(SyscallError::InvalidAttribute.into()),
+//         }
+//     }
+// );
 
 declare_builtin_function!(
     // Generic Hashing Syscall
@@ -1924,7 +1941,7 @@ declare_builtin_function!(
         let hash_result = translate_slice_mut::<u8>(
             memory_mapping,
             result_addr,
-            std::mem::size_of::<H::Output>() as u64,
+            core::mem::size_of::<H::Output>() as u64,
             invoke_context.get_check_aligned(),
         )?;
         let mut hasher = H::create_hasher();
@@ -3769,10 +3786,10 @@ mod tests {
         const VM_BASE_ADDRESS: u64 = 0x100000000;
         const META_OFFSET: usize = 0;
         const PROGRAM_ID_OFFSET: usize =
-            META_OFFSET + std::mem::size_of::<ProcessedSiblingInstruction>();
-        const DATA_OFFSET: usize = PROGRAM_ID_OFFSET + std::mem::size_of::<Pubkey>();
+            META_OFFSET + core::mem::size_of::<ProcessedSiblingInstruction>();
+        const DATA_OFFSET: usize = PROGRAM_ID_OFFSET + core::mem::size_of::<Pubkey>();
         const ACCOUNTS_OFFSET: usize = DATA_OFFSET + 0x100;
-        const END_OFFSET: usize = ACCOUNTS_OFFSET + std::mem::size_of::<AccountInfo>() * 4;
+        const END_OFFSET: usize = ACCOUNTS_OFFSET + core::mem::size_of::<AccountInfo>() * 4;
         let mut memory = [0u8; END_OFFSET];
         let config = Config::default();
         let mut memory_mapping = MemoryMapping::new(
@@ -4179,7 +4196,7 @@ mod tests {
 
     #[test]
     fn test_address_is_aligned() {
-        for address in 0..std::mem::size_of::<u64>() {
+        for address in 0..core::mem::size_of::<u64>() {
             assert_eq!(address_is_aligned::<u64>(address as u64), address == 0);
         }
     }

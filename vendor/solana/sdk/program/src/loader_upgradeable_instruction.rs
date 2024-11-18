@@ -2,6 +2,8 @@
 //!
 //! [ubpfl]: crate::bpf_loader_upgradeable
 
+use alloc::vec::Vec;
+
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub enum UpgradeableLoaderInstruction {

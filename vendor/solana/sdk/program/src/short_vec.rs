@@ -2,6 +2,7 @@
 
 #![allow(clippy::arithmetic_side_effects)]
 use {
+    alloc::vec::Vec,
     core::{convert::TryFrom, fmt, marker::PhantomData},
     serde::{
         de::{self, Deserializer, SeqAccess, Visitor},

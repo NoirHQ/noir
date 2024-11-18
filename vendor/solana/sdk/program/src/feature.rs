@@ -15,6 +15,7 @@ use crate::{
     account_info::AccountInfo, bincode, clock::Slot, instruction::Instruction,
     program_error::ProgramError, pubkey::Pubkey, rent::Rent, system_instruction,
 };
+use alloc::{vec, vec::Vec};
 
 crate::declare_id!("Feature111111111111111111111111111111111111");
 

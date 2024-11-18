@@ -1,7 +1,10 @@
 #![allow(clippy::arithmetic_side_effects)]
 
 use {
+    alloc::vec::Vec,
     byteorder::{ByteOrder, LittleEndian},
+    core::mem::{self, size_of},
+    core2::io,
     solana_program_runtime::invoke_context::SerializedAccountMetadata,
     solana_rbpf::{
         aligned_memory::{AlignedMemory, Pod},
@@ -18,7 +21,6 @@ use {
             BorrowedAccount, IndexOfAccount, InstructionContext, TransactionContext,
         },
     },
-    std::mem::{self, size_of},
 };
 
 /// Maximum number of instruction accounts that can be serialized into the
@@ -51,7 +53,7 @@ impl Serializer {
         }
     }
 
-    fn fill_write(&mut self, num: usize, value: u8) -> std::io::Result<()> {
+    fn fill_write(&mut self, num: usize, value: u8) -> io::Result<()> {
         self.buffer.fill_write(num, value)
     }
 

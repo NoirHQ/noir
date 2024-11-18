@@ -22,7 +22,8 @@ use {
     crate::{
         declare_deprecated_sysvar_id, fee_calculator::FeeCalculator, hash::Hash, sysvar::Sysvar,
     },
-    std::{cmp::Ordering, collections::BinaryHeap, iter::FromIterator, ops::Deref},
+    alloc::{collections::BinaryHeap, vec::Vec},
+    core::{cmp::Ordering, iter::FromIterator, ops::Deref},
 };
 
 #[deprecated(

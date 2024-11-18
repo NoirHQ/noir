@@ -21,6 +21,7 @@ use crate::{
     pubkey::Pubkey,
     system_instruction, sysvar,
 };
+use alloc::{vec, vec::Vec};
 
 crate::declare_id!("BPFLoaderUpgradeab1e11111111111111111111111");
 

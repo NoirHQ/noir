@@ -1,5 +1,6 @@
 //! A trait for sanitizing values and members of over the wire messages.
 
+use alloc::vec::Vec;
 use thiserror::Error;
 
 #[derive(PartialEq, Debug, Error, Eq, Clone)]

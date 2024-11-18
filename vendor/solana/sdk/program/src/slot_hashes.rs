@@ -9,6 +9,7 @@
 pub use crate::clock::Slot;
 use {
     crate::hash::Hash,
+    alloc::vec::Vec,
     core::{
         iter::FromIterator,
         ops::Deref,

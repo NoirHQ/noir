@@ -8,6 +8,7 @@ use {
         sanitize::{Sanitize, SanitizeError},
         short_vec,
     },
+    alloc::vec::Vec,
     core::fmt,
     serde::{
         de::{self, Deserializer, SeqAccess, Unexpected, Visitor},

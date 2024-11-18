@@ -8,7 +8,7 @@ use {
         message::{legacy::is_builtin_key_or_sysvar, v0, AccountKeys},
         pubkey::Pubkey,
     },
-    alloc::borrow::Cow,
+    alloc::{borrow::Cow, vec::Vec},
 };
 
 /// Combination of a version #0 message and its loaded addresses

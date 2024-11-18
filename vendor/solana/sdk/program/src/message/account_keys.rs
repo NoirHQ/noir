@@ -4,7 +4,7 @@ use {
         message::{v0::LoadedAddresses, CompileError},
         pubkey::Pubkey,
     },
-    alloc::collections::BTreeMap,
+    alloc::{collections::BTreeMap, vec::Vec},
     core::{iter::zip, ops::Index},
 };
 

@@ -1,4 +1,8 @@
-use {super::*, solana_rbpf::vm::ContextObject};
+use {
+    super::*,
+    alloc::{format, string::ToString},
+    solana_rbpf::vm::ContextObject,
+};
 
 declare_builtin_function!(
     /// Log a user's info message

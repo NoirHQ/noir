@@ -7,9 +7,10 @@ use {
         account_info::AccountInfo, entrypoint::ProgramResult, instruction::Instruction,
         program_error::UNSUPPORTED_SYSVAR, pubkey::Pubkey,
     },
+    alloc::{format, vec::Vec},
+    //std::sync::{Arc, RwLock},
     base64::{prelude::BASE64_STANDARD, Engine},
     itertools::Itertools,
-    //std::sync::{Arc, RwLock},
 };
 
 //lazy_static::lazy_static! {
@@ -25,7 +26,7 @@ use {
 #[allow(clippy::arithmetic_side_effects)]
 pub trait SyscallStubs: Sync + Send {
     fn sol_log(&self, message: &str) {
-        println!("{message}");
+        log::info!("{message}");
     }
     fn sol_log_compute_units(&self) {
         sol_log("SyscallStubs: sol_log_compute_units() not available");
@@ -100,7 +101,7 @@ pub trait SyscallStubs: Sync + Send {
     }
     fn sol_set_return_data(&self, _data: &[u8]) {}
     fn sol_log_data(&self, fields: &[&[u8]]) {
-        println!(
+        log::info!(
             "data: {}",
             fields.iter().map(|v| BASE64_STANDARD.encode(v)).join(" ")
         );
