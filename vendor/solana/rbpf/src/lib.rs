@@ -95,9 +95,9 @@ mod lib {
     // BTree-based implementations of Maps and Sets. The cranelift module uses
     // BTrees by default, hence we need to expose it twice here.
     #[cfg(not(feature = "std"))]
-    pub use alloc::collections::{
-        btree_map::Entry, BTreeMap as HashMap, BTreeMap, BTreeSet as HashSet, BTreeSet,
-    };
+    pub use alloc::collections::{btree_map::Entry, BTreeMap, BTreeSet};
+    #[cfg(not(feature = "std"))]
+    pub use hashbrown::{HashMap, HashSet};
     #[cfg(feature = "std")]
     pub use std::collections::{btree_map::Entry, BTreeMap, BTreeSet, HashMap, HashSet};
 

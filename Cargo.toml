@@ -34,6 +34,7 @@ members = [
 	"vendor/no_std/bv",
 	"vendor/solana/frozen-abi/macro",
 	"vendor/solana/program-runtime",
+	"vendor/solana/rbpf",
 	"vendor/solana/sdk",
 	"vendor/solana/sdk/macro",
 	"vendor/solana/sdk/program",
@@ -79,6 +80,7 @@ pallet-multimap = { path = "frame/multimap", default-features = false }
 solana-frozen-abi-macro = { path = "vendor/solana/frozen-abi/macro" }
 solana-program = { path = "vendor/solana/sdk/program", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
+solana_rbpf = { path = "vendor/solana/rbpf", default-features = false }
 solana-sdk = { path = "vendor/solana/sdk", default-features = false }
 solana-sdk-macro = { path = "vendor/solana/sdk/macro" }
 
