@@ -3,9 +3,7 @@
 pub mod consts;
 pub mod types;
 
-use std::{fmt, mem, ops::Range, slice};
-
-use crate::{ArithmeticOverflow, ErrCheckedArithmetic};
+use crate::{lib::*, ArithmeticOverflow, ErrCheckedArithmetic};
 use {consts::*, types::*};
 
 /// Maximum length of section name allowed.

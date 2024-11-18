@@ -6,10 +6,7 @@
 
 //! This module contains error and result types
 
-use {
-    crate::{elf::ElfError, memory_region::AccessType, verifier::VerifierError},
-    std::error::Error,
-};
+use crate::{elf::ElfError, lib::*, memory_region::AccessType, verifier::VerifierError};
 
 /// Error definitions
 #[derive(Debug, thiserror::Error)]
@@ -74,7 +71,7 @@ pub enum EbpfError {
     VerifierError(#[from] VerifierError),
     /// Syscall error
     #[error("Syscall error: {0}")]
-    SyscallError(Box<dyn Error>),
+    SyscallError(Box<dyn error::Error>),
 }
 
 /// Same as `Result` but provides a stable memory layout
@@ -145,7 +142,7 @@ impl<T: std::fmt::Debug, E: std::fmt::Debug> StableResult<T, E> {
         allow(dead_code)
     )]
     pub(crate) fn discriminant(&self) -> u64 {
-        unsafe { *std::ptr::addr_of!(*self).cast::<u64>() }
+        unsafe { *ptr::addr_of!(*self).cast::<u64>() }
     }
 }
 

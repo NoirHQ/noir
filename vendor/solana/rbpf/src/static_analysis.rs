@@ -6,11 +6,11 @@ use crate::{
     ebpf,
     elf::Executable,
     error::EbpfError,
+    lib::*,
     program::SBPFVersion,
     vm::{ContextObject, DynamicAnalysis, TestContextObject},
 };
 use rustc_demangle::demangle;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 /// Register state recorded after executing one instruction
 ///

@@ -24,10 +24,10 @@
 use crate::{
     declare_builtin_function,
     error::EbpfError,
+    lib::*,
     memory_region::{AccessType, MemoryMapping},
     vm::TestContextObject,
 };
-use std::{slice::from_raw_parts, str::from_utf8};
 
 declare_builtin_function!(
     /// Prints its **last three** arguments to standard output. The **first two** arguments are

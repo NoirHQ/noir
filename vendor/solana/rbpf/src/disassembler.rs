@@ -10,11 +10,11 @@
 
 use crate::{
     ebpf,
+    lib::*,
     program::{BuiltinProgram, FunctionRegistry, SBPFVersion},
     static_analysis::CfgNode,
     vm::ContextObject,
 };
-use std::collections::BTreeMap;
 
 fn resolve_label(cfg_nodes: &BTreeMap<usize, CfgNode>, pc: usize) -> &str {
     cfg_nodes

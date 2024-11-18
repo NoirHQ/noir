@@ -14,6 +14,7 @@
 
 use crate::{
     ebpf,
+    lib::*,
     program::{BuiltinFunction, FunctionRegistry, SBPFVersion},
     vm::{Config, ContextObject},
 };
@@ -136,7 +137,7 @@ fn check_load_dw(prog: &[u8], insn_ptr: usize) -> Result<(), VerifierError> {
 fn check_jmp_offset(
     prog: &[u8],
     insn_ptr: usize,
-    function_range: &std::ops::Range<usize>,
+    function_range: &ops::Range<usize>,
 ) -> Result<(), VerifierError> {
     let insn = ebpf::get_insn(prog, insn_ptr);
 

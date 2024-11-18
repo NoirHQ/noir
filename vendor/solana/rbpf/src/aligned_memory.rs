@@ -1,6 +1,6 @@
 //! Aligned memory
 
-use std::{mem, ptr};
+use crate::lib::*;
 
 /// Scalar types, aka "plain old data"
 pub trait Pod {}
@@ -112,15 +112,15 @@ impl<const ALIGN: usize> AlignedMemory<ALIGN> {
         &mut self.mem[start..end]
     }
     /// Grows memory with `value` repeated `num` times starting at the `write_index`
-    pub fn fill_write(&mut self, num: usize, value: u8) -> std::io::Result<()> {
+    pub fn fill_write(&mut self, num: usize, value: u8) -> io::Result<()> {
         let new_len = match (
             self.mem.len().checked_add(num),
             self.align_offset.checked_add(self.max_len),
         ) {
             (Some(new_len), Some(allocation_end)) if new_len <= allocation_end => new_len,
             _ => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
                     "aligned memory fill_write failed",
                 ))
             }
@@ -177,16 +177,16 @@ impl<const ALIGN: usize> Clone for AlignedMemory<ALIGN> {
     }
 }
 
-impl<const ALIGN: usize> std::io::Write for AlignedMemory<ALIGN> {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+impl<const ALIGN: usize> io::Write for AlignedMemory<ALIGN> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match (
             self.mem.len().checked_add(buf.len()),
             self.align_offset.checked_add(self.max_len),
         ) {
             (Some(new_len), Some(allocation_end)) if new_len <= allocation_end => {}
             _ => {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
                     "aligned memory write failed",
                 ))
             }
@@ -194,7 +194,7 @@ impl<const ALIGN: usize> std::io::Write for AlignedMemory<ALIGN> {
         self.mem.extend_from_slice(buf);
         Ok(buf.len())
     }
-    fn flush(&mut self) -> std::io::Result<()> {
+    fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }
 }
