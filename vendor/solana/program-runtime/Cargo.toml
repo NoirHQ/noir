@@ -20,7 +20,7 @@ log = { version = "0.4.21", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
 solana-program = { workspace = true }
-solana_rbpf = { git = "https://github.com/code0xff/rbpf", branch = "no_std" }
+solana_rbpf = { workspace = true, default-features = false }
 solana-sdk = { workspace = true, features = ["full"] }
 
 [features]
