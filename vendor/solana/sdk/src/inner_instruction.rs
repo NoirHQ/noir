@@ -1,5 +1,6 @@
 use {
     crate::instruction::CompiledInstruction,
+    alloc::vec::Vec,
     serde::{Deserialize, Serialize},
 };
 

@@ -5,8 +5,8 @@ use {
         account::{Account, AccountSharedData},
         instruction::InstructionError,
     },
-    bincode::ErrorKind,
-    std::cell::Ref,
+    bincode::error::EncodeError,
+    core::cell::Ref,
 };
 
 /// Convenience trait to covert bincode errors to instruction errors.
@@ -28,8 +28,8 @@ where
             .map_err(|_| InstructionError::InvalidAccountData)
     }
     fn set_state(&mut self, state: &T) -> Result<(), InstructionError> {
-        self.serialize_data(state).map_err(|err| match *err {
-            ErrorKind::SizeLimit => InstructionError::AccountDataTooSmall,
+        self.serialize_data(state).map_err(|err| match err {
+            EncodeError::UnexpectedEnd => InstructionError::AccountDataTooSmall,
             _ => InstructionError::GenericError,
         })
     }
@@ -44,8 +44,8 @@ where
             .map_err(|_| InstructionError::InvalidAccountData)
     }
     fn set_state(&mut self, state: &T) -> Result<(), InstructionError> {
-        self.serialize_data(state).map_err(|err| match *err {
-            ErrorKind::SizeLimit => InstructionError::AccountDataTooSmall,
+        self.serialize_data(state).map_err(|err| match err {
+            EncodeError::UnexpectedEnd => InstructionError::AccountDataTooSmall,
             _ => InstructionError::GenericError,
         })
     }

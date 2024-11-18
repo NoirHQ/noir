@@ -68,7 +68,7 @@ pub use solana_program::{
 };
 
 pub mod account;
-//pub mod account_utils;
+pub mod account_utils;
 //pub mod client;
 //pub mod commitment_config;
 pub mod compute_budget;
@@ -88,7 +88,7 @@ pub mod fee;
 //pub mod hard_forks;
 //pub mod hash;
 //pub mod inflation;
-//pub mod inner_instruction;
+pub mod inner_instruction;
 //pub mod log;
 pub mod native_loader;
 //pub mod net;
