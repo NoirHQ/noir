@@ -8,8 +8,8 @@
 //! This module translates eBPF assembly language to binary.
 
 use self::InstructionType::{
-    AluBinary, AluUnary, CallImm, CallReg, Endian, JumpConditional, JumpUnconditional, LoadDwImm,
-    LoadReg, NoOperand, StoreImm, StoreReg, Syscall,
+    AluBinary, AluUnary, CallImm, CallReg, Endian, JumpConditional, JumpUnconditional, LoadAbs,
+    LoadDwImm, LoadInd, LoadReg, NoOperand, StoreImm, StoreReg, Syscall,
 };
 use crate::{
     asm_parser::{
@@ -22,19 +22,15 @@ use crate::{
     program::{BuiltinProgram, FunctionRegistry, SBPFVersion},
     vm::ContextObject,
 };
-use std::collections::HashMap;
-
-#[cfg(not(feature = "shuttle-test"))]
-use std::sync::Arc;
-
-#[cfg(feature = "shuttle-test")]
-use shuttle::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum InstructionType {
     AluBinary,
     AluUnary,
     LoadDwImm,
+    LoadAbs,
+    LoadInd,
     LoadReg,
     StoreImm,
     StoreReg,
@@ -47,7 +43,7 @@ enum InstructionType {
     NoOperand,
 }
 
-fn make_instruction_map(sbpf_version: SBPFVersion) -> HashMap<String, (InstructionType, u8)> {
+fn make_instruction_map() -> HashMap<String, (InstructionType, u8)> {
     let mut result = HashMap::new();
 
     let alu_binary_ops = [
@@ -66,31 +62,11 @@ fn make_instruction_map(sbpf_version: SBPFVersion) -> HashMap<String, (Instructi
         ("hor", ebpf::BPF_HOR),
     ];
 
-    let mem_classes = [
-        (
-            "ldx",
-            LoadReg,
-            ebpf::BPF_MEM | ebpf::BPF_LDX,
-            ebpf::BPF_ALU32_LOAD | ebpf::BPF_X,
-        ),
-        (
-            "st",
-            StoreImm,
-            ebpf::BPF_MEM | ebpf::BPF_ST,
-            ebpf::BPF_ALU64_STORE | ebpf::BPF_K,
-        ),
-        (
-            "stx",
-            StoreReg,
-            ebpf::BPF_MEM | ebpf::BPF_STX,
-            ebpf::BPF_ALU64_STORE | ebpf::BPF_X,
-        ),
-    ];
     let mem_sizes = [
-        ("b", ebpf::BPF_B, ebpf::BPF_1B),
-        ("h", ebpf::BPF_H, ebpf::BPF_2B),
-        ("w", ebpf::BPF_W, ebpf::BPF_4B),
-        ("dw", ebpf::BPF_DW, ebpf::BPF_8B),
+        ("w", ebpf::BPF_W),
+        ("h", ebpf::BPF_H),
+        ("b", ebpf::BPF_B),
+        ("dw", ebpf::BPF_DW),
     ];
 
     let jump_conditions = [
@@ -112,25 +88,10 @@ fn make_instruction_map(sbpf_version: SBPFVersion) -> HashMap<String, (Instructi
             result.insert(name.to_string(), (inst_type, opc))
         };
 
-        if sbpf_version == SBPFVersion::V1 {
-            entry("exit", NoOperand, ebpf::EXIT);
-            entry("return", NoOperand, ebpf::EXIT);
-        } else {
-            entry("exit", NoOperand, ebpf::RETURN);
-            entry("return", NoOperand, ebpf::RETURN);
-        }
-
         // Miscellaneous.
+        entry("exit", NoOperand, ebpf::EXIT);
         entry("ja", JumpUnconditional, ebpf::JA);
-        entry(
-            "syscall",
-            Syscall,
-            if sbpf_version == SBPFVersion::V1 {
-                ebpf::CALL_IMM
-            } else {
-                ebpf::SYSCALL
-            },
-        );
+        entry("syscall", Syscall, ebpf::CALL_IMM);
         entry("call", CallImm, ebpf::CALL_IMM);
         entry("callx", CallReg, ebpf::CALL_REG);
         entry("lddw", LoadDwImm, ebpf::LD_DW_IMM);
@@ -142,9 +103,9 @@ fn make_instruction_map(sbpf_version: SBPFVersion) -> HashMap<String, (Instructi
 
         // AluBinary.
         for &(name, opc) in &alu_binary_ops {
-            entry(name, AluBinary, ebpf::BPF_ALU64_STORE | opc);
-            entry(&format!("{name}32"), AluBinary, ebpf::BPF_ALU32_LOAD | opc);
-            entry(&format!("{name}64"), AluBinary, ebpf::BPF_ALU64_STORE | opc);
+            entry(name, AluBinary, ebpf::BPF_ALU64 | opc);
+            entry(&format!("{name}32"), AluBinary, ebpf::BPF_ALU | opc);
+            entry(&format!("{name}64"), AluBinary, ebpf::BPF_ALU64 | opc);
         }
 
         // Product Quotient Remainder.
@@ -169,6 +130,7 @@ fn make_instruction_map(sbpf_version: SBPFVersion) -> HashMap<String, (Instructi
             AluBinary,
             ebpf::BPF_PQR | ebpf::BPF_B | ebpf::BPF_UHMUL,
         );
+        entry("uhmul32", AluBinary, ebpf::BPF_PQR | ebpf::BPF_UHMUL);
         entry(
             "shmul",
             AluBinary,
@@ -179,6 +141,7 @@ fn make_instruction_map(sbpf_version: SBPFVersion) -> HashMap<String, (Instructi
             AluBinary,
             ebpf::BPF_PQR | ebpf::BPF_B | ebpf::BPF_SHMUL,
         );
+        entry("shmul32", AluBinary, ebpf::BPF_PQR | ebpf::BPF_SHMUL);
         entry(
             "udiv",
             AluBinary,
@@ -224,19 +187,33 @@ fn make_instruction_map(sbpf_version: SBPFVersion) -> HashMap<String, (Instructi
         );
         entry("srem32", AluBinary, ebpf::BPF_PQR | ebpf::BPF_SREM);
 
-        // Memory
-        if sbpf_version.move_memory_instruction_classes() {
-            for &(prefix, class, _, opcode) in &mem_classes {
-                for &(suffix, _, size) in &mem_sizes {
-                    entry(&format!("{prefix}{suffix}"), class, opcode | size);
-                }
-            }
-        } else {
-            for &(prefix, class, opcode, _) in &mem_classes {
-                for &(suffix, size, _) in &mem_sizes {
-                    entry(&format!("{prefix}{suffix}"), class, opcode | size);
-                }
-            }
+        // LoadAbs, LoadInd, LoadReg, StoreImm, and StoreReg.
+        for &(suffix, size) in &mem_sizes {
+            entry(
+                &format!("ldabs{suffix}"),
+                LoadAbs,
+                ebpf::BPF_ABS | ebpf::BPF_LD | size,
+            );
+            entry(
+                &format!("ldind{suffix}"),
+                LoadInd,
+                ebpf::BPF_IND | ebpf::BPF_LD | size,
+            );
+            entry(
+                &format!("ldx{suffix}"),
+                LoadReg,
+                ebpf::BPF_MEM | ebpf::BPF_LDX | size,
+            );
+            entry(
+                &format!("st{suffix}"),
+                StoreImm,
+                ebpf::BPF_MEM | ebpf::BPF_ST | size,
+            );
+            entry(
+                &format!("stx{suffix}"),
+                StoreReg,
+                ebpf::BPF_MEM | ebpf::BPF_STX | size,
+            );
         }
 
         // JumpConditional.
@@ -258,7 +235,7 @@ fn insn(opc: u8, dst: i64, src: i64, off: i64, imm: i64) -> Result<Insn, String>
     if !(0..16).contains(&dst) {
         return Err(format!("Invalid destination register {dst}"));
     }
-    if !(0..16).contains(&src) {
+    if dst < 0 || src >= 16 {
         return Err(format!("Invalid source register {src}"));
     }
     if off < i16::MIN as i64 || off > i16::MAX as i64 {
@@ -275,17 +252,6 @@ fn insn(opc: u8, dst: i64, src: i64, off: i64, imm: i64) -> Result<Insn, String>
         off: off as i16,
         imm,
     })
-}
-
-fn resolve_label(
-    insn_ptr: usize,
-    labels: &HashMap<&str, usize>,
-    label: &str,
-) -> Result<i64, String> {
-    labels
-        .get(label)
-        .map(|target_pc| *target_pc as i64 - insn_ptr as i64 - 1)
-        .ok_or_else(|| format!("Label not found {label}"))
 }
 
 /// Parse assembly source and translate to binary.
@@ -311,7 +277,7 @@ fn resolve_label(
 /// #              0xbf, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 /// #              0xdc, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
 /// #              0x87, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-/// #              0x9d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+/// #              0x95, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 /// ```
 ///
 /// This will produce the following output:
@@ -328,10 +294,24 @@ pub fn assemble<C: ContextObject>(
     src: &str,
     loader: Arc<BuiltinProgram<C>>,
 ) -> Result<Executable<C>, String> {
-    let sbpf_version = *loader.get_config().enabled_sbpf_versions.end();
+    let sbpf_version = if loader.get_config().enable_sbpf_v2 {
+        SBPFVersion::V2
+    } else {
+        SBPFVersion::V1
+    };
+    fn resolve_label(
+        insn_ptr: usize,
+        labels: &HashMap<&str, usize>,
+        label: &str,
+    ) -> Result<i64, String> {
+        labels
+            .get(label)
+            .map(|target_pc| *target_pc as i64 - insn_ptr as i64 - 1)
+            .ok_or_else(|| format!("Label not found {label}"))
+    }
 
     let statements = parse(src)?;
-    let instruction_map = make_instruction_map(sbpf_version);
+    let instruction_map = make_instruction_map();
     let mut insn_ptr = 0;
     let mut function_registry = FunctionRegistry::default();
     let mut labels = HashMap::new();
@@ -341,20 +321,10 @@ pub fn assemble<C: ContextObject>(
             Statement::Label { name } => {
                 if name.starts_with("function_") || name == "entrypoint" {
                     function_registry
-                        .register_function(insn_ptr as u32, name.as_bytes(), insn_ptr)
+                        .register_function(insn_ptr as u32, name.as_bytes().to_vec(), insn_ptr)
                         .map_err(|_| format!("Label hash collision {name}"))?;
                 }
                 labels.insert(name.as_str(), insn_ptr);
-            }
-            Statement::Directive { name, operands } =>
-            {
-                #[allow(clippy::single_match)]
-                match (name.as_str(), operands.as_slice()) {
-                    ("fill", [Integer(repeat), Integer(_value)]) => {
-                        insn_ptr += *repeat as usize;
-                    }
-                    _ => {}
-                }
             }
             Statement::Instruction { name, .. } => {
                 insn_ptr += if name == "lddw" { 2 } else { 1 };
@@ -364,139 +334,106 @@ pub fn assemble<C: ContextObject>(
     insn_ptr = 0;
     let mut instructions: Vec<Insn> = Vec::new();
     for statement in statements.iter() {
-        match statement {
-            Statement::Label { .. } => {}
-            Statement::Directive { name, operands } =>
-            {
-                #[allow(clippy::single_match)]
-                match (name.as_str(), operands.as_slice()) {
-                    ("fill", [Integer(repeat), Integer(value)]) => {
-                        for _ in 0..*repeat {
+        if let Statement::Instruction { name, operands } = statement {
+            let name = name.as_str();
+            match instruction_map.get(name) {
+                Some(&(inst_type, opc)) => {
+                    let mut insn = match (inst_type, operands.as_slice()) {
+                        (AluBinary, [Register(dst), Register(src)]) => {
+                            insn(opc | ebpf::BPF_X, *dst, *src, 0, 0)
+                        }
+                        (AluBinary, [Register(dst), Integer(imm)]) => {
+                            insn(opc | ebpf::BPF_K, *dst, 0, 0, *imm)
+                        }
+                        (AluUnary, [Register(dst)]) => insn(opc, *dst, 0, 0, 0),
+                        (LoadAbs, [Integer(imm)]) => insn(opc, 0, 0, 0, *imm),
+                        (LoadInd, [Register(src), Integer(imm)]) => insn(opc, 0, *src, 0, *imm),
+                        (LoadReg, [Register(dst), Memory(src, off)])
+                        | (StoreReg, [Memory(dst, off), Register(src)]) => {
+                            insn(opc, *dst, *src, *off, 0)
+                        }
+                        (StoreImm, [Memory(dst, off), Integer(imm)]) => {
+                            insn(opc, *dst, 0, *off, *imm)
+                        }
+                        (NoOperand, []) => insn(opc, 0, 0, 0, 0),
+                        (JumpUnconditional, [Integer(off)]) => insn(opc, 0, 0, *off, 0),
+                        (JumpConditional, [Register(dst), Register(src), Integer(off)]) => {
+                            insn(opc | ebpf::BPF_X, *dst, *src, *off, 0)
+                        }
+                        (JumpConditional, [Register(dst), Integer(imm), Integer(off)]) => {
+                            insn(opc | ebpf::BPF_K, *dst, 0, *off, *imm)
+                        }
+                        (JumpUnconditional, [Label(label)]) => {
+                            insn(opc, 0, 0, resolve_label(insn_ptr, &labels, label)?, 0)
+                        }
+                        (CallImm, [Integer(imm)]) => {
+                            let target_pc = *imm + insn_ptr as i64 + 1;
+                            let label = format!("function_{}", target_pc as usize);
+                            function_registry
+                                .register_function(
+                                    target_pc as u32,
+                                    label.as_bytes().to_vec(),
+                                    target_pc as usize,
+                                )
+                                .map_err(|_| format!("Label hash collision {name}"))?;
+                            insn(opc, 0, 1, 0, target_pc)
+                        }
+                        (CallReg, [Register(dst)]) => {
+                            if sbpf_version.callx_uses_src_reg() {
+                                insn(opc, 0, *dst, 0, 0)
+                            } else {
+                                insn(opc, 0, 0, 0, *dst)
+                            }
+                        }
+                        (JumpConditional, [Register(dst), Register(src), Label(label)]) => insn(
+                            opc | ebpf::BPF_X,
+                            *dst,
+                            *src,
+                            resolve_label(insn_ptr, &labels, label)?,
+                            0,
+                        ),
+                        (JumpConditional, [Register(dst), Integer(imm), Label(label)]) => insn(
+                            opc | ebpf::BPF_K,
+                            *dst,
+                            0,
+                            resolve_label(insn_ptr, &labels, label)?,
+                            *imm,
+                        ),
+                        (Syscall, [Label(label)]) => insn(
+                            opc,
+                            0,
+                            0,
+                            0,
+                            ebpf::hash_symbol_name(label.as_bytes()) as i32 as i64,
+                        ),
+                        (CallImm, [Label(label)]) => {
+                            let label: &str = label;
+                            let target_pc = *labels
+                                .get(label)
+                                .ok_or_else(|| format!("Label not found {label}"))?;
+                            insn(opc, 0, 1, 0, target_pc as i64)
+                        }
+                        (Endian(size), [Register(dst)]) => insn(opc, *dst, 0, 0, size),
+                        (LoadDwImm, [Register(dst), Integer(imm)]) => {
+                            insn(opc, *dst, 0, 0, (*imm << 32) >> 32)
+                        }
+                        _ => Err(format!("Unexpected operands: {operands:?}")),
+                    }?;
+                    insn.ptr = insn_ptr;
+                    instructions.push(insn);
+                    insn_ptr += 1;
+                    if let LoadDwImm = inst_type {
+                        if let Integer(imm) = operands[1] {
                             instructions.push(Insn {
                                 ptr: insn_ptr,
-                                opc: *value as u8,
-                                dst: (*value >> 8) as u8 & 0xF,
-                                src: (*value >> 12) as u8 & 0xF,
-                                off: (*value >> 16) as u16 as i16,
-                                imm: (*value >> 32) as u32 as i64,
+                                imm: imm >> 32,
+                                ..Insn::default()
                             });
                             insn_ptr += 1;
                         }
                     }
-                    _ => return Err(format!("Invalid directive {name:?}")),
                 }
-            }
-            Statement::Instruction { name, operands } => {
-                let name = name.as_str();
-                match instruction_map.get(name) {
-                    Some(&(inst_type, opc)) => {
-                        let mut insn = match (inst_type, operands.as_slice()) {
-                            (AluBinary, [Register(dst), Register(src)]) => {
-                                insn(opc | ebpf::BPF_X, *dst, *src, 0, 0)
-                            }
-                            (AluBinary, [Register(dst), Integer(imm)]) => {
-                                insn(opc | ebpf::BPF_K, *dst, 0, 0, *imm)
-                            }
-                            (AluUnary, [Register(dst)]) => insn(opc, *dst, 0, 0, 0),
-                            (LoadReg, [Register(dst), Memory(src, off)])
-                            | (StoreReg, [Memory(dst, off), Register(src)]) => {
-                                insn(opc, *dst, *src, *off, 0)
-                            }
-                            (StoreImm, [Memory(dst, off), Integer(imm)]) => {
-                                insn(opc, *dst, 0, *off, *imm)
-                            }
-                            (NoOperand, []) => insn(opc, 0, 0, 0, 0),
-                            (JumpUnconditional, [Integer(off)]) => insn(opc, 0, 0, *off, 0),
-                            (JumpConditional, [Register(dst), Register(src), Integer(off)]) => {
-                                insn(opc | ebpf::BPF_X, *dst, *src, *off, 0)
-                            }
-                            (JumpConditional, [Register(dst), Integer(imm), Integer(off)]) => {
-                                insn(opc | ebpf::BPF_K, *dst, 0, *off, *imm)
-                            }
-                            (JumpUnconditional, [Label(label)]) => {
-                                insn(opc, 0, 0, resolve_label(insn_ptr, &labels, label)?, 0)
-                            }
-                            (CallImm, [Integer(imm)]) => {
-                                let instr_imm = if sbpf_version.static_syscalls() {
-                                    *imm
-                                } else {
-                                    *imm + insn_ptr as i64 + 1
-                                };
-                                let target_pc = *imm + insn_ptr as i64 + 1;
-                                let label = format!("function_{}", target_pc as usize);
-                                function_registry
-                                    .register_function(
-                                        target_pc as u32,
-                                        label.as_bytes(),
-                                        target_pc as usize,
-                                    )
-                                    .map_err(|_| format!("Label hash collision {name}"))?;
-                                insn(opc, 0, 1, 0, instr_imm)
-                            }
-                            (CallReg, [Register(dst)]) => {
-                                if sbpf_version.callx_uses_src_reg() {
-                                    insn(opc, 0, *dst, 0, 0)
-                                } else {
-                                    insn(opc, 0, 0, 0, *dst)
-                                }
-                            }
-                            (JumpConditional, [Register(dst), Register(src), Label(label)]) => {
-                                insn(
-                                    opc | ebpf::BPF_X,
-                                    *dst,
-                                    *src,
-                                    resolve_label(insn_ptr, &labels, label)?,
-                                    0,
-                                )
-                            }
-                            (JumpConditional, [Register(dst), Integer(imm), Label(label)]) => insn(
-                                opc | ebpf::BPF_K,
-                                *dst,
-                                0,
-                                resolve_label(insn_ptr, &labels, label)?,
-                                *imm,
-                            ),
-                            (Syscall, [Label(label)]) => insn(
-                                opc,
-                                0,
-                                0,
-                                0,
-                                ebpf::hash_symbol_name(label.as_bytes()) as i32 as i64,
-                            ),
-                            (Syscall, [Integer(imm)]) => insn(opc, 0, 0, 0, *imm),
-                            (CallImm, [Label(label)]) => {
-                                let label: &str = label;
-                                let mut target_pc = *labels
-                                    .get(label)
-                                    .ok_or_else(|| format!("Label not found {label}"))?
-                                    as i64;
-                                if sbpf_version.static_syscalls() {
-                                    target_pc = target_pc - insn_ptr as i64 - 1;
-                                }
-                                insn(opc, 0, 1, 0, target_pc)
-                            }
-                            (Endian(size), [Register(dst)]) => insn(opc, *dst, 0, 0, size),
-                            (LoadDwImm, [Register(dst), Integer(imm)]) => {
-                                insn(opc, *dst, 0, 0, (*imm << 32) >> 32)
-                            }
-                            _ => Err(format!("Unexpected operands: {operands:?}")),
-                        }?;
-                        insn.ptr = insn_ptr;
-                        instructions.push(insn);
-                        insn_ptr += 1;
-                        if let LoadDwImm = inst_type {
-                            if let Integer(imm) = operands[1] {
-                                instructions.push(Insn {
-                                    ptr: insn_ptr,
-                                    imm: imm >> 32,
-                                    ..Insn::default()
-                                });
-                                insn_ptr += 1;
-                            }
-                        }
-                    }
-                    None => return Err(format!("Invalid instruction {name:?}")),
-                }
+                None => return Err(format!("Invalid instruction {name:?}")),
             }
         }
     }

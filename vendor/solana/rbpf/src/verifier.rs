@@ -10,13 +10,23 @@
 // the MIT license <http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-//! Verifies that the bytecode is valid for the given config.
+//! This “verifier” performs simple checks when the eBPF program is loaded into the VM (before it is
+//! interpreted or JIT-compiled). It has nothing to do with the much more elaborated verifier inside
+//! Linux kernel. There is no verification regarding the program flow control (should be a Direct
+//! Acyclic Graph) or the consistency for registers usage (the verifier of the kernel assigns types
+//! to the registers and is much stricter).
+//!
+//! On the other hand, rbpf is not expected to run in kernel space.
+//!
+//! Improving the verifier would be nice, but this is not trivial (and Linux kernel is under GPL
+//! license, so we cannot copy it).
+//!
+//! Contrary to the verifier of the Linux kernel, this one does not modify the bytecode at all.
 
 use crate::{
     ebpf,
-    lib::*,
-    program::{BuiltinFunction, FunctionRegistry, SBPFVersion},
-    vm::{Config, ContextObject},
+    program::{FunctionRegistry, SBPFVersion},
+    vm::Config,
 };
 use thiserror::Error;
 
@@ -74,9 +84,6 @@ pub enum VerifierError {
     /// Invalid function
     #[error("Invalid function at instruction {0}")]
     InvalidFunction(usize),
-    /// Invalid syscall
-    #[error("Invalid syscall code {0}")]
-    InvalidSyscall(u32),
 }
 
 /// eBPF Verifier
@@ -89,12 +96,11 @@ pub trait Verifier {
     ///   - Unknown instructions.
     ///   - Bad formed instruction.
     ///   - Unknown eBPF syscall index.
-    fn verify<C: ContextObject>(
+    fn verify(
         prog: &[u8],
         config: &Config,
-        sbpf_version: SBPFVersion,
+        sbpf_version: &SBPFVersion,
         function_registry: &FunctionRegistry<usize>,
-        syscall_registry: &FunctionRegistry<BuiltinFunction<C>>,
     ) -> Result<(), VerifierError>;
 }
 
@@ -137,7 +143,7 @@ fn check_load_dw(prog: &[u8], insn_ptr: usize) -> Result<(), VerifierError> {
 fn check_jmp_offset(
     prog: &[u8],
     insn_ptr: usize,
-    function_range: &ops::Range<usize>,
+    function_range: &std::ops::Range<usize>,
 ) -> Result<(), VerifierError> {
     let insn = ebpf::get_insn(prog, insn_ptr);
 
@@ -158,26 +164,11 @@ fn check_jmp_offset(
     Ok(())
 }
 
-fn check_call_target<T>(
-    key: u32,
-    function_registry: &FunctionRegistry<T>,
-    error: VerifierError,
-) -> Result<(), VerifierError>
-where
-    T: Copy,
-    T: PartialEq,
-{
-    function_registry
-        .lookup_by_key(key)
-        .map(|_| ())
-        .ok_or(error)
-}
-
 fn check_registers(
     insn: &ebpf::Insn,
     store: bool,
     insn_ptr: usize,
-    sbpf_version: SBPFVersion,
+    sbpf_version: &SBPFVersion,
 ) -> Result<(), VerifierError> {
     if insn.src > 10 {
         return Err(VerifierError::InvalidSourceRegister(insn_ptr));
@@ -206,14 +197,15 @@ fn check_imm_shift(insn: &ebpf::Insn, insn_ptr: usize, imm_bits: u64) -> Result<
 fn check_callx_register(
     insn: &ebpf::Insn,
     insn_ptr: usize,
-    sbpf_version: SBPFVersion,
+    config: &Config,
+    sbpf_version: &SBPFVersion,
 ) -> Result<(), VerifierError> {
     let reg = if sbpf_version.callx_uses_src_reg() {
         insn.src as i64
     } else {
         insn.imm
     };
-    if !(0..10).contains(&reg) {
+    if !(0..=10).contains(&reg) || (reg == 10 && config.reject_callx_r10) {
         return Err(VerifierError::InvalidRegister(insn_ptr));
     }
     Ok(())
@@ -225,7 +217,7 @@ pub struct RequisiteVerifier {}
 impl Verifier for RequisiteVerifier {
     /// Check the program against the verifier's rules
     #[rustfmt::skip]
-    fn verify<C: ContextObject>(prog: &[u8], _config: &Config, sbpf_version: SBPFVersion, function_registry: &FunctionRegistry<usize>, syscall_registry: &FunctionRegistry<BuiltinFunction<C>>) -> Result<(), VerifierError> {
+    fn verify(prog: &[u8], config: &Config, sbpf_version: &SBPFVersion, function_registry: &FunctionRegistry<usize>) -> Result<(), VerifierError> {
         check_prog_len(prog)?;
 
         let program_range = 0..prog.len() / ebpf::INSN_SIZE;
@@ -241,7 +233,7 @@ impl Verifier for RequisiteVerifier {
                 function_range.end = *function_iter.peek().unwrap_or(&program_range.end);
                 let insn = ebpf::get_insn(prog, function_range.end.saturating_sub(1));
                 match insn.opc {
-                    ebpf::JA | ebpf::RETURN => {},
+                    ebpf::JA | ebpf::EXIT => {},
                     _ => return Err(VerifierError::InvalidFunction(
                         function_range.end.saturating_sub(1),
                     )),
@@ -249,40 +241,38 @@ impl Verifier for RequisiteVerifier {
             }
 
             match insn.opc {
-                ebpf::LD_DW_IMM if sbpf_version.enable_lddw() => {
+                ebpf::LD_DW_IMM if !sbpf_version.disable_lddw() => {
                     check_load_dw(prog, insn_ptr)?;
                     insn_ptr += 1;
                 },
 
                 // BPF_LDX class
-                ebpf::LD_B_REG  if !sbpf_version.move_memory_instruction_classes() => {},
-                ebpf::LD_H_REG  if !sbpf_version.move_memory_instruction_classes() => {},
-                ebpf::LD_W_REG  if !sbpf_version.move_memory_instruction_classes() => {},
-                ebpf::LD_DW_REG if !sbpf_version.move_memory_instruction_classes() => {},
+                ebpf::LD_B_REG   => {},
+                ebpf::LD_H_REG   => {},
+                ebpf::LD_W_REG   => {},
+                ebpf::LD_DW_REG  => {},
 
                 // BPF_ST class
-                ebpf::ST_B_IMM  if !sbpf_version.move_memory_instruction_classes() => store = true,
-                ebpf::ST_H_IMM  if !sbpf_version.move_memory_instruction_classes() => store = true,
-                ebpf::ST_W_IMM  if !sbpf_version.move_memory_instruction_classes() => store = true,
-                ebpf::ST_DW_IMM if !sbpf_version.move_memory_instruction_classes() => store = true,
+                ebpf::ST_B_IMM   => store = true,
+                ebpf::ST_H_IMM   => store = true,
+                ebpf::ST_W_IMM   => store = true,
+                ebpf::ST_DW_IMM  => store = true,
 
                 // BPF_STX class
-                ebpf::ST_B_REG  if !sbpf_version.move_memory_instruction_classes() => store = true,
-                ebpf::ST_H_REG  if !sbpf_version.move_memory_instruction_classes() => store = true,
-                ebpf::ST_W_REG  if !sbpf_version.move_memory_instruction_classes() => store = true,
-                ebpf::ST_DW_REG if !sbpf_version.move_memory_instruction_classes() => store = true,
+                ebpf::ST_B_REG   => store = true,
+                ebpf::ST_H_REG   => store = true,
+                ebpf::ST_W_REG   => store = true,
+                ebpf::ST_DW_REG  => store = true,
 
-                // BPF_ALU32_LOAD class
+                // BPF_ALU class
                 ebpf::ADD32_IMM  => {},
                 ebpf::ADD32_REG  => {},
                 ebpf::SUB32_IMM  => {},
                 ebpf::SUB32_REG  => {},
                 ebpf::MUL32_IMM  if !sbpf_version.enable_pqr() => {},
                 ebpf::MUL32_REG  if !sbpf_version.enable_pqr() => {},
-                ebpf::LD_1B_REG  if sbpf_version.move_memory_instruction_classes() => {},
                 ebpf::DIV32_IMM  if !sbpf_version.enable_pqr() => { check_imm_nonzero(&insn, insn_ptr)?; },
                 ebpf::DIV32_REG  if !sbpf_version.enable_pqr() => {},
-                ebpf::LD_2B_REG  if sbpf_version.move_memory_instruction_classes() => {},
                 ebpf::OR32_IMM   => {},
                 ebpf::OR32_REG   => {},
                 ebpf::AND32_IMM  => {},
@@ -292,10 +282,8 @@ impl Verifier for RequisiteVerifier {
                 ebpf::RSH32_IMM  => { check_imm_shift(&insn, insn_ptr, 32)?; },
                 ebpf::RSH32_REG  => {},
                 ebpf::NEG32      if sbpf_version.enable_neg() => {},
-                ebpf::LD_4B_REG  if sbpf_version.move_memory_instruction_classes() => {},
                 ebpf::MOD32_IMM  if !sbpf_version.enable_pqr() => { check_imm_nonzero(&insn, insn_ptr)?; },
                 ebpf::MOD32_REG  if !sbpf_version.enable_pqr() => {},
-                ebpf::LD_8B_REG  if sbpf_version.move_memory_instruction_classes() => {},
                 ebpf::XOR32_IMM  => {},
                 ebpf::XOR32_REG  => {},
                 ebpf::MOV32_IMM  => {},
@@ -305,19 +293,15 @@ impl Verifier for RequisiteVerifier {
                 ebpf::LE         if sbpf_version.enable_le() => { check_imm_endian(&insn, insn_ptr)?; },
                 ebpf::BE         => { check_imm_endian(&insn, insn_ptr)?; },
 
-                // BPF_ALU64_STORE class
+                // BPF_ALU64 class
                 ebpf::ADD64_IMM  => {},
                 ebpf::ADD64_REG  => {},
                 ebpf::SUB64_IMM  => {},
                 ebpf::SUB64_REG  => {},
                 ebpf::MUL64_IMM  if !sbpf_version.enable_pqr() => {},
-                ebpf::ST_1B_IMM  if sbpf_version.move_memory_instruction_classes() => store = true,
                 ebpf::MUL64_REG  if !sbpf_version.enable_pqr() => {},
-                ebpf::ST_1B_REG  if sbpf_version.move_memory_instruction_classes() => store = true,
                 ebpf::DIV64_IMM  if !sbpf_version.enable_pqr() => { check_imm_nonzero(&insn, insn_ptr)?; },
-                ebpf::ST_2B_IMM  if sbpf_version.move_memory_instruction_classes() => store = true,
                 ebpf::DIV64_REG  if !sbpf_version.enable_pqr() => {},
-                ebpf::ST_2B_REG  if sbpf_version.move_memory_instruction_classes() => store = true,
                 ebpf::OR64_IMM   => {},
                 ebpf::OR64_REG   => {},
                 ebpf::AND64_IMM  => {},
@@ -326,20 +310,16 @@ impl Verifier for RequisiteVerifier {
                 ebpf::LSH64_REG  => {},
                 ebpf::RSH64_IMM  => { check_imm_shift(&insn, insn_ptr, 64)?; },
                 ebpf::RSH64_REG  => {},
-                ebpf::ST_4B_IMM  if sbpf_version.move_memory_instruction_classes() => store = true,
                 ebpf::NEG64      if sbpf_version.enable_neg() => {},
-                ebpf::ST_4B_REG  if sbpf_version.move_memory_instruction_classes() => store = true,
                 ebpf::MOD64_IMM  if !sbpf_version.enable_pqr() => { check_imm_nonzero(&insn, insn_ptr)?; },
-                ebpf::ST_8B_IMM  if sbpf_version.move_memory_instruction_classes() => store = true,
                 ebpf::MOD64_REG  if !sbpf_version.enable_pqr() => {},
-                ebpf::ST_8B_REG  if sbpf_version.move_memory_instruction_classes() => store = true,
                 ebpf::XOR64_IMM  => {},
                 ebpf::XOR64_REG  => {},
                 ebpf::MOV64_IMM  => {},
                 ebpf::MOV64_REG  => {},
                 ebpf::ARSH64_IMM => { check_imm_shift(&insn, insn_ptr, 64)?; },
                 ebpf::ARSH64_REG => {},
-                ebpf::HOR64_IMM  if !sbpf_version.enable_lddw() => {},
+                ebpf::HOR64_IMM  if sbpf_version.disable_lddw() => {},
 
                 // BPF_PQR class
                 ebpf::LMUL32_IMM if sbpf_version.enable_pqr() => {},
@@ -391,24 +371,10 @@ impl Verifier for RequisiteVerifier {
                 ebpf::JSLT_REG   => { check_jmp_offset(prog, insn_ptr, &function_range)?; },
                 ebpf::JSLE_IMM   => { check_jmp_offset(prog, insn_ptr, &function_range)?; },
                 ebpf::JSLE_REG   => { check_jmp_offset(prog, insn_ptr, &function_range)?; },
-                ebpf::CALL_IMM   if sbpf_version.static_syscalls() => {
-                    let target_pc = sbpf_version.calculate_call_imm_target_pc(insn_ptr, insn.imm);
-                    check_call_target(
-                        target_pc,
-                        function_registry,
-                        VerifierError::InvalidFunction(target_pc as usize)
-                    )?;
-                },
+                ebpf::CALL_IMM   if sbpf_version.static_syscalls() && insn.src != 0 => { check_jmp_offset(prog, insn_ptr, &program_range)?; },
                 ebpf::CALL_IMM   => {},
-                ebpf::CALL_REG   => { check_callx_register(&insn, insn_ptr, sbpf_version)?; },
-                ebpf::EXIT       if !sbpf_version.static_syscalls()   => {},
-                ebpf::RETURN     if sbpf_version.static_syscalls()    => {},
-                ebpf::SYSCALL    if sbpf_version.static_syscalls()    => {
-                    check_call_target(
-                        insn.imm as u32,
-                        syscall_registry,
-                        VerifierError::InvalidSyscall(insn.imm as u32))?;
-                },
+                ebpf::CALL_REG   => { check_callx_register(&insn, insn_ptr, config, sbpf_version)?; },
+                ebpf::EXIT       => {},
 
                 _                => {
                     return Err(VerifierError::UnknownOpCode(insn.opc, insn_ptr));

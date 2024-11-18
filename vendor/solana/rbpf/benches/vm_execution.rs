@@ -9,15 +9,13 @@
 extern crate solana_rbpf;
 extern crate test;
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
 use solana_rbpf::{
     ebpf,
+    elf::Executable,
     memory_region::MemoryRegion,
-    program::{FunctionRegistry, SBPFVersion},
-    vm::Config,
-};
-use solana_rbpf::{
-    elf::Executable, program::BuiltinProgram, verifier::RequisiteVerifier, vm::TestContextObject,
+    program::{BuiltinProgram, FunctionRegistry},
+    verifier::RequisiteVerifier,
+    vm::{Config, TestContextObject},
 };
 use std::{fs::File, io::Read, sync::Arc};
 use test::Bencher;
@@ -25,7 +23,7 @@ use test_utils::create_vm;
 
 #[bench]
 fn bench_init_interpreter_start(bencher: &mut Bencher) {
-    let mut file = File::open("tests/elfs/rodata_section_sbpfv1.so").unwrap();
+    let mut file = File::open("tests/elfs/rodata_section.so").unwrap();
     let mut elf = Vec::new();
     file.read_to_end(&mut elf).unwrap();
     let executable =
@@ -48,10 +46,10 @@ fn bench_init_interpreter_start(bencher: &mut Bencher) {
     });
 }
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
+#[cfg(not(windows))]
 #[bench]
 fn bench_init_jit_start(bencher: &mut Bencher) {
-    let mut file = File::open("tests/elfs/rodata_section_sbpfv1.so").unwrap();
+    let mut file = File::open("tests/elfs/rodata_section.so").unwrap();
     let mut elf = Vec::new();
     file.read_to_end(&mut elf).unwrap();
     let mut executable =
@@ -75,7 +73,7 @@ fn bench_init_jit_start(bencher: &mut Bencher) {
     });
 }
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
+#[cfg(not(windows))]
 fn bench_jit_vs_interpreter(
     bencher: &mut Bencher,
     assembly: &str,
@@ -134,7 +132,7 @@ fn bench_jit_vs_interpreter(
     );
 }
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
+#[cfg(not(windows))]
 #[bench]
 fn bench_jit_vs_interpreter_address_translation(bencher: &mut Bencher) {
     bench_jit_vs_interpreter(
@@ -152,7 +150,6 @@ fn bench_jit_vs_interpreter_address_translation(bencher: &mut Bencher) {
     );
 }
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
 static ADDRESS_TRANSLATION_STACK_CODE: &str = "
     mov r1, r2
     and r1, 4095
@@ -164,14 +161,14 @@ static ADDRESS_TRANSLATION_STACK_CODE: &str = "
     jlt r2, 0x10000, -8
     exit";
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
+#[cfg(not(windows))]
 #[bench]
 fn bench_jit_vs_interpreter_address_translation_stack_fixed(bencher: &mut Bencher) {
     bench_jit_vs_interpreter(
         bencher,
         ADDRESS_TRANSLATION_STACK_CODE,
         Config {
-            enabled_sbpf_versions: SBPFVersion::V1..=SBPFVersion::V1,
+            enable_sbpf_v2: false,
             ..Config::default()
         },
         524289,
@@ -179,14 +176,14 @@ fn bench_jit_vs_interpreter_address_translation_stack_fixed(bencher: &mut Benche
     );
 }
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
+#[cfg(not(windows))]
 #[bench]
 fn bench_jit_vs_interpreter_address_translation_stack_dynamic(bencher: &mut Bencher) {
     bench_jit_vs_interpreter(
         bencher,
         ADDRESS_TRANSLATION_STACK_CODE,
         Config {
-            enabled_sbpf_versions: SBPFVersion::V1..=SBPFVersion::V2,
+            enable_sbpf_v2: true,
             ..Config::default()
         },
         524289,
@@ -194,7 +191,7 @@ fn bench_jit_vs_interpreter_address_translation_stack_dynamic(bencher: &mut Benc
     );
 }
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
+#[cfg(not(windows))]
 #[bench]
 fn bench_jit_vs_interpreter_empty_for_loop(bencher: &mut Bencher) {
     bench_jit_vs_interpreter(
@@ -211,7 +208,7 @@ fn bench_jit_vs_interpreter_empty_for_loop(bencher: &mut Bencher) {
     );
 }
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
+#[cfg(not(windows))]
 #[bench]
 fn bench_jit_vs_interpreter_call_depth_fixed(bencher: &mut Bencher) {
     bench_jit_vs_interpreter(
@@ -233,7 +230,7 @@ fn bench_jit_vs_interpreter_call_depth_fixed(bencher: &mut Bencher) {
     call function_foo
     exit",
         Config {
-            enabled_sbpf_versions: SBPFVersion::V1..=SBPFVersion::V1,
+            enable_sbpf_v2: false,
             ..Config::default()
         },
         137218,
@@ -241,7 +238,7 @@ fn bench_jit_vs_interpreter_call_depth_fixed(bencher: &mut Bencher) {
     );
 }
 
-#[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
+#[cfg(not(windows))]
 #[bench]
 fn bench_jit_vs_interpreter_call_depth_dynamic(bencher: &mut Bencher) {
     bench_jit_vs_interpreter(
@@ -264,7 +261,7 @@ fn bench_jit_vs_interpreter_call_depth_dynamic(bencher: &mut Bencher) {
     add r11, 4
     exit",
         Config {
-            enabled_sbpf_versions: SBPFVersion::V1..=SBPFVersion::V2,
+            enable_sbpf_v2: true,
             ..Config::default()
         },
         176130,

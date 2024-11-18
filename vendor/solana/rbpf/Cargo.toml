@@ -1,6 +1,6 @@
 [package]
 name = "solana_rbpf"
-version = "0.8.2"
+version = "0.8.3"
 description = "Virtual machine and JIT compiler for eBPF programs"
 authors = ["Solana Maintainers <maintainers@solana.foundation>"]
 repository = "https://github.com/solana-labs/rbpf"
@@ -20,18 +20,16 @@ include = [
 
 [dependencies]
 arbitrary = { version = "1.0", optional = true, features = ["derive"] }
-byteorder = { version = "1.2", default-features = false }
+byteorder = "1.2"
 combine = "3.8.1"
-core2 = { version = "0.4.0", default-features = false }
-gdbstub = { version = "0.6.2", optional = true, default-features = false }
+gdbstub = { version = "0.6.2", optional = true }
+goblin = "0.5.1"
 hash32 = "0.2.0"
-hashbrown = "0.15"
-log = { version = "0.4.2", default-features = false }
+log = "0.4.2"
 rand = { version = "0.8.5", features = ["small_rng"]}
-rustc-demangle = { version = "0.1.24", default-features = false }
+rustc-demangle = "0.1"
 scroll = "0.11"
-shuttle = { version = "0.7.1", optional = true }
-thiserror = { version = "2.0", default-features = false }
+thiserror = "1.0.26"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["memoryapi", "sysinfoapi", "winnt", "errhandlingapi"], optional = true }
@@ -40,19 +38,10 @@ winapi = { version = "0.3", features = ["memoryapi", "sysinfoapi", "winnt", "err
 libc = { version = "0.2", optional = true }
 
 [features]
-default = ["std"]
-std = [
-    "jit",
-    "byteorder/std",
-    "core2/std",
-    "log/std",
-    "rustc-demangle/std",
-    "thiserror/std",
-]
+default = ["jit"]
 jit = ["libc", "winapi"]
 fuzzer-not-safe-for-production = ["arbitrary"]
 debugger = ["gdbstub"]
-shuttle-test = ["dep:shuttle"]
 
 [dev-dependencies]
 elf = "0.0.10"

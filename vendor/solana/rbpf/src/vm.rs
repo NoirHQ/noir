@@ -17,44 +17,27 @@ use crate::{
     elf::Executable,
     error::{EbpfError, ProgramResult},
     interpreter::Interpreter,
-    lib::*,
     memory_region::MemoryMapping,
     program::{BuiltinFunction, BuiltinProgram, FunctionRegistry, SBPFVersion},
     static_analysis::{Analysis, TraceLogEntry},
 };
-
-#[cfg(all(feature = "std", not(feature = "shuttle-test")))]
-use {
-    rand::{thread_rng, Rng},
-    std::sync::Arc,
-};
-
-#[cfg(all(not(feature = "std"), not(feature = "shuttle-test")))]
-use alloc::sync::Arc;
-
-#[cfg(feature = "shuttle-test")]
-use shuttle::{
-    rand::{thread_rng, Rng},
-    sync::Arc,
-};
+use rand::Rng;
+use std::{collections::BTreeMap, fmt::Debug, sync::Arc};
 
 /// Shift the RUNTIME_ENVIRONMENT_KEY by this many bits to the LSB
 ///
 /// 3 bits for 8 Byte alignment, and 1 bit to have encoding space for the RuntimeEnvironment.
-#[cfg(feature = "std")]
 const PROGRAM_ENVIRONMENT_KEY_SHIFT: u32 = 4;
-#[cfg(feature = "std")]
 static RUNTIME_ENVIRONMENT_KEY: std::sync::OnceLock<i32> = std::sync::OnceLock::<i32>::new();
 
 /// Returns (and if not done before generates) the encryption key for the VM pointer
-#[cfg(feature = "std")]
 pub fn get_runtime_environment_key() -> i32 {
     *RUNTIME_ENVIRONMENT_KEY
-        .get_or_init(|| thread_rng().gen::<i32>() >> PROGRAM_ENVIRONMENT_KEY_SHIFT)
+        .get_or_init(|| rand::thread_rng().gen::<i32>() >> PROGRAM_ENVIRONMENT_KEY_SHIFT)
 }
 
 /// VM configuration settings
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Config {
     /// Maximum call depth
     pub max_call_depth: usize,
@@ -78,12 +61,20 @@ pub struct Config {
     pub noop_instruction_rate: u32,
     /// Enable disinfection of immediate values and offsets provided by the user in JIT
     pub sanitize_user_provided_values: bool,
+    /// Throw ElfError::SymbolHashCollision when a BPF function collides with a registered syscall
+    pub external_internal_function_hash_collision: bool,
+    /// Have the verifier reject "callx r10"
+    pub reject_callx_r10: bool,
     /// Avoid copying read only sections when possible
     pub optimize_rodata: bool,
+    /// Use the new ELF parser
+    pub new_elf_parser: bool,
     /// Use aligned memory mapping
     pub aligned_memory_mapping: bool,
-    /// Allowed [SBPFVersion]s
-    pub enabled_sbpf_versions: ops::RangeInclusive<SBPFVersion>,
+    /// Allow ExecutableCapability::V1
+    pub enable_sbpf_v1: bool,
+    /// Allow ExecutableCapability::V2
+    pub enable_sbpf_v2: bool,
 }
 
 impl Config {
@@ -96,7 +87,7 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            max_call_depth: 64,
+            max_call_depth: 20,
             stack_frame_size: 4_096,
             enable_address_translation: true,
             enable_stack_frame_gaps: true,
@@ -107,9 +98,13 @@ impl Default for Config {
             reject_broken_elfs: false,
             noop_instruction_rate: 256,
             sanitize_user_provided_values: true,
+            external_internal_function_hash_collision: true,
+            reject_callx_r10: true,
             optimize_rodata: true,
+            new_elf_parser: true,
             aligned_memory_mapping: true,
-            enabled_sbpf_versions: SBPFVersion::V1..=SBPFVersion::V2,
+            enable_sbpf_v1: true,
+            enable_sbpf_v2: true,
         }
     }
 }
@@ -249,7 +244,7 @@ pub struct CallFrame {
 /// };
 ///
 /// let prog = &[
-///     0x9d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  // exit
+///     0x95, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  // exit
 /// ];
 /// let mem = &mut [
 ///     0xaa, 0xbb, 0x11, 0x22, 0xcc, 0xdd
@@ -329,7 +324,7 @@ impl<'a, C: ContextObject> EbpfVm<'a, C> {
     /// Creates a new virtual machine instance.
     pub fn new(
         loader: Arc<BuiltinProgram<C>>,
-        sbpf_version: SBPFVersion,
+        sbpf_version: &SBPFVersion,
         context_object: &'a mut C,
         mut memory_mapping: MemoryMapping<'a>,
         stack_len: usize,
@@ -347,7 +342,7 @@ impl<'a, C: ContextObject> EbpfVm<'a, C> {
             memory_mapping = MemoryMapping::new_identity();
         }
         EbpfVm {
-            host_stack_pointer: ptr::null_mut(),
+            host_stack_pointer: std::ptr::null_mut(),
             call_depth: 0,
             stack_pointer,
             context_object_pointer: context_object,
@@ -423,22 +418,17 @@ impl<'a, C: ContextObject> EbpfVm<'a, C> {
             0
         };
         let mut result = ProgramResult::Ok(0);
-        mem::swap(&mut result, &mut self.program_result);
+        std::mem::swap(&mut result, &mut self.program_result);
         (instruction_count, result)
     }
 
     /// Invokes a built-in function
     pub fn invoke_function(&mut self, function: BuiltinFunction<C>) {
         function(
-            #[cfg(feature = "std")]
             unsafe {
-                ptr::addr_of_mut!(*self)
-                    .cast::<u64>()
-                    .offset(get_runtime_environment_key() as isize)
-                    .cast::<Self>()
+                (self as *mut _ as *mut u64).offset(get_runtime_environment_key() as isize)
+                    as *mut _
             },
-            #[cfg(not(feature = "std"))]
-            self,
             self.registers[1],
             self.registers[2],
             self.registers[3],

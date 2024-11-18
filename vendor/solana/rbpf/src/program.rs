@@ -1,102 +1,75 @@
 //! Common interface for built-in and user supplied programs
-use crate::{
-    ebpf,
-    elf::ElfError,
-    lib::*,
-    vm::{Config, ContextObject, EbpfVm},
+use {
+    crate::{
+        ebpf,
+        elf::ElfError,
+        vm::{Config, ContextObject, EbpfVm},
+    },
+    std::collections::{btree_map::Entry, BTreeMap},
 };
 
 /// Defines a set of sbpf_version of an executable
-#[derive(Debug, PartialEq, PartialOrd, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum SBPFVersion {
     /// The legacy format
     V1,
     /// The current format
     V2,
-    /// Used for future versions
-    Reserved,
+    /// The future format with BTF support
+    V3,
 }
 
 impl SBPFVersion {
-    /// Implicitly perform sign extension of results
-    pub fn implicit_sign_extension_of_results(self) -> bool {
-        self == SBPFVersion::V1
-    }
-
     /// Enable the little-endian byte swap instructions
-    pub fn enable_le(self) -> bool {
-        self == SBPFVersion::V1
+    pub fn enable_le(&self) -> bool {
+        self == &SBPFVersion::V1
     }
 
     /// Enable the negation instruction
-    pub fn enable_neg(self) -> bool {
-        self == SBPFVersion::V1
+    pub fn enable_neg(&self) -> bool {
+        self == &SBPFVersion::V1
     }
 
     /// Swaps the reg and imm operands of the subtraction instruction
-    pub fn swap_sub_reg_imm_operands(self) -> bool {
-        self != SBPFVersion::V1
+    pub fn swap_sub_reg_imm_operands(&self) -> bool {
+        self != &SBPFVersion::V1
     }
 
-    /// Enable the only two slots long instruction: LD_DW_IMM
-    pub fn enable_lddw(self) -> bool {
-        self == SBPFVersion::V1
+    /// Disable the only two slots long instruction: LD_DW_IMM
+    pub fn disable_lddw(&self) -> bool {
+        self != &SBPFVersion::V1
     }
 
     /// Enable the BPF_PQR instruction class
-    pub fn enable_pqr(self) -> bool {
-        self != SBPFVersion::V1
+    pub fn enable_pqr(&self) -> bool {
+        self != &SBPFVersion::V1
     }
 
     /// Use src reg instead of imm in callx
-    pub fn callx_uses_src_reg(self) -> bool {
-        self != SBPFVersion::V1
+    pub fn callx_uses_src_reg(&self) -> bool {
+        self != &SBPFVersion::V1
     }
 
     /// Ensure that rodata sections don't exceed their maximum allowed size and
     /// overlap with the stack
-    pub fn reject_rodata_stack_overlap(self) -> bool {
-        self != SBPFVersion::V1
+    pub fn reject_rodata_stack_overlap(&self) -> bool {
+        self != &SBPFVersion::V1
     }
 
-    /// Allow sh_addr != sh_offset in elf sections.
-    pub fn enable_elf_vaddr(self) -> bool {
-        self != SBPFVersion::V1
-    }
-
-    /// Separates the bytecode from the read only data in virtual address space
-    pub fn enable_lower_bytecode_vaddr(self) -> bool {
-        self != SBPFVersion::V1
+    /// Allow sh_addr != sh_offset in elf sections. Used in V2 to align
+    /// section vaddrs to MM_PROGRAM_START.
+    pub fn enable_elf_vaddr(&self) -> bool {
+        self != &SBPFVersion::V1
     }
 
     /// Use dynamic stack frame sizes
-    pub fn dynamic_stack_frames(self) -> bool {
-        self != SBPFVersion::V1
+    pub fn dynamic_stack_frames(&self) -> bool {
+        self != &SBPFVersion::V1
     }
 
     /// Support syscalls via pseudo calls (insn.src = 0)
-    pub fn static_syscalls(self) -> bool {
-        self != SBPFVersion::V1
-    }
-
-    /// Calculate the target program counter for a CALL_IMM instruction depending on
-    /// the SBPF version.
-    pub fn calculate_call_imm_target_pc(self, pc: usize, imm: i64) -> u32 {
-        if self.static_syscalls() {
-            (pc as i64).saturating_add(imm).saturating_add(1) as u32
-        } else {
-            imm as u32
-        }
-    }
-
-    /// Move opcodes of memory instructions into ALU instruction classes
-    pub fn move_memory_instruction_classes(self) -> bool {
-        self != SBPFVersion::V1
-    }
-
-    /// Constrain ELF format to ignore section headers and relocations
-    pub fn enable_stricter_elf_headers(self) -> bool {
-        self != SBPFVersion::V1
+    pub fn static_syscalls(&self) -> bool {
+        self != &SBPFVersion::V1
     }
 }
 
@@ -166,10 +139,8 @@ impl<T: Copy + PartialEq> FunctionRegistry<T> {
             } else {
                 ebpf::hash_symbol_name(&usize::from(value).to_le_bytes())
             };
-            if loader
-                .get_function_registry(SBPFVersion::V1)
-                .lookup_by_key(hash)
-                .is_some()
+            if config.external_internal_function_hash_collision
+                && loader.get_function_registry().lookup_by_key(hash).is_some()
             {
                 return Err(ElfError::SymbolHashCollision(hash));
             }
@@ -196,7 +167,7 @@ impl<T: Copy + PartialEq> FunctionRegistry<T> {
 
     /// Iterate over all keys
     pub fn keys(&self) -> impl Iterator<Item = u32> + '_ {
-        self.map.keys().copied()
+        self.map.keys().cloned()
     }
 
     /// Iterate over all entries
@@ -224,12 +195,13 @@ impl<T: Copy + PartialEq> FunctionRegistry<T> {
 
     /// Calculate memory size
     pub fn mem_size(&self) -> usize {
-        mem::size_of::<Self>().saturating_add(self.map.iter().fold(
+        std::mem::size_of::<Self>().saturating_add(self.map.iter().fold(
             0,
             |state: usize, (_, (name, value))| {
                 state.saturating_add(
-                    mem::size_of_val(value)
-                        .saturating_add(mem::size_of_val(name).saturating_add(name.capacity())),
+                    std::mem::size_of_val(value).saturating_add(
+                        std::mem::size_of_val(name).saturating_add(name.capacity()),
+                    ),
                 )
             },
         ))
@@ -244,17 +216,13 @@ pub type BuiltinFunction<C> = fn(*mut EbpfVm<C>, u64, u64, u64, u64, u64);
 pub struct BuiltinProgram<C: ContextObject> {
     /// Holds the Config if this is a loader program
     config: Option<Box<Config>>,
-    /// Function pointers by symbol with sparse indexing
-    sparse_registry: FunctionRegistry<BuiltinFunction<C>>,
-    /// Function pointers by symbol with dense indexing
-    dense_registry: FunctionRegistry<BuiltinFunction<C>>,
+    /// Function pointers by symbol
+    functions: FunctionRegistry<BuiltinFunction<C>>,
 }
 
 impl<C: ContextObject> PartialEq for BuiltinProgram<C> {
     fn eq(&self, other: &Self) -> bool {
-        self.config.eq(&other.config)
-            && self.sparse_registry.eq(&other.sparse_registry)
-            && self.dense_registry.eq(&other.dense_registry)
+        self.config.eq(&other.config) && self.functions.eq(&other.functions)
     }
 }
 
@@ -263,8 +231,7 @@ impl<C: ContextObject> BuiltinProgram<C> {
     pub fn new_loader(config: Config, functions: FunctionRegistry<BuiltinFunction<C>>) -> Self {
         Self {
             config: Some(Box::new(config)),
-            sparse_registry: functions,
-            dense_registry: FunctionRegistry::default(),
+            functions,
         }
     }
 
@@ -272,8 +239,7 @@ impl<C: ContextObject> BuiltinProgram<C> {
     pub fn new_builtin(functions: FunctionRegistry<BuiltinFunction<C>>) -> Self {
         Self {
             config: None,
-            sparse_registry: functions,
-            dense_registry: FunctionRegistry::default(),
+            functions,
         }
     }
 
@@ -281,18 +247,7 @@ impl<C: ContextObject> BuiltinProgram<C> {
     pub fn new_mock() -> Self {
         Self {
             config: Some(Box::default()),
-            sparse_registry: FunctionRegistry::default(),
-            dense_registry: FunctionRegistry::default(),
-        }
-    }
-
-    /// Create a new loader with both dense and sparse function indexation
-    /// Use `BuiltinProgram::register_function` for registrations.
-    pub fn new_loader_with_dense_registration(config: Config) -> Self {
-        Self {
-            config: Some(Box::new(config)),
-            sparse_registry: FunctionRegistry::default(),
-            dense_registry: FunctionRegistry::default(),
+            functions: FunctionRegistry::default(),
         }
     }
 
@@ -301,58 +256,31 @@ impl<C: ContextObject> BuiltinProgram<C> {
         self.config.as_ref().unwrap()
     }
 
-    /// Get the function registry depending on the SBPF version
-    pub fn get_function_registry(
-        &self,
-        sbpf_version: SBPFVersion,
-    ) -> &FunctionRegistry<BuiltinFunction<C>> {
-        if sbpf_version.static_syscalls() {
-            &self.dense_registry
-        } else {
-            &self.sparse_registry
-        }
+    /// Get the function registry
+    pub fn get_function_registry(&self) -> &FunctionRegistry<BuiltinFunction<C>> {
+        &self.functions
     }
 
     /// Calculate memory size
     pub fn mem_size(&self) -> usize {
-        mem::size_of::<Self>()
+        std::mem::size_of::<Self>()
             .saturating_add(if self.config.is_some() {
-                mem::size_of::<Config>()
+                std::mem::size_of::<Config>()
             } else {
                 0
             })
-            .saturating_add(self.sparse_registry.mem_size())
-            .saturating_add(self.dense_registry.mem_size())
-    }
-
-    /// Register a function both in the sparse and dense registries
-    pub fn register_function(
-        &mut self,
-        name: &str,
-        dense_key: u32,
-        value: BuiltinFunction<C>,
-    ) -> Result<(), ElfError> {
-        self.sparse_registry.register_function_hashed(name, value)?;
-        self.dense_registry
-            .register_function(dense_key, name, value)
+            .saturating_add(self.functions.mem_size())
     }
 }
 
-impl<C: ContextObject> fmt::Debug for BuiltinProgram<C> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        unsafe {
-            writeln!(
-                f,
-                "sparse: {:?}\n dense: {:?}",
-                // `derive(Debug)` does not know that `C: ContextObject` does not need to implement `Debug`
-                mem::transmute::<&FunctionRegistry<BuiltinFunction<C>>, &FunctionRegistry<usize>>(
-                    &self.sparse_registry,
-                ),
-                mem::transmute::<&FunctionRegistry<BuiltinFunction<C>>, &FunctionRegistry<usize>>(
-                    &self.dense_registry,
-                )
-            )?;
-        }
+impl<C: ContextObject> std::fmt::Debug for BuiltinProgram<C> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        writeln!(f, "{:?}", unsafe {
+            // `derive(Debug)` does not know that `C: ContextObject` does not need to implement `Debug`
+            std::mem::transmute::<&FunctionRegistry<BuiltinFunction<C>>, &FunctionRegistry<usize>>(
+                &self.functions,
+            )
+        })?;
         Ok(())
     }
 }
@@ -395,13 +323,8 @@ macro_rules! declare_builtin_function {
                 $arg_e: u64,
             ) {
                 use $crate::vm::ContextObject;
-                #[cfg(feature = "std")]
                 let vm = unsafe {
-                    &mut *($vm.cast::<u64>().offset(-($crate::vm::get_runtime_environment_key() as isize)).cast::<$crate::vm::EbpfVm<$ContextObject>>())
-                };
-                #[cfg(not(feature = "std"))]
-                let vm = unsafe {
-                    &mut *($vm.cast::<$crate::vm::EbpfVm<$ContextObject>>())
+                    &mut *(($vm as *mut u64).offset(-($crate::vm::get_runtime_environment_key() as isize)) as *mut $crate::vm::EbpfVm<$ContextObject>)
                 };
                 let config = vm.loader.get_config();
                 if config.enable_instruction_meter {
@@ -422,7 +345,7 @@ macro_rules! declare_builtin_function {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{syscalls, vm::TestContextObject};
+    use crate::{program::BuiltinFunction, syscalls, vm::TestContextObject};
 
     #[test]
     fn test_builtin_program_eq() {

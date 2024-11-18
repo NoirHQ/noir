@@ -38,11 +38,6 @@ pub enum Operand {
 pub enum Statement {
     /// Parsed label (name).
     Label { name: String },
-    /// Parsed directive (name, operands).
-    Directive {
-        name: String,
-        operands: Vec<Operand>,
-    },
     /// Parsed instruction (name, operands).
     Instruction {
         name: String,
@@ -64,7 +59,7 @@ parser! {
 
 parser! {
     fn integer[I]()(I) -> i64 where [I: Stream<Item=char>] {
-        let sign = optional(one_of("-+".chars()).skip(skip_many(char(' ')))).map(|x| match x {
+        let sign = optional(one_of("-+".chars())).map(|x| match x {
             Some('-') => -1,
             _ => 1,
         });
@@ -92,7 +87,7 @@ parser! {
         let memory = between(
             char('['),
             char(']'),
-            (register().skip(skip_many(char(' '))), optional(integer())),
+            (register(), optional(integer())),
         )
         .map(|t| Operand::Memory(t.0, t.1.unwrap_or(0)));
         let label = ident().map(Operand::Label);
@@ -107,14 +102,6 @@ parser! {
     fn label[I]()(I) -> Statement where [I: Stream<Item=char>] {
         (ident(), char(':'))
             .map(|t| Statement::Label { name: t.0 })
-    }
-}
-
-parser! {
-    fn directive[I]()(I) -> Statement where [I: Stream<Item=char>] {
-        let operands = sep_by(operand(), char(',').skip(skip_many(char(' '))));
-        (char('.').with(many1(alpha_num())).skip(skip_many(char(' '))), operands)
-            .map(|t| Statement::Directive { name: t.0, operands: t.1 })
     }
 }
 
@@ -163,12 +150,7 @@ fn format_parse_error(parse_error: &Errors<char, &str, SourcePosition>) -> Strin
 /// The instructions are not validated and may have invalid names and operand types.
 pub fn parse(input: &str) -> Result<Vec<Statement>, String> {
     match spaces()
-        .with(many(
-            attempt(label())
-                .or(directive())
-                .or(instruction())
-                .skip(spaces()),
-        ))
+        .with(many(attempt(label()).or(instruction()).skip(spaces())))
         .skip(eof())
         .easy_parse(State::with_positioner(input, SourcePosition::default()))
     {
@@ -238,11 +220,6 @@ mod tests {
         assert_eq!(
             operand().parse("[r3-0x1f]"),
             Ok((Operand::Memory(3, -31), ""))
-        );
-        assert_eq!(operand().parse("[r5 + 3]"), Ok((Operand::Memory(5, 3), "")));
-        assert_eq!(
-            operand().parse("[r11 - 0x30]"),
-            Ok((Operand::Memory(11, -48), ""))
         );
     }
 
@@ -671,7 +648,7 @@ exit
         assert_eq!(
             parse("exit\n^"),
             Err(
-                "Parse error at line 2 column 1: unexpected '^', expected letter or digit, expected '_', expected '.', expected whitespaces, expected end of input".to_string()
+                "Parse error at line 2 column 1: unexpected '^', expected letter or digit, expected \'_\', expected whitespaces, expected end of input".to_string()
             )
         );
     }

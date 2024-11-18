@@ -26,10 +26,9 @@ use solana_rbpf::{
     assembler::assemble,
     ebpf,
     elf::Executable,
-    program::{BuiltinFunction, BuiltinProgram, FunctionRegistry, SBPFVersion},
-    syscalls,
+    program::{BuiltinProgram, FunctionRegistry, SBPFVersion},
     verifier::{RequisiteVerifier, Verifier, VerifierError},
-    vm::{Config, ContextObject, TestContextObject},
+    vm::{Config, TestContextObject},
 };
 use std::sync::Arc;
 use test_utils::{assert_error, create_vm};
@@ -44,12 +43,11 @@ pub enum VerifierTestError {
 
 struct TautologyVerifier {}
 impl Verifier for TautologyVerifier {
-    fn verify<C: ContextObject>(
+    fn verify(
         _prog: &[u8],
         _config: &Config,
-        _sbpf_version: SBPFVersion,
+        _sbpf_version: &SBPFVersion,
         _function_registry: &FunctionRegistry<usize>,
-        _syscall_registry: &FunctionRegistry<BuiltinFunction<C>>,
     ) -> std::result::Result<(), VerifierError> {
         Ok(())
     }
@@ -57,12 +55,11 @@ impl Verifier for TautologyVerifier {
 
 struct ContradictionVerifier {}
 impl Verifier for ContradictionVerifier {
-    fn verify<C: ContextObject>(
+    fn verify(
         _prog: &[u8],
         _config: &Config,
-        _sbpf_version: SBPFVersion,
+        _sbpf_version: &SBPFVersion,
         _function_registry: &FunctionRegistry<usize>,
-        _syscall_registry: &FunctionRegistry<BuiltinFunction<C>>,
     ) -> std::result::Result<(), VerifierError> {
         Err(VerifierError::NoProgram)
     }
@@ -122,7 +119,7 @@ fn test_verifier_err_endian_size() {
     let prog = &[
         0xdc, 0x01, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, //
         0xb7, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
-        0x9d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
+        0x95, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
     ];
     let executable = Executable::<TestContextObject>::from_text_bytes(
         prog,
@@ -138,7 +135,6 @@ fn test_verifier_err_endian_size() {
 #[should_panic(expected = "IncompleteLDDW(0)")]
 fn test_verifier_err_incomplete_lddw() {
     // Note: ubpf has test-err-incomplete-lddw2, which is the same
-    // lddw r0, 0x55667788
     let prog = &[
         0x18, 0x00, 0x00, 0x00, 0x88, 0x77, 0x66, 0x55, //
         0x95, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
@@ -154,39 +150,17 @@ fn test_verifier_err_incomplete_lddw() {
 }
 
 #[test]
-#[should_panic(expected = "LDDWCannotBeLast")]
-fn test_verifier_err_lddw_cannot_be_last() {
-    for highest_sbpf_version in [SBPFVersion::V1, SBPFVersion::V2] {
-        let prog = &[0x18, 0x00, 0x00, 0x00, 0x88, 0x77, 0x66, 0x55];
-        let executable = Executable::<TestContextObject>::from_text_bytes(
-            prog,
-            Arc::new(BuiltinProgram::new_loader(
-                Config {
-                    enabled_sbpf_versions: SBPFVersion::V1..=highest_sbpf_version,
-                    ..Config::default()
-                },
-                FunctionRegistry::default(),
-            )),
-            highest_sbpf_version,
-            FunctionRegistry::default(),
-        )
-        .unwrap();
-        executable.verify::<RequisiteVerifier>().unwrap();
-    }
-}
-
-#[test]
 fn test_verifier_err_invalid_reg_dst() {
     // r11 is disabled when sbpf_version.dynamic_stack_frames()=false, and only sub and add are
     // allowed when sbpf_version.dynamic_stack_frames()=true
-    for highest_sbpf_version in [SBPFVersion::V1, SBPFVersion::V2] {
+    for enable_sbpf_v2 in [false, true] {
         let executable = assemble::<TestContextObject>(
             "
             mov r11, 1
             exit",
             Arc::new(BuiltinProgram::new_loader(
                 Config {
-                    enabled_sbpf_versions: SBPFVersion::V1..=highest_sbpf_version,
+                    enable_sbpf_v2,
                     ..Config::default()
                 },
                 FunctionRegistry::default(),
@@ -202,14 +176,14 @@ fn test_verifier_err_invalid_reg_dst() {
 fn test_verifier_err_invalid_reg_src() {
     // r11 is disabled when sbpf_version.dynamic_stack_frames()=false, and only sub and add are
     // allowed when sbpf_version.dynamic_stack_frames()=true
-    for highest_sbpf_version in [SBPFVersion::V1, SBPFVersion::V2] {
+    for enable_sbpf_v2 in [false, true] {
         let executable = assemble::<TestContextObject>(
             "
             mov r0, r11
             exit",
             Arc::new(BuiltinProgram::new_loader(
                 Config {
-                    enabled_sbpf_versions: SBPFVersion::V1..=highest_sbpf_version,
+                    enable_sbpf_v2,
                     ..Config::default()
                 },
                 FunctionRegistry::default(),
@@ -269,28 +243,6 @@ fn test_verifier_err_call_lddw() {
 }
 
 #[test]
-#[should_panic(expected = "InvalidRegister(0)")]
-fn test_verifier_err_callx_cannot_use_r10() {
-    for highest_sbpf_version in [SBPFVersion::V1, SBPFVersion::V2] {
-        let executable = assemble::<TestContextObject>(
-            "
-        callx r10
-        exit
-        ",
-            Arc::new(BuiltinProgram::new_loader(
-                Config {
-                    enabled_sbpf_versions: SBPFVersion::V1..=highest_sbpf_version,
-                    ..Config::default()
-                },
-                FunctionRegistry::default(),
-            )),
-        )
-        .unwrap();
-        executable.verify::<RequisiteVerifier>().unwrap();
-    }
-}
-
-#[test]
 #[should_panic(expected = "InvalidFunction(0)")]
 fn test_verifier_err_function_fallthrough() {
     let executable = assemble::<TestContextObject>(
@@ -335,49 +287,11 @@ fn test_verifier_err_jmp_out_start() {
 fn test_verifier_err_unknown_opcode() {
     let prog = &[
         0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
-        0x9d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
+        0x95, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //
     ];
     let executable = Executable::<TestContextObject>::from_text_bytes(
         prog,
         Arc::new(BuiltinProgram::new_mock()),
-        SBPFVersion::V2,
-        FunctionRegistry::default(),
-    )
-    .unwrap();
-    executable.verify::<RequisiteVerifier>().unwrap();
-}
-
-#[test]
-#[should_panic(expected = "InvalidFunction(1811268607)")]
-fn test_verifier_unknown_sycall() {
-    let prog = &[
-        0x85, 0x00, 0x00, 0x00, 0xfe, 0xc3, 0xf5, 0x6b, // call 0x6bf5c3fe
-        0x9d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // return
-    ];
-    let executable = Executable::<TestContextObject>::from_text_bytes(
-        prog,
-        Arc::new(BuiltinProgram::new_mock()),
-        SBPFVersion::V2,
-        FunctionRegistry::default(),
-    )
-    .unwrap();
-    executable.verify::<RequisiteVerifier>().unwrap();
-}
-
-#[test]
-fn test_verifier_known_syscall() {
-    let prog = &[
-        0x95, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, // syscall 2
-        0x9d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // return
-    ];
-
-    let mut loader = BuiltinProgram::new_loader_with_dense_registration(Config::default());
-    loader
-        .register_function("my_syscall", 2, syscalls::SyscallString::vm)
-        .unwrap();
-    let executable = Executable::<TestContextObject>::from_text_bytes(
-        prog,
-        Arc::new(loader),
         SBPFVersion::V2,
         FunctionRegistry::default(),
     )
@@ -446,13 +360,13 @@ fn test_sdiv_disabled() {
     ];
 
     for (opc, instruction) in instructions {
-        for highest_sbpf_version in [SBPFVersion::V1, SBPFVersion::V2] {
+        for enable_sbpf_v2 in [true, false] {
             let assembly = format!("\n{instruction}\nexit");
             let executable = assemble::<TestContextObject>(
                 &assembly,
                 Arc::new(BuiltinProgram::new_loader(
                     Config {
-                        enabled_sbpf_versions: SBPFVersion::V1..=highest_sbpf_version,
+                        enable_sbpf_v2,
                         ..Config::default()
                     },
                     FunctionRegistry::default(),
@@ -460,72 +374,11 @@ fn test_sdiv_disabled() {
             )
             .unwrap();
             let result = executable.verify::<RequisiteVerifier>();
-            if highest_sbpf_version == SBPFVersion::V2 {
+            if enable_sbpf_v2 {
                 assert!(result.is_ok());
             } else {
                 assert_error!(result, "VerifierError(UnknownOpCode({}, {}))", opc, 0);
             }
         }
     }
-}
-
-#[test]
-fn return_instr() {
-    for sbpf_version in [SBPFVersion::V1, SBPFVersion::V2] {
-        let prog = &[
-            0xbf, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, // mov64 r0, 2
-            0x95, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // exit (v1), syscall (v2)
-            0x9d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // return
-        ];
-
-        let executable = Executable::<TestContextObject>::from_text_bytes(
-            prog,
-            Arc::new(BuiltinProgram::new_mock()),
-            sbpf_version,
-            FunctionRegistry::default(),
-        )
-        .unwrap();
-        let result = executable.verify::<RequisiteVerifier>();
-        if sbpf_version == SBPFVersion::V2 {
-            assert_error!(result, "VerifierError(InvalidSyscall(0))");
-        } else {
-            assert_error!(result, "VerifierError(UnknownOpCode(157, 2))");
-        }
-    }
-}
-
-#[test]
-fn return_in_v2() {
-    let executable = assemble::<TestContextObject>(
-        "mov r0, 2
-                 return",
-        Arc::new(BuiltinProgram::new_loader(
-            Config {
-                enabled_sbpf_versions: SBPFVersion::V2..=SBPFVersion::V2,
-                ..Config::default()
-            },
-            FunctionRegistry::default(),
-        )),
-    )
-    .unwrap();
-    let result = executable.verify::<RequisiteVerifier>();
-    assert!(result.is_ok());
-}
-
-#[test]
-fn function_without_return() {
-    let executable = assemble::<TestContextObject>(
-        "mov r0, 2
-                add64 r0, 5",
-        Arc::new(BuiltinProgram::new_loader(
-            Config {
-                enabled_sbpf_versions: SBPFVersion::V2..=SBPFVersion::V2,
-                ..Config::default()
-            },
-            FunctionRegistry::default(),
-        )),
-    )
-    .unwrap();
-    let result = executable.verify::<RequisiteVerifier>();
-    assert_error!(result, "VerifierError(InvalidFunction(1))");
 }

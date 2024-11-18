@@ -1,6 +1,6 @@
 //! Aligned memory
 
-use crate::lib::*;
+use std::{mem, ptr};
 
 /// Scalar types, aka "plain old data"
 pub trait Pod {}
@@ -27,6 +27,7 @@ pub struct AlignedMemory<const ALIGN: usize> {
 impl<const ALIGN: usize> AlignedMemory<ALIGN> {
     fn get_mem(max_len: usize) -> (Vec<u8>, usize) {
         let mut mem: Vec<u8> = Vec::with_capacity(max_len.saturating_add(ALIGN));
+        mem.push(0);
         let align_offset = mem.as_ptr().align_offset(ALIGN);
         mem.resize(align_offset, 0);
         (mem, align_offset)
@@ -112,16 +113,16 @@ impl<const ALIGN: usize> AlignedMemory<ALIGN> {
         &mut self.mem[start..end]
     }
     /// Grows memory with `value` repeated `num` times starting at the `write_index`
-    pub fn fill_write(&mut self, num: usize, value: u8) -> io::Result<()> {
+    pub fn fill_write(&mut self, num: usize, value: u8) -> std::io::Result<()> {
         let new_len = match (
             self.mem.len().checked_add(num),
             self.align_offset.checked_add(self.max_len),
         ) {
             (Some(new_len), Some(allocation_end)) if new_len <= allocation_end => new_len,
             _ => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "aligned memory fill_write failed",
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "aligned memory resize failed",
                 ))
             }
         };
@@ -177,16 +178,16 @@ impl<const ALIGN: usize> Clone for AlignedMemory<ALIGN> {
     }
 }
 
-impl<const ALIGN: usize> io::Write for AlignedMemory<ALIGN> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+impl<const ALIGN: usize> std::io::Write for AlignedMemory<ALIGN> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         match (
             self.mem.len().checked_add(buf.len()),
             self.align_offset.checked_add(self.max_len),
         ) {
             (Some(new_len), Some(allocation_end)) if new_len <= allocation_end => {}
             _ => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
                     "aligned memory write failed",
                 ))
             }
@@ -194,7 +195,7 @@ impl<const ALIGN: usize> io::Write for AlignedMemory<ALIGN> {
         self.mem.extend_from_slice(buf);
         Ok(buf.len())
     }
-    fn flush(&mut self) -> io::Result<()> {
+    fn flush(&mut self) -> std::io::Result<()> {
         Ok(())
     }
 }
@@ -212,9 +213,9 @@ pub fn is_memory_aligned(ptr: usize, align: usize) -> bool {
         .unwrap_or(false)
 }
 
-#[allow(clippy::arithmetic_side_effects)]
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::arithmetic_side_effects)]
     use {super::*, std::io::Write};
 
     fn do_test<const ALIGN: usize>() {

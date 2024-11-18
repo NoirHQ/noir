@@ -32,7 +32,16 @@ fn loader() -> Arc<BuiltinProgram<TestContextObject>> {
 
 #[bench]
 fn bench_load_sbpfv1(bencher: &mut Bencher) {
-    let mut file = File::open("tests/elfs/syscall_reloc_64_32_sbpfv1.so").unwrap();
+    let mut file = File::open("tests/elfs/syscall_reloc_64_32.so").unwrap();
+    let mut elf = Vec::new();
+    file.read_to_end(&mut elf).unwrap();
+    let loader = loader();
+    bencher.iter(|| Executable::<TestContextObject>::from_elf(&elf, loader.clone()).unwrap());
+}
+
+#[bench]
+fn bench_load_sbpfv2(bencher: &mut Bencher) {
+    let mut file = File::open("tests/elfs/syscall_static.so").unwrap();
     let mut elf = Vec::new();
     file.read_to_end(&mut elf).unwrap();
     let loader = loader();

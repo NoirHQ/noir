@@ -6,11 +6,10 @@ use crate::{
     ebpf,
     elf::Executable,
     error::EbpfError,
-    lib::*,
-    program::SBPFVersion,
     vm::{ContextObject, DynamicAnalysis, TestContextObject},
 };
 use rustc_demangle::demangle;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 /// Register state recorded after executing one instruction
 ///
@@ -181,9 +180,7 @@ impl<'a> Analysis<'a> {
         }
         let mut result = Self {
             // Removes the generic ContextObject which is safe because we are not going to execute the program
-            executable: unsafe {
-                std::mem::transmute::<&Executable<C>, &Executable<TestContextObject>>(executable)
-            },
+            executable: unsafe { std::mem::transmute(executable) },
             instructions,
             functions,
             cfg_nodes: BTreeMap::new(),
@@ -193,7 +190,7 @@ impl<'a> Analysis<'a> {
             dfg_forward_edges: BTreeMap::new(),
             dfg_reverse_edges: BTreeMap::new(),
         };
-        result.split_into_basic_blocks(false, executable.get_sbpf_version());
+        result.split_into_basic_blocks(false);
         result.control_flow_graph_tarjan();
         result.control_flow_graph_dominance_hierarchy();
         result.label_basic_blocks();
@@ -205,11 +202,7 @@ impl<'a> Analysis<'a> {
     fn link_cfg_edges(&mut self, cfg_edges: Vec<(usize, Vec<usize>)>, both_directions: bool) {
         for (source, destinations) in cfg_edges {
             if both_directions {
-                self.cfg_nodes
-                    .get_mut(&source)
-                    .unwrap()
-                    .destinations
-                    .clone_from(&destinations);
+                self.cfg_nodes.get_mut(&source).unwrap().destinations = destinations.clone();
             }
             for destination in &destinations {
                 self.cfg_nodes
@@ -224,7 +217,7 @@ impl<'a> Analysis<'a> {
     /// Splits the sequence of instructions into basic blocks
     ///
     /// Also links the control-flow graph edges between the basic blocks.
-    pub fn split_into_basic_blocks(&mut self, flatten_call_graph: bool, sbpf_version: SBPFVersion) {
+    pub fn split_into_basic_blocks(&mut self, flatten_call_graph: bool) {
         self.cfg_nodes.insert(0, CfgNode::default());
         for pc in self.functions.keys() {
             self.cfg_nodes.entry(*pc).or_default();
@@ -237,7 +230,7 @@ impl<'a> Analysis<'a> {
                     if let Some((function_name, _function)) = self
                         .executable
                         .get_loader()
-                        .get_function_registry(sbpf_version)
+                        .get_function_registry()
                         .lookup_by_key(insn.imm as u32)
                     {
                         if function_name == b"abort" {
@@ -357,7 +350,7 @@ impl<'a> Analysis<'a> {
                 }
                 if let Some(next_cfg_edge) = cfg_edge_iter.peek() {
                     if *next_cfg_edge.0 <= cfg_node_end {
-                        cfg_node.destinations.clone_from(&next_cfg_edge.1 .1);
+                        cfg_node.destinations = next_cfg_edge.1 .1.clone();
                         cfg_edge_iter.next();
                         continue;
                     }
@@ -442,10 +435,9 @@ impl<'a> Analysis<'a> {
     }
 
     /// Generates assembler code for a single instruction
-    pub fn disassemble_instruction(&self, insn: &ebpf::Insn, pc: usize) -> String {
+    pub fn disassemble_instruction(&self, insn: &ebpf::Insn) -> String {
         disassemble_instruction(
             insn,
-            pc,
             &self.cfg_nodes,
             self.executable.get_function_registry(),
             self.executable.get_loader(),
@@ -456,14 +448,14 @@ impl<'a> Analysis<'a> {
     /// Generates assembler code for the analyzed executable
     pub fn disassemble<W: std::io::Write>(&self, output: &mut W) -> std::io::Result<()> {
         let mut last_basic_block = usize::MAX;
-        for (pc, insn) in self.instructions.iter().enumerate() {
+        for insn in self.instructions.iter() {
             self.disassemble_label(
                 output,
                 Some(insn) == self.instructions.first(),
                 insn.ptr,
                 &mut last_basic_block,
             )?;
-            writeln!(output, "    {}", self.disassemble_instruction(insn, pc))?;
+            writeln!(output, "    {}", self.disassemble_instruction(insn))?;
         }
         Ok(())
     }
@@ -494,7 +486,7 @@ impl<'a> Analysis<'a> {
                 index,
                 &entry[0..11],
                 pc,
-                self.disassemble_instruction(insn, pc),
+                self.disassemble_instruction(insn),
             )?;
         }
         Ok(())
@@ -546,9 +538,9 @@ impl<'a> Analysis<'a> {
             writeln!(output, "    lbb_{} [label=<<table border=\"0\" cellborder=\"0\" cellpadding=\"3\">{}</table>>];",
                 cfg_node_start,
                 analysis.instructions[cfg_node.instructions.clone()].iter()
-                .enumerate().map(|(pc, insn)| {
+                .map(|insn| {
                     let desc = analysis.disassemble_instruction(
-                        insn, pc
+                        insn
                     );
                     if let Some(split_index) = desc.find(' ') {
                         let mut rest = desc[split_index+1..].to_string();
@@ -561,7 +553,8 @@ impl<'a> Analysis<'a> {
                         format!("<tr><td align=\"left\">{}</td></tr>", html_escape(&desc))
                     }
                 })
-                .collect::<String>()
+                .collect::<Vec<String>>()
+                .join("")
             )?;
             if let Some(dynamic_analysis) = dynamic_analysis {
                 if let Some(recorded_edges) = dynamic_analysis.edges.get(&cfg_node_start) {

@@ -218,19 +218,6 @@ impl X86Instruction {
         }
     }
 
-    /// Move source to destination
-    #[inline]
-    pub const fn mov_with_sign_extension(size: OperandSize, source: u8, destination: u8) -> Self {
-        exclude_operand_sizes!(size, OperandSize::S0 | OperandSize::S8 | OperandSize::S16);
-        Self {
-            size,
-            opcode: 0x63,
-            first_operand: destination,
-            second_operand: source,
-            ..Self::DEFAULT
-        }
-    }
-
     /// Conditionally move source to destination
     #[inline]
     pub const fn cmov(size: OperandSize, condition: u8, source: u8, destination: u8) -> Self {
@@ -622,20 +609,6 @@ impl X86Instruction {
             modrm: false,
             immediate_size: OperandSize::S32,
             immediate: relative_destination as i64,
-            ..Self::DEFAULT
-        }
-    }
-
-    /// Jump to absolute destination
-    #[allow(dead_code)]
-    #[inline]
-    pub const fn jump_reg(destination: u8, indirect: Option<X86IndirectAccess>) -> Self {
-        Self {
-            size: OperandSize::S64,
-            opcode: 0xff,
-            first_operand: 4,
-            second_operand: destination,
-            indirect,
             ..Self::DEFAULT
         }
     }

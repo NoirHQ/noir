@@ -80,7 +80,7 @@ pub trait IntoBytes {
 }
 
 /// General implementation of `IntoBytes` for `Instruction`
-impl<I: Instruction> IntoBytes for &I {
+impl<'i, I: Instruction> IntoBytes for &'i I {
     type Bytes = Vec<u8>;
 
     /// transform immutable reference of `Instruction` into `Vec<u8>` with size of 8
@@ -310,7 +310,7 @@ impl<'i> Move<'i> {
     }
 }
 
-impl Instruction for Move<'_> {
+impl<'i> Instruction for Move<'i> {
     fn opt_code_byte(&self) -> u8 {
         let op_bits = self.op_bits as u8;
         let src_bit = self.src_bit as u8;
@@ -365,9 +365,9 @@ enum OpBits {
 /// Architecture of instructions
 pub enum Arch {
     /// 64-bit instructions
-    X64 = BPF_ALU64_STORE as isize,
+    X64 = BPF_ALU64 as isize,
     /// 32-bit instructions
-    X32 = BPF_ALU32_LOAD as isize,
+    X32 = BPF_ALU as isize,
 }
 
 /// struct representation of byte swap operation
@@ -386,7 +386,7 @@ impl<'i> SwapBytes<'i> {
     }
 }
 
-impl Instruction for SwapBytes<'_> {
+impl<'i> Instruction for SwapBytes<'i> {
     fn opt_code_byte(&self) -> u8 {
         self.endian as u8
     }
@@ -431,7 +431,7 @@ impl<'i> Load<'i> {
     }
 }
 
-impl Instruction for Load<'_> {
+impl<'i> Instruction for Load<'i> {
     fn opt_code_byte(&self) -> u8 {
         let size = self.mem_size as u8;
         let addressing = self.addressing as u8;
@@ -464,7 +464,7 @@ impl<'i> Store<'i> {
     }
 }
 
-impl Instruction for Store<'_> {
+impl<'i> Instruction for Store<'i> {
     fn opt_code_byte(&self) -> u8 {
         let size = self.mem_size as u8;
         BPF_MEM | BPF_ST | size | self.source
@@ -521,7 +521,7 @@ impl<'i> Jump<'i> {
     }
 }
 
-impl Instruction for Jump<'_> {
+impl<'i> Instruction for Jump<'i> {
     fn opt_code_byte(&self) -> u8 {
         let cmp: u8 = self.cond as u8;
         let src_bit = self.src_bit as u8;
@@ -585,7 +585,7 @@ impl<'i> FunctionCall<'i> {
     }
 }
 
-impl Instruction for FunctionCall<'_> {
+impl<'i> Instruction for FunctionCall<'i> {
     fn opt_code_byte(&self) -> u8 {
         BPF_CALL | BPF_JMP
     }
@@ -614,7 +614,7 @@ impl<'i> Exit<'i> {
     }
 }
 
-impl Instruction for Exit<'_> {
+impl<'i> Instruction for Exit<'i> {
     fn opt_code_byte(&self) -> u8 {
         BPF_EXIT | BPF_JMP
     }
