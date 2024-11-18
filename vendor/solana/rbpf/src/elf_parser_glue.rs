@@ -1,5 +1,5 @@
 //! Internal ELF parser abstraction.
-use std::{borrow::Cow, convert::TryInto, iter, ops::Range, slice};
+use crate::lib::*;
 
 use goblin::{
     elf::{Elf, Header, ProgramHeader, Reloc, SectionHeader, Sym},
@@ -224,9 +224,7 @@ impl<'a> ElfParser<'a> for GoblinParser<'a> {
         }) {
             Some(section) => Ok(section.clone()),
             None => Err(ElfError::SectionNotFound(
-                std::str::from_utf8(name)
-                    .unwrap_or("UTF-8 error")
-                    .to_string(),
+                str::from_utf8(name).unwrap_or("UTF-8 error").to_string(),
             )),
         }
     }
@@ -411,9 +409,7 @@ impl<'a> ElfParser<'a> for NewParser<'a> {
         }
 
         Err(ElfError::SectionNotFound(
-            std::str::from_utf8(name)
-                .unwrap_or("UTF-8 error")
-                .to_string(),
+            str::from_utf8(name).unwrap_or("UTF-8 error").to_string(),
         ))
     }
 

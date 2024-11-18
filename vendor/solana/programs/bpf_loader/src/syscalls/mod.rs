@@ -1,5 +1,3 @@
-use solana_rbpf::program::SBPFVersion;
-
 pub use self::{
     cpi::{SyscallInvokeSignedC, SyscallInvokeSignedRust},
     logging::{
@@ -56,11 +54,11 @@ use {
             // enable_big_mod_exp_syscall,
             enable_partitioned_epoch_reward,
             // enable_poseidon_syscall,
-            // error_on_syscall_bpf_function_hash_collisions,
+            error_on_syscall_bpf_function_hash_collisions,
             last_restart_slot_sysvar,
-            // reject_callx_r10,
+            reject_callx_r10,
             remaining_compute_units_syscall_enabled,
-            // switch_to_new_elf_parser,
+            switch_to_new_elf_parser,
         },
         hash::{Hash, Hasher},
         instruction::{AccountMeta, InstructionError, ProcessedSiblingInstruction},
@@ -263,7 +261,7 @@ pub fn morph_into_deployment_environment_v1(
 
     let mut result = FunctionRegistry::<BuiltinFunction<InvokeContext>>::default();
 
-    for (key, (name, value)) in from.get_function_registry(SBPFVersion::V1).iter() {
+    for (key, (name, value)) in from.get_function_registry().iter() {
         // Deployment of programs with sol_alloc_free is disabled. So do not register the syscall.
         if name != *b"sol_alloc_free_" {
             result.register_function(key, name, value)?;
@@ -310,15 +308,14 @@ pub fn create_program_runtime_environment_v1<'a>(
         reject_broken_elfs: reject_deployment_of_broken_elfs,
         noop_instruction_rate: 256,
         sanitize_user_provided_values: true,
-        // external_internal_function_hash_collision: feature_set
-        //     .is_active(&error_on_syscall_bpf_function_hash_collisions::id()),
-        // reject_callx_r10: feature_set.is_active(&reject_callx_r10::id()),
-        // enable_sbpf_v1: true,
-        // enable_sbpf_v2: false,
+        external_internal_function_hash_collision: feature_set
+            .is_active(&error_on_syscall_bpf_function_hash_collisions::id()),
+        reject_callx_r10: feature_set.is_active(&reject_callx_r10::id()),
+        enable_sbpf_v1: true,
+        enable_sbpf_v2: false,
         optimize_rodata: false,
-        // new_elf_parser: feature_set.is_active(&switch_to_new_elf_parser::id()),
+        new_elf_parser: feature_set.is_active(&switch_to_new_elf_parser::id()),
         aligned_memory_mapping: !feature_set.is_active(&bpf_account_data_direct_mapping::id()),
-        enabled_sbpf_versions: SBPFVersion::V1..=SBPFVersion::V2,
         // Warning, do not use `Config::default()` so that configuration here is explicit.
     };
     let mut result = FunctionRegistry::<BuiltinFunction<InvokeContext>>::default();

@@ -16,16 +16,24 @@
     html_favicon_url = "https://raw.githubusercontent.com/qmonnet/rbpf/master/misc/rbpf.ico"
 )]
 #![deny(clippy::arithmetic_side_effects)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
 
 extern crate byteorder;
+#[cfg(feature = "std")]
 extern crate combine;
 extern crate hash32;
 extern crate log;
+#[cfg(feature = "std")]
 extern crate rand;
 extern crate thiserror;
 
 pub mod aligned_memory;
+#[cfg(feature = "std")]
 mod asm_parser;
+#[cfg(feature = "std")]
 pub mod assembler;
 #[cfg(feature = "debugger")]
 pub mod debugger;
@@ -35,7 +43,9 @@ pub mod elf;
 pub mod elf_parser;
 pub mod elf_parser_glue;
 pub mod error;
+#[cfg(test)]
 pub mod fuzz;
+#[cfg(feature = "std")]
 pub mod insn_builder;
 pub mod interpreter;
 #[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
@@ -50,6 +60,114 @@ pub mod verifier;
 pub mod vm;
 #[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
 mod x86;
+
+mod lib {
+    mod core {
+        #[cfg(not(feature = "std"))]
+        pub use core::*;
+        #[cfg(feature = "std")]
+        pub use std::*;
+    }
+
+    pub use self::core::iter;
+    pub use self::core::mem;
+    pub use self::core::ptr;
+
+    pub use self::core::f64;
+
+    #[cfg(feature = "std")]
+    pub use std::println;
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::vec;
+    #[cfg(feature = "std")]
+    pub use std::vec;
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::vec::Vec;
+    #[cfg(feature = "std")]
+    pub use std::vec::Vec;
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::string::{String, ToString};
+    #[cfg(feature = "std")]
+    pub use std::string::{String, ToString};
+
+    // In no_std we cannot use randomness for hashing, thus we need to use
+    // BTree-based implementations of Maps and Sets. The cranelift module uses
+    // BTrees by default, hence we need to expose it twice here.
+    #[cfg(not(feature = "std"))]
+    pub use alloc::collections::{btree_map::Entry, BTreeMap, BTreeSet};
+    #[cfg(not(feature = "std"))]
+    pub use hashbrown::{HashMap, HashSet};
+    #[cfg(feature = "std")]
+    pub use std::collections::{btree_map::Entry, BTreeMap, BTreeSet, HashMap, HashSet};
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::format;
+    #[cfg(feature = "std")]
+    pub use std::format;
+
+    #[cfg(not(feature = "std"))]
+    pub use core::{array, cmp, fmt, ops, str};
+    #[cfg(feature = "std")]
+    pub use std::{array, cmp, fmt, ops, str};
+
+    #[cfg(not(feature = "std"))]
+    pub use core::ops::Range;
+    #[cfg(feature = "std")]
+    pub use std::ops::Range;
+
+    #[cfg(not(feature = "std"))]
+    pub use core2::io;
+    #[cfg(feature = "std")]
+    pub use std::io;
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::{slice::from_raw_parts, str::from_utf8};
+    #[cfg(feature = "std")]
+    pub use std::{slice::from_raw_parts, str::from_utf8};
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::boxed::Box;
+    #[cfg(feature = "std")]
+    pub use std::boxed::Box;
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::slice;
+    #[cfg(feature = "std")]
+    pub use std::slice;
+
+    #[cfg(not(feature = "std"))]
+    pub use core::ptr::copy_nonoverlapping;
+    #[cfg(feature = "std")]
+    pub use std::ptr::copy_nonoverlapping;
+
+    #[cfg(not(feature = "std"))]
+    pub use core::cell::{Cell, UnsafeCell};
+    #[cfg(feature = "std")]
+    pub use std::cell::{Cell, UnsafeCell};
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::borrow::Cow;
+    #[cfg(feature = "std")]
+    pub use std::borrow::Cow;
+
+    #[cfg(not(feature = "std"))]
+    pub use core::convert::TryInto;
+    #[cfg(feature = "std")]
+    pub use std::convert::TryInto;
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::sync::Arc;
+    #[cfg(feature = "std")]
+    pub use std::sync::Arc;
+
+    #[cfg(not(feature = "std"))]
+    pub use core::error;
+    #[cfg(feature = "std")]
+    pub use std::error;
+}
 
 trait ErrCheckedArithmetic: Sized {
     fn err_checked_add(self, other: Self) -> Result<Self, ArithmeticOverflow>;

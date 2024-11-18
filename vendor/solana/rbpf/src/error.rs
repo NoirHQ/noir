@@ -18,8 +18,8 @@
 //! the list of the operation codes: <https://github.com/iovisor/bpf-docs/blob/master/eBPF.md>
 
 use {
-    crate::{elf::ElfError, memory_region::AccessType, verifier::VerifierError},
-    std::error::Error,
+    crate::{elf::ElfError, lib::*, memory_region::AccessType, verifier::VerifierError},
+    core::error::Error,
 };
 
 /// Error definitions
@@ -98,7 +98,7 @@ pub enum StableResult<T, E> {
     Err(E),
 }
 
-impl<T: std::fmt::Debug, E: std::fmt::Debug> StableResult<T, E> {
+impl<T: fmt::Debug, E: fmt::Debug> StableResult<T, E> {
     /// `true` if `Ok`
     pub fn is_ok(&self) -> bool {
         match self {

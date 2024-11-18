@@ -29,8 +29,8 @@ use crate::{
 
 #[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
 use crate::jit::{JitCompiler, JitProgram};
+use crate::lib::*;
 use byteorder::{ByteOrder, LittleEndian};
-use std::{collections::BTreeMap, fmt::Debug, mem, ops::Range, str, sync::Arc};
 
 /// Error definitions
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -397,7 +397,7 @@ impl<C: ContextObject> Executable<C> {
         let text_section_info = SectionInfo {
             name: if config.enable_symbol_and_section_labels {
                 elf.section_name(text_section.sh_name())
-                    .and_then(|name| std::str::from_utf8(name).ok())
+                    .and_then(|name| str::from_utf8(name).ok())
                     .unwrap_or(".text")
                     .to_string()
             } else {

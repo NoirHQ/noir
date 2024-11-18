@@ -1,11 +1,9 @@
 //! Common interface for built-in and user supplied programs
-use {
-    crate::{
-        ebpf,
-        elf::ElfError,
-        vm::{Config, ContextObject, EbpfVm},
-    },
-    std::collections::{btree_map::Entry, BTreeMap},
+use crate::{
+    ebpf,
+    elf::ElfError,
+    lib::*,
+    vm::{Config, ContextObject, EbpfVm},
 };
 
 /// Defines a set of sbpf_version of an executable
@@ -195,13 +193,12 @@ impl<T: Copy + PartialEq> FunctionRegistry<T> {
 
     /// Calculate memory size
     pub fn mem_size(&self) -> usize {
-        std::mem::size_of::<Self>().saturating_add(self.map.iter().fold(
+        mem::size_of::<Self>().saturating_add(self.map.iter().fold(
             0,
             |state: usize, (_, (name, value))| {
                 state.saturating_add(
-                    std::mem::size_of_val(value).saturating_add(
-                        std::mem::size_of_val(name).saturating_add(name.capacity()),
-                    ),
+                    mem::size_of_val(value)
+                        .saturating_add(mem::size_of_val(name).saturating_add(name.capacity())),
                 )
             },
         ))
@@ -263,9 +260,9 @@ impl<C: ContextObject> BuiltinProgram<C> {
 
     /// Calculate memory size
     pub fn mem_size(&self) -> usize {
-        std::mem::size_of::<Self>()
+        mem::size_of::<Self>()
             .saturating_add(if self.config.is_some() {
-                std::mem::size_of::<Config>()
+                mem::size_of::<Config>()
             } else {
                 0
             })
@@ -273,11 +270,11 @@ impl<C: ContextObject> BuiltinProgram<C> {
     }
 }
 
-impl<C: ContextObject> std::fmt::Debug for BuiltinProgram<C> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+impl<C: ContextObject> fmt::Debug for BuiltinProgram<C> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         writeln!(f, "{:?}", unsafe {
             // `derive(Debug)` does not know that `C: ContextObject` does not need to implement `Debug`
-            std::mem::transmute::<&FunctionRegistry<BuiltinFunction<C>>, &FunctionRegistry<usize>>(
+            mem::transmute::<&FunctionRegistry<BuiltinFunction<C>>, &FunctionRegistry<usize>>(
                 &self.functions,
             )
         })?;
@@ -323,9 +320,12 @@ macro_rules! declare_builtin_function {
                 $arg_e: u64,
             ) {
                 use $crate::vm::ContextObject;
+                #[cfg(feature = "std")]
                 let vm = unsafe {
                     &mut *(($vm as *mut u64).offset(-($crate::vm::get_runtime_environment_key() as isize)) as *mut $crate::vm::EbpfVm<$ContextObject>)
                 };
+                #[cfg(not(feature = "std"))]
+                let vm = $vm;
                 let config = vm.loader.get_config();
                 if config.enable_instruction_meter {
                     vm.context_object_pointer.consume(vm.previous_instruction_meter - vm.due_insn_count);

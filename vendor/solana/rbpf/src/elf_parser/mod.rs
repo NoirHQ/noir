@@ -3,9 +3,7 @@
 pub mod consts;
 pub mod types;
 
-use std::{fmt, mem, ops::Range, slice};
-
-use crate::{ArithmeticOverflow, ErrCheckedArithmetic};
+use crate::{lib::*, ArithmeticOverflow, ErrCheckedArithmetic};
 use {consts::*, types::*};
 
 /// Maximum length of section name allowed.
@@ -518,9 +516,7 @@ impl<'a> fmt::Debug for Elf64<'a> {
                     section_header.sh_name,
                     SECTION_NAME_LENGTH_MAXIMUM,
                 )
-                .and_then(|name| {
-                    std::str::from_utf8(name).map_err(|_| ElfParserError::InvalidString)
-                })
+                .and_then(|name| str::from_utf8(name).map_err(|_| ElfParserError::InvalidString))
                 .unwrap();
             writeln!(f, "{section_name}")?;
             writeln!(f, "{section_header:#X?}")?;
@@ -537,7 +533,7 @@ impl<'a> fmt::Debug for Elf64<'a> {
                             SYMBOL_NAME_LENGTH_MAXIMUM,
                         )
                         .and_then(|name| {
-                            std::str::from_utf8(name).map_err(|_| ElfParserError::InvalidString)
+                            str::from_utf8(name).map_err(|_| ElfParserError::InvalidString)
                         })
                         .unwrap();
                     writeln!(f, "{symbol_name}")?;

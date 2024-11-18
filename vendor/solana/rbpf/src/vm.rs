@@ -17,20 +17,25 @@ use crate::{
     elf::Executable,
     error::{EbpfError, ProgramResult},
     interpreter::Interpreter,
+    lib::*,
     memory_region::MemoryMapping,
     program::{BuiltinFunction, BuiltinProgram, FunctionRegistry, SBPFVersion},
     static_analysis::{Analysis, TraceLogEntry},
 };
+
+#[cfg(feature = "std")]
 use rand::Rng;
-use std::{collections::BTreeMap, fmt::Debug, sync::Arc};
 
 /// Shift the RUNTIME_ENVIRONMENT_KEY by this many bits to the LSB
 ///
 /// 3 bits for 8 Byte alignment, and 1 bit to have encoding space for the RuntimeEnvironment.
+#[cfg(feature = "std")]
 const PROGRAM_ENVIRONMENT_KEY_SHIFT: u32 = 4;
+#[cfg(feature = "std")]
 static RUNTIME_ENVIRONMENT_KEY: std::sync::OnceLock<i32> = std::sync::OnceLock::<i32>::new();
 
 /// Returns (and if not done before generates) the encryption key for the VM pointer
+#[cfg(feature = "std")]
 pub fn get_runtime_environment_key() -> i32 {
     *RUNTIME_ENVIRONMENT_KEY
         .get_or_init(|| rand::thread_rng().gen::<i32>() >> PROGRAM_ENVIRONMENT_KEY_SHIFT)
@@ -342,7 +347,7 @@ impl<'a, C: ContextObject> EbpfVm<'a, C> {
             memory_mapping = MemoryMapping::new_identity();
         }
         EbpfVm {
-            host_stack_pointer: std::ptr::null_mut(),
+            host_stack_pointer: ptr::null_mut(),
             call_depth: 0,
             stack_pointer,
             context_object_pointer: context_object,
@@ -418,17 +423,20 @@ impl<'a, C: ContextObject> EbpfVm<'a, C> {
             0
         };
         let mut result = ProgramResult::Ok(0);
-        std::mem::swap(&mut result, &mut self.program_result);
+        mem::swap(&mut result, &mut self.program_result);
         (instruction_count, result)
     }
 
     /// Invokes a built-in function
     pub fn invoke_function(&mut self, function: BuiltinFunction<C>) {
         function(
+            #[cfg(feature = "std")]
             unsafe {
                 (self as *mut _ as *mut u64).offset(get_runtime_environment_key() as isize)
                     as *mut _
             },
+            #[cfg(not(feature = "std"))]
+            self,
             self.registers[1],
             self.registers[2],
             self.registers[3],

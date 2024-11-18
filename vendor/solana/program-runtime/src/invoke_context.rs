@@ -473,7 +473,7 @@ impl<'a> InvokeContext<'a> {
             .ok_or(InstructionError::UnsupportedProgramId)?;
         let function = match &entry.program {
             LoadedProgramType::Builtin(program) => program
-                .get_function_registry(SBPFVersion::V1)
+                .get_function_registry()
                 .lookup_by_key(ENTRYPOINT_KEY)
                 .map(|(_name, function)| function),
             _ => None,
@@ -492,13 +492,13 @@ impl<'a> InvokeContext<'a> {
         // For now, only built-ins are invoked from here, so the VM and its Config are irrelevant.
         let mock_config = Config::default();
         let empty_memory_mapping =
-            MemoryMapping::new(Vec::new(), &mock_config, SBPFVersion::V1).unwrap();
+            MemoryMapping::new(Vec::new(), &mock_config, &SBPFVersion::V1).unwrap();
         let mut vm = EbpfVm::new(
             self.programs_loaded_for_tx_batch
                 .environments
                 .program_runtime_v2
                 .clone(),
-            SBPFVersion::V1,
+            &SBPFVersion::V1,
             // Removes lifetime tracking
             unsafe { core::mem::transmute::<&mut InvokeContext, &mut InvokeContext>(self) },
             empty_memory_mapping,
