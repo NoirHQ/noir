@@ -3,6 +3,7 @@
 
 // // legacy module paths
 // pub use crate::signer::{keypair::*, null_signer::*, presigner::*, *};
+pub use crate::signer::{keypair::*, presigner::*};
 // use {
 //     crate::pubkey::Pubkey,
 //     generic_array::{typenum::U64, GenericArray},
@@ -15,12 +16,13 @@
 //     thiserror::Error,
 // };
 use {
+    alloc::vec::Vec,
     core::fmt,
     generic_array::{typenum::U64, GenericArray},
 };
 
-// /// Number of bytes in a signature
-// pub const SIGNATURE_BYTES: usize = 64;
+/// Number of bytes in a signature
+pub const SIGNATURE_BYTES: usize = 64;
 // /// Maximum string length of a base58 encoded signature
 // const MAX_BASE58_SIGNATURE_LEN: usize = 88;
 
@@ -32,33 +34,33 @@ pub struct Signature(GenericArray<u8, U64>);
 
 // impl crate::sanitize::Sanitize for Signature {}
 
-// impl Signature {
-//     #[deprecated(
-//         since = "1.16.4",
-//         note = "Please use 'Signature::from' or 'Signature::try_from' instead"
-//     )]
-//     pub fn new(signature_slice: &[u8]) -> Self {
-//         Self(GenericArray::clone_from_slice(signature_slice))
-//     }
+impl Signature {
+    // #[deprecated(
+    //     since = "1.16.4",
+    //     note = "Please use 'Signature::from' or 'Signature::try_from' instead"
+    // )]
+    // pub fn new(signature_slice: &[u8]) -> Self {
+    //     Self(GenericArray::clone_from_slice(signature_slice))
+    // }
 
-//     pub fn new_unique() -> Self {
-//         Self::from(std::array::from_fn(|_| rand::random()))
-//     }
+    pub fn new_unique() -> Self {
+        Self::from(core::array::from_fn(|_| rand::random()))
+    }
 
-//     pub(self) fn verify_verbose(
-//         &self,
-//         pubkey_bytes: &[u8],
-//         message_bytes: &[u8],
-//     ) -> Result<(), ed25519_dalek::SignatureError> {
-//         let publickey = ed25519_dalek::PublicKey::from_bytes(pubkey_bytes)?;
-//         let signature = self.0.as_slice().try_into()?;
-//         publickey.verify_strict(message_bytes, &signature)
-//     }
+    pub(self) fn verify_verbose(
+        &self,
+        pubkey_bytes: &[u8],
+        message_bytes: &[u8],
+    ) -> Result<(), ed25519_dalek::SignatureError> {
+        let publickey = ed25519_dalek::VerifyingKey::try_from(pubkey_bytes)?;
+        let signature = self.0.as_slice().try_into()?;
+        publickey.verify_strict(message_bytes, &signature)
+    }
 
-//     pub fn verify(&self, pubkey_bytes: &[u8], message_bytes: &[u8]) -> bool {
-//         self.verify_verbose(pubkey_bytes, message_bytes).is_ok()
-//     }
-// }
+    pub fn verify(&self, pubkey_bytes: &[u8], message_bytes: &[u8]) -> bool {
+        self.verify_verbose(pubkey_bytes, message_bytes).is_ok()
+    }
+}
 
 // pub trait Signable {
 //     fn sign(&mut self, keypair: &Keypair) {
@@ -76,11 +78,11 @@ pub struct Signature(GenericArray<u8, U64>);
 //     fn set_signature(&mut self, signature: Signature);
 // }
 
-// impl AsRef<[u8]> for Signature {
-//     fn as_ref(&self) -> &[u8] {
-//         &self.0[..]
-//     }
-// }
+impl AsRef<[u8]> for Signature {
+    fn as_ref(&self) -> &[u8] {
+        &self.0[..]
+    }
+}
 
 impl fmt::Debug for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -94,36 +96,36 @@ impl fmt::Debug for Signature {
 //     }
 // }
 
-// impl From<Signature> for [u8; 64] {
-//     fn from(signature: Signature) -> Self {
-//         signature.0.into()
-//     }
-// }
+impl From<Signature> for [u8; 64] {
+    fn from(signature: Signature) -> Self {
+        signature.0.into()
+    }
+}
 
-// impl From<[u8; SIGNATURE_BYTES]> for Signature {
-//     #[inline]
-//     fn from(signature: [u8; SIGNATURE_BYTES]) -> Self {
-//         Self(GenericArray::from(signature))
-//     }
-// }
+impl From<[u8; SIGNATURE_BYTES]> for Signature {
+    #[inline]
+    fn from(signature: [u8; SIGNATURE_BYTES]) -> Self {
+        Self(GenericArray::from(signature))
+    }
+}
 
-// impl<'a> TryFrom<&'a [u8]> for Signature {
-//     type Error = <[u8; SIGNATURE_BYTES] as TryFrom<&'a [u8]>>::Error;
+impl<'a> TryFrom<&'a [u8]> for Signature {
+    type Error = <[u8; SIGNATURE_BYTES] as TryFrom<&'a [u8]>>::Error;
 
-//     #[inline]
-//     fn try_from(signature: &'a [u8]) -> Result<Self, Self::Error> {
-//         <[u8; SIGNATURE_BYTES]>::try_from(signature).map(Self::from)
-//     }
-// }
+    #[inline]
+    fn try_from(signature: &'a [u8]) -> Result<Self, Self::Error> {
+        <[u8; SIGNATURE_BYTES]>::try_from(signature).map(Self::from)
+    }
+}
 
-// impl TryFrom<Vec<u8>> for Signature {
-//     type Error = <[u8; SIGNATURE_BYTES] as TryFrom<Vec<u8>>>::Error;
+impl TryFrom<Vec<u8>> for Signature {
+    type Error = <[u8; SIGNATURE_BYTES] as TryFrom<Vec<u8>>>::Error;
 
-//     #[inline]
-//     fn try_from(signature: Vec<u8>) -> Result<Self, Self::Error> {
-//         <[u8; SIGNATURE_BYTES]>::try_from(signature).map(Self::from)
-//     }
-// }
+    #[inline]
+    fn try_from(signature: Vec<u8>) -> Result<Self, Self::Error> {
+        <[u8; SIGNATURE_BYTES]>::try_from(signature).map(Self::from)
+    }
+}
 
 // #[derive(Debug, Clone, PartialEq, Eq, Error)]
 // pub enum ParseSignatureError {

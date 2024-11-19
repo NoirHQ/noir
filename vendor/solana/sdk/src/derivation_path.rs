@@ -10,15 +10,15 @@
 //! with 501 being the Solana coin type.
 
 use {
-    core::{iter::IntoIterator, slice::Iter},
-    derivation_path::{ChildIndex, DerivationPath as DerivationPathInner},
-    std::{
+    core::{
         convert::{Infallible, TryFrom},
         fmt,
         str::FromStr,
     },
+    core::{iter::IntoIterator, slice::Iter},
+    derivation_path::{ChildIndex, DerivationPath as DerivationPathInner},
     thiserror::Error,
-    uriparse::URIReference,
+    // uriparse::URIReference,
 };
 
 const ACCOUNT_INDEX: usize = 2;
@@ -143,51 +143,51 @@ impl DerivationPath {
         }
     }
 
-    pub fn from_uri_key_query(uri: &URIReference<'_>) -> Result<Option<Self>, DerivationPathError> {
-        Self::from_uri(uri, true)
-    }
+    // pub fn from_uri_key_query(uri: &URIReference<'_>) -> Result<Option<Self>, DerivationPathError> {
+    //     Self::from_uri(uri, true)
+    // }
 
-    pub fn from_uri_any_query(uri: &URIReference<'_>) -> Result<Option<Self>, DerivationPathError> {
-        Self::from_uri(uri, false)
-    }
+    // pub fn from_uri_any_query(uri: &URIReference<'_>) -> Result<Option<Self>, DerivationPathError> {
+    //     Self::from_uri(uri, false)
+    // }
 
-    fn from_uri(
-        uri: &URIReference<'_>,
-        key_only: bool,
-    ) -> Result<Option<Self>, DerivationPathError> {
-        if let Some(query) = uri.query() {
-            let query_str = query.as_str();
-            if query_str.is_empty() {
-                return Ok(None);
-            }
-            let query = qstring::QString::from(query_str);
-            if query.len() > 1 {
-                return Err(DerivationPathError::InvalidDerivationPath(
-                    "invalid query string, extra fields not supported".to_string(),
-                ));
-            }
-            let key = query.get(QueryKey::Key.as_ref());
-            if let Some(key) = key {
-                // Use from_key_str instead of TryInto here to make it more explicit that this
-                // generates a Solana bip44 DerivationPath
-                return Self::from_key_str(key).map(Some);
-            }
-            if key_only {
-                return Err(DerivationPathError::InvalidDerivationPath(format!(
-                    "invalid query string `{query_str}`, only `key` supported",
-                )));
-            }
-            let full_path = query.get(QueryKey::FullPath.as_ref());
-            if let Some(full_path) = full_path {
-                return Self::from_absolute_path_str(full_path).map(Some);
-            }
-            Err(DerivationPathError::InvalidDerivationPath(format!(
-                "invalid query string `{query_str}`, only `key` and `full-path` supported",
-            )))
-        } else {
-            Ok(None)
-        }
-    }
+    // fn from_uri(
+    //     uri: &URIReference<'_>,
+    //     key_only: bool,
+    // ) -> Result<Option<Self>, DerivationPathError> {
+    //     if let Some(query) = uri.query() {
+    //         let query_str = query.as_str();
+    //         if query_str.is_empty() {
+    //             return Ok(None);
+    //         }
+    //         let query = qstring::QString::from(query_str);
+    //         if query.len() > 1 {
+    //             return Err(DerivationPathError::InvalidDerivationPath(
+    //                 "invalid query string, extra fields not supported".to_string(),
+    //             ));
+    //         }
+    //         let key = query.get(QueryKey::Key.as_ref());
+    //         if let Some(key) = key {
+    //             // Use from_key_str instead of TryInto here to make it more explicit that this
+    //             // generates a Solana bip44 DerivationPath
+    //             return Self::from_key_str(key).map(Some);
+    //         }
+    //         if key_only {
+    //             return Err(DerivationPathError::InvalidDerivationPath(format!(
+    //                 "invalid query string `{query_str}`, only `key` supported",
+    //             )));
+    //         }
+    //         let full_path = query.get(QueryKey::FullPath.as_ref());
+    //         if let Some(full_path) = full_path {
+    //             return Self::from_absolute_path_str(full_path).map(Some);
+    //         }
+    //         Err(DerivationPathError::InvalidDerivationPath(format!(
+    //             "invalid query string `{query_str}`, only `key` and `full-path` supported",
+    //         )))
+    //     } else {
+    //         Ok(None)
+    //     }
+    // }
 }
 
 impl fmt::Debug for DerivationPath {
@@ -241,8 +241,8 @@ impl AsRef<str> for QueryKey {
     }
 }
 
-impl std::fmt::Display for QueryKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Display for QueryKey {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         let s: &str = self.as_ref();
         write!(f, "{s}")
     }
@@ -268,7 +268,11 @@ impl Bip44 for Solana {
 
 #[cfg(test)]
 mod tests {
-    use {super::*, assert_matches::assert_matches, uriparse::URIReferenceBuilder};
+    use {
+        super::*,
+        // assert_matches::assert_matches,
+        // uriparse::URIReferenceBuilder,
+    };
 
     struct TestCoin;
     impl Bip44 for TestCoin {
@@ -371,381 +375,381 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_from_uri() {
-        let derivation_path = DerivationPath::new_bip44(Some(0), Some(0));
+    // #[test]
+    // fn test_from_uri() {
+    //     let derivation_path = DerivationPath::new_bip44(Some(0), Some(0));
 
-        // test://path?key=0/0
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key=0/0"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(
-            DerivationPath::from_uri(&uri, true).unwrap(),
-            Some(derivation_path.clone())
-        );
+    //     // test://path?key=0/0
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key=0/0"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(
+    //         DerivationPath::from_uri(&uri, true).unwrap(),
+    //         Some(derivation_path.clone())
+    //     );
 
-        // test://path?key=0'/0'
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key=0'/0'"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(
-            DerivationPath::from_uri(&uri, true).unwrap(),
-            Some(derivation_path.clone())
-        );
+    //     // test://path?key=0'/0'
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key=0'/0'"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(
+    //         DerivationPath::from_uri(&uri, true).unwrap(),
+    //         Some(derivation_path.clone())
+    //     );
 
-        // test://path?key=0\'/0\'
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key=0\'/0\'"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(
-            DerivationPath::from_uri(&uri, true).unwrap(),
-            Some(derivation_path)
-        );
+    //     // test://path?key=0\'/0\'
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key=0\'/0\'"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(
+    //         DerivationPath::from_uri(&uri, true).unwrap(),
+    //         Some(derivation_path)
+    //     );
 
-        // test://path?key=m
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key=m"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(
-            DerivationPath::from_uri(&uri, true).unwrap(),
-            Some(DerivationPath::new_bip44(None, None))
-        );
+    //     // test://path?key=m
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key=m"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(
+    //         DerivationPath::from_uri(&uri, true).unwrap(),
+    //         Some(DerivationPath::new_bip44(None, None))
+    //     );
 
-        // test://path
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(DerivationPath::from_uri(&uri, true).unwrap(), None);
+    //     // test://path
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(DerivationPath::from_uri(&uri, true).unwrap(), None);
 
-        // test://path?
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some(""))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(DerivationPath::from_uri(&uri, true).unwrap(), None);
+    //     // test://path?
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some(""))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(DerivationPath::from_uri(&uri, true).unwrap(), None);
 
-        // test://path?key=0/0/0
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key=0/0/0"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, true),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?key=0/0/0
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key=0/0/0"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, true),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?key=0/0&bad-key=0/0
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key=0/0&bad-key=0/0"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, true),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?key=0/0&bad-key=0/0
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key=0/0&bad-key=0/0"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, true),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?bad-key=0/0
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("bad-key=0/0"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, true),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?bad-key=0/0
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("bad-key=0/0"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, true),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?key=bad-value
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key=bad-value"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, true),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?key=bad-value
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key=bad-value"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, true),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?key=
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key="))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, true),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?key=
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key="))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, true),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?key
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, true),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
-    }
+    //     // test://path?key
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, true),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
+    // }
 
-    #[test]
-    fn test_from_uri_full_path() {
-        let derivation_path = DerivationPath::from_absolute_path_str("m/44'/999'/1'").unwrap();
+    // #[test]
+    // fn test_from_uri_full_path() {
+    //     let derivation_path = DerivationPath::from_absolute_path_str("m/44'/999'/1'").unwrap();
 
-        // test://path?full-path=m/44/999/1
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path=m/44/999/1"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(
-            DerivationPath::from_uri(&uri, false).unwrap(),
-            Some(derivation_path.clone())
-        );
+    //     // test://path?full-path=m/44/999/1
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path=m/44/999/1"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(
+    //         DerivationPath::from_uri(&uri, false).unwrap(),
+    //         Some(derivation_path.clone())
+    //     );
 
-        // test://path?full-path=m/44'/999'/1'
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path=m/44'/999'/1'"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(
-            DerivationPath::from_uri(&uri, false).unwrap(),
-            Some(derivation_path.clone())
-        );
+    //     // test://path?full-path=m/44'/999'/1'
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path=m/44'/999'/1'"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(
+    //         DerivationPath::from_uri(&uri, false).unwrap(),
+    //         Some(derivation_path.clone())
+    //     );
 
-        // test://path?full-path=m/44\'/999\'/1\'
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path=m/44\'/999\'/1\'"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(
-            DerivationPath::from_uri(&uri, false).unwrap(),
-            Some(derivation_path)
-        );
+    //     // test://path?full-path=m/44\'/999\'/1\'
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path=m/44\'/999\'/1\'"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(
+    //         DerivationPath::from_uri(&uri, false).unwrap(),
+    //         Some(derivation_path)
+    //     );
 
-        // test://path?full-path=m
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path=m"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_eq!(
-            DerivationPath::from_uri(&uri, false).unwrap(),
-            Some(DerivationPath(DerivationPathInner::from_str("m").unwrap()))
-        );
+    //     // test://path?full-path=m
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path=m"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_eq!(
+    //         DerivationPath::from_uri(&uri, false).unwrap(),
+    //         Some(DerivationPath(DerivationPathInner::from_str("m").unwrap()))
+    //     );
 
-        // test://path?full-path=m/44/999/1, only `key` supported
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path=m/44/999/1"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, true),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?full-path=m/44/999/1, only `key` supported
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path=m/44/999/1"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, true),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?key=0/0&full-path=m/44/999/1
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("key=0/0&full-path=m/44/999/1"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, false),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?key=0/0&full-path=m/44/999/1
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("key=0/0&full-path=m/44/999/1"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, false),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?full-path=m/44/999/1&bad-key=0/0
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path=m/44/999/1&bad-key=0/0"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, false),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?full-path=m/44/999/1&bad-key=0/0
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path=m/44/999/1&bad-key=0/0"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, false),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?full-path=bad-value
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path=bad-value"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, false),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?full-path=bad-value
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path=bad-value"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, false),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?full-path=
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path="))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, false),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
+    //     // test://path?full-path=
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path="))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, false),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
 
-        // test://path?full-path
-        let mut builder = URIReferenceBuilder::new();
-        builder
-            .try_scheme(Some("test"))
-            .unwrap()
-            .try_authority(Some("path"))
-            .unwrap()
-            .try_path("")
-            .unwrap()
-            .try_query(Some("full-path"))
-            .unwrap();
-        let uri = builder.build().unwrap();
-        assert_matches!(
-            DerivationPath::from_uri(&uri, false),
-            Err(DerivationPathError::InvalidDerivationPath(_))
-        );
-    }
+    //     // test://path?full-path
+    //     let mut builder = URIReferenceBuilder::new();
+    //     builder
+    //         .try_scheme(Some("test"))
+    //         .unwrap()
+    //         .try_authority(Some("path"))
+    //         .unwrap()
+    //         .try_path("")
+    //         .unwrap()
+    //         .try_query(Some("full-path"))
+    //         .unwrap();
+    //     let uri = builder.build().unwrap();
+    //     assert_matches!(
+    //         DerivationPath::from_uri(&uri, false),
+    //         Err(DerivationPathError::InvalidDerivationPath(_))
+    //     );
+    // }
 
     #[test]
     fn test_get_query() {

@@ -9,21 +9,21 @@ use {
         signature::{PresignerError, Signature},
         transaction::TransactionError,
     },
-    itertools::Itertools,
-    std::{
-        error,
-        fs::{self, File, OpenOptions},
-        io::{Read, Write},
-        ops::Deref,
-        path::Path,
+    alloc::{
+        boxed::Box,
+        string::{String, ToString},
+        vec::Vec,
     },
+    core::{error, ops::Deref},
+    core2::io::{Read, Write},
+    itertools::Itertools,
     thiserror::Error,
 };
 
 pub mod keypair;
-pub mod null_signer;
+// pub mod null_signer;
 pub mod presigner;
-pub mod signers;
+// pub mod signers;
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum SignerError {
@@ -126,8 +126,8 @@ impl PartialEq for dyn Signer {
 
 impl Eq for dyn Signer {}
 
-impl std::fmt::Debug for dyn Signer {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Debug for dyn Signer {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
         write!(fmt, "Signer: {:?}", self.pubkey())
     }
 }
@@ -141,36 +141,36 @@ pub fn unique_signers(signers: Vec<&dyn Signer>) -> Vec<&dyn Signer> {
 /// written, and derived from sources.
 pub trait EncodableKey: Sized {
     fn read<R: Read>(reader: &mut R) -> Result<Self, Box<dyn error::Error>>;
-    fn read_from_file<F: AsRef<Path>>(path: F) -> Result<Self, Box<dyn error::Error>> {
-        let mut file = File::open(path.as_ref())?;
-        Self::read(&mut file)
-    }
+    // fn read_from_file<F: AsRef<Path>>(path: F) -> Result<Self, Box<dyn error::Error>> {
+    //     let mut file = File::open(path.as_ref())?;
+    //     Self::read(&mut file)
+    // }
     fn write<W: Write>(&self, writer: &mut W) -> Result<String, Box<dyn error::Error>>;
-    fn write_to_file<F: AsRef<Path>>(&self, outfile: F) -> Result<String, Box<dyn error::Error>> {
-        let outfile = outfile.as_ref();
+    // fn write_to_file<F: AsRef<Path>>(&self, outfile: F) -> Result<String, Box<dyn error::Error>> {
+    //     let outfile = outfile.as_ref();
 
-        if let Some(outdir) = outfile.parent() {
-            fs::create_dir_all(outdir)?;
-        }
+    //     if let Some(outdir) = outfile.parent() {
+    //         fs::create_dir_all(outdir)?;
+    //     }
 
-        let mut f = {
-            #[cfg(not(unix))]
-            {
-                OpenOptions::new()
-            }
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::OpenOptionsExt;
-                OpenOptions::new().mode(0o600)
-            }
-        }
-        .write(true)
-        .truncate(true)
-        .create(true)
-        .open(outfile)?;
+    //     let mut f = {
+    //         #[cfg(not(unix))]
+    //         {
+    //             OpenOptions::new()
+    //         }
+    //         #[cfg(unix)]
+    //         {
+    //             use std::os::unix::fs::OpenOptionsExt;
+    //             OpenOptions::new().mode(0o600)
+    //         }
+    //     }
+    //     .write(true)
+    //     .truncate(true)
+    //     .create(true)
+    //     .open(outfile)?;
 
-        self.write(&mut f)
-    }
+    //     self.write(&mut f)
+    // }
 }
 
 /// The `SeedDerivable` trait defines the interface by which cryptographic keys/keypairs are
@@ -204,50 +204,50 @@ mod tests {
         signers.iter().map(|x| x.pubkey()).collect()
     }
 
-    #[test]
-    fn test_unique_signers() {
-        let alice = Keypair::new();
-        let bob = Keypair::new();
-        assert_eq!(
-            pubkeys(&unique_signers(vec![&alice, &bob, &alice])),
-            pubkeys(&[&alice, &bob])
-        );
-    }
+    // #[test]
+    // fn test_unique_signers() {
+    //     let alice = Keypair::new();
+    //     let bob = Keypair::new();
+    //     assert_eq!(
+    //         pubkeys(&unique_signers(vec![&alice, &bob, &alice])),
+    //         pubkeys(&[&alice, &bob])
+    //     );
+    // }
 
-    #[test]
-    fn test_containers() {
-        use std::{rc::Rc, sync::Arc};
+    // #[test]
+    // fn test_containers() {
+    //     use std::{rc::Rc, sync::Arc};
 
-        struct Foo<S: Signer> {
-            #[allow(unused)]
-            signer: S,
-        }
+    //     struct Foo<S: Signer> {
+    //         #[allow(unused)]
+    //         signer: S,
+    //     }
 
-        fn foo(_s: impl Signer) {}
+    //     fn foo(_s: impl Signer) {}
 
-        let _arc_signer = Foo {
-            signer: Arc::new(Keypair::new()),
-        };
-        foo(Arc::new(Keypair::new()));
+    //     let _arc_signer = Foo {
+    //         signer: Arc::new(Keypair::new()),
+    //     };
+    //     foo(Arc::new(Keypair::new()));
 
-        let _rc_signer = Foo {
-            signer: Rc::new(Keypair::new()),
-        };
-        foo(Rc::new(Keypair::new()));
+    //     let _rc_signer = Foo {
+    //         signer: Rc::new(Keypair::new()),
+    //     };
+    //     foo(Rc::new(Keypair::new()));
 
-        let _ref_signer = Foo {
-            signer: &Keypair::new(),
-        };
-        foo(&Keypair::new());
+    //     let _ref_signer = Foo {
+    //         signer: &Keypair::new(),
+    //     };
+    //     foo(&Keypair::new());
 
-        let _box_signer = Foo {
-            signer: Box::new(Keypair::new()),
-        };
-        foo(Box::new(Keypair::new()));
+    //     let _box_signer = Foo {
+    //         signer: Box::new(Keypair::new()),
+    //     };
+    //     foo(Box::new(Keypair::new()));
 
-        let _signer = Foo {
-            signer: Keypair::new(),
-        };
-        foo(Keypair::new());
-    }
+    //     let _signer = Foo {
+    //         signer: Keypair::new(),
+    //     };
+    //     foo(Keypair::new());
+    // }
 }
