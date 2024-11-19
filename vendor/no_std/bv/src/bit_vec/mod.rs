@@ -2,6 +2,7 @@ use super::slice::*;
 use super::storage::*;
 use super::traits::*;
 
+use alloc::{boxed::Box, vec::Vec};
 use core::cmp::{max, Ordering};
 use core::ptr;
 

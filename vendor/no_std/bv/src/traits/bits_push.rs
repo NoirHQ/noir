@@ -1,5 +1,6 @@
 use super::BitsMut;
 use crate::storage::BlockType;
+use alloc::vec::Vec;
 
 /// Bit vector operations that change the length.
 pub trait BitsPush: BitsMut {

@@ -2,6 +2,7 @@ use crate::iter::BlockIter;
 use crate::BlockType;
 use crate::{Bits, BitsMut, BitsPush};
 
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 use core::ops;
 

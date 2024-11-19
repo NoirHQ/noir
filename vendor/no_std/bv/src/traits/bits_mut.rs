@@ -1,5 +1,6 @@
 use super::Bits;
 use crate::storage::{Address, BlockType};
+use alloc::{boxed::Box, vec::Vec};
 
 /// Mutable bit vector operations that don’t affect the length.
 ///

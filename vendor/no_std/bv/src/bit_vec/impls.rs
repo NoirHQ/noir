@@ -7,6 +7,7 @@ use crate::traits::get_masked_block;
 
 use crate::range_compat::*;
 
+use alloc::{boxed::Box, vec::Vec};
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{Hash, Hasher};

@@ -1,6 +1,7 @@
 use super::BitsMut;
 use crate::storage::{Address, BlockType};
 use crate::BitVec;
+use alloc::{boxed::Box, vec::Vec};
 
 /// Read-only bit vector operations.
 ///
