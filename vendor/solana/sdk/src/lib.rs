@@ -65,8 +65,9 @@ pub use solana_program::{
     account_info, blake3, borsh1, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable, clock,
     decode_error, ed25519_program, epoch_schedule, fee_calculator, hash, instruction, keccak,
     lamports, loader_upgradeable_instruction, loader_v4, loader_v4_instruction, message,
-    native_token, program, program_stubs, rent, sanitize, secp256k1_program, secp256k1_recover,
-    short_vec, slot_history, stable_layout, syscalls, system_instruction, system_program, sysvar,
+    native_token, nonce, program, program_stubs, rent, sanitize, secp256k1_program,
+    secp256k1_recover, short_vec, slot_history, stable_layout, syscalls, system_instruction,
+    system_program, sysvar,
 };
 
 pub mod account;
@@ -94,7 +95,7 @@ pub mod inner_instruction;
 //pub mod log;
 pub mod native_loader;
 //pub mod net;
-//pub mod nonce_account;
+pub mod nonce_account;
 //pub mod offchain_message;
 pub mod packet;
 //pub mod poh_config;
@@ -102,7 +103,7 @@ pub mod precompiles;
 pub mod program_utils;
 pub mod pubkey;
 //pub mod quic;
-//pub mod recent_blockhashes_account;
+pub mod recent_blockhashes_account;
 //pub mod reward_type;
 //pub mod rpc_port;
 pub mod secp256k1_instruction;

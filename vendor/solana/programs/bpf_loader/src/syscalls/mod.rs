@@ -46,7 +46,7 @@ use {
         feature_set::{
             self,
             blake3_syscall_enabled,
-            curve25519_syscall_enabled,
+            // curve25519_syscall_enabled,
             disable_deploy_of_alloc_free_syscall,
             disable_fees_sysvar,
             // enable_alt_bn128_compression_syscall,
@@ -282,7 +282,7 @@ pub fn create_program_runtime_environment_v1<'a>(
     //     feature_set.is_active(&enable_alt_bn128_compression_syscall::id());
     // let enable_big_mod_exp_syscall = feature_set.is_active(&enable_big_mod_exp_syscall::id());
     let blake3_syscall_enabled = feature_set.is_active(&blake3_syscall_enabled::id());
-    let curve25519_syscall_enabled = feature_set.is_active(&curve25519_syscall_enabled::id());
+    // let curve25519_syscall_enabled = feature_set.is_active(&curve25519_syscall_enabled::id());
     let disable_fees_sysvar = feature_set.is_active(&disable_fees_sysvar::id());
     let epoch_rewards_syscall_enabled =
         feature_set.is_active(&enable_partitioned_epoch_reward::id());
@@ -2633,691 +2633,691 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_syscall_edwards_curve_point_validation() {
-        use solana_zk_token_sdk::curve25519::curve_syscall_traits::CURVE25519_EDWARDS;
-
-        let config = Config::default();
-        prepare_mockup!(invoke_context, program_id, bpf_loader::id());
-
-        let valid_bytes: [u8; 32] = [
-            201, 179, 241, 122, 180, 185, 239, 50, 183, 52, 221, 0, 153, 195, 43, 18, 22, 38, 187,
-            206, 179, 192, 210, 58, 53, 45, 150, 98, 89, 17, 158, 11,
-        ];
-        let valid_bytes_va = 0x100000000;
-
-        let invalid_bytes: [u8; 32] = [
-            120, 140, 152, 233, 41, 227, 203, 27, 87, 115, 25, 251, 219, 5, 84, 148, 117, 38, 84,
-            60, 87, 144, 161, 146, 42, 34, 91, 155, 158, 189, 121, 79,
-        ];
-        let invalid_bytes_va = 0x200000000;
-
-        let mut memory_mapping = MemoryMapping::new(
-            vec![
-                MemoryRegion::new_readonly(&valid_bytes, valid_bytes_va),
-                MemoryRegion::new_readonly(&invalid_bytes, invalid_bytes_va),
-            ],
-            &config,
-            &SBPFVersion::V2,
-        )
-        .unwrap();
-
-        invoke_context.mock_set_remaining(
-            (invoke_context
-                .get_compute_budget()
-                .curve25519_edwards_validate_point_cost)
-                * 2,
-        );
-
-        let result = SyscallCurvePointValidation::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            valid_bytes_va,
-            0,
-            0,
-            0,
-            &mut memory_mapping,
-        );
-        assert_eq!(0, result.unwrap());
-
-        let result = SyscallCurvePointValidation::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            invalid_bytes_va,
-            0,
-            0,
-            0,
-            &mut memory_mapping,
-        );
-        assert_eq!(1, result.unwrap());
-
-        let result = SyscallCurvePointValidation::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            valid_bytes_va,
-            0,
-            0,
-            0,
-            &mut memory_mapping,
-        );
-        assert_matches!(
-            result,
-            Result::Err(error) if error.downcast_ref::<InstructionError>().unwrap() == &InstructionError::ComputationalBudgetExceeded
-        );
-    }
-
-    #[test]
-    fn test_syscall_ristretto_curve_point_validation() {
-        use solana_zk_token_sdk::curve25519::curve_syscall_traits::CURVE25519_RISTRETTO;
-
-        let config = Config::default();
-        prepare_mockup!(invoke_context, program_id, bpf_loader::id());
-
-        let valid_bytes: [u8; 32] = [
-            226, 242, 174, 10, 106, 188, 78, 113, 168, 132, 169, 97, 197, 0, 81, 95, 88, 227, 11,
-            106, 165, 130, 221, 141, 182, 166, 89, 69, 224, 141, 45, 118,
-        ];
-        let valid_bytes_va = 0x100000000;
-
-        let invalid_bytes: [u8; 32] = [
-            120, 140, 152, 233, 41, 227, 203, 27, 87, 115, 25, 251, 219, 5, 84, 148, 117, 38, 84,
-            60, 87, 144, 161, 146, 42, 34, 91, 155, 158, 189, 121, 79,
-        ];
-        let invalid_bytes_va = 0x200000000;
-
-        let mut memory_mapping = MemoryMapping::new(
-            vec![
-                MemoryRegion::new_readonly(&valid_bytes, valid_bytes_va),
-                MemoryRegion::new_readonly(&invalid_bytes, invalid_bytes_va),
-            ],
-            &config,
-            &SBPFVersion::V2,
-        )
-        .unwrap();
-
-        invoke_context.mock_set_remaining(
-            (invoke_context
-                .get_compute_budget()
-                .curve25519_ristretto_validate_point_cost)
-                * 2,
-        );
-
-        let result = SyscallCurvePointValidation::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            valid_bytes_va,
-            0,
-            0,
-            0,
-            &mut memory_mapping,
-        );
-        assert_eq!(0, result.unwrap());
-
-        let result = SyscallCurvePointValidation::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            invalid_bytes_va,
-            0,
-            0,
-            0,
-            &mut memory_mapping,
-        );
-        assert_eq!(1, result.unwrap());
-
-        let result = SyscallCurvePointValidation::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            valid_bytes_va,
-            0,
-            0,
-            0,
-            &mut memory_mapping,
-        );
-        assert_matches!(
-            result,
-            Result::Err(error) if error.downcast_ref::<InstructionError>().unwrap() == &InstructionError::ComputationalBudgetExceeded
-        );
-    }
-
-    #[test]
-    fn test_syscall_edwards_curve_group_ops() {
-        use solana_zk_token_sdk::curve25519::curve_syscall_traits::{
-            ADD, CURVE25519_EDWARDS, MUL, SUB,
-        };
-
-        let config = Config::default();
-        prepare_mockup!(invoke_context, program_id, bpf_loader::id());
-
-        let left_point: [u8; 32] = [
-            33, 124, 71, 170, 117, 69, 151, 247, 59, 12, 95, 125, 133, 166, 64, 5, 2, 27, 90, 27,
-            200, 167, 59, 164, 52, 54, 52, 200, 29, 13, 34, 213,
-        ];
-        let left_point_va = 0x100000000;
-        let right_point: [u8; 32] = [
-            70, 222, 137, 221, 253, 204, 71, 51, 78, 8, 124, 1, 67, 200, 102, 225, 122, 228, 111,
-            183, 129, 14, 131, 210, 212, 95, 109, 246, 55, 10, 159, 91,
-        ];
-        let right_point_va = 0x200000000;
-        let scalar: [u8; 32] = [
-            254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
-            78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
-        ];
-        let scalar_va = 0x300000000;
-        let invalid_point: [u8; 32] = [
-            120, 140, 152, 233, 41, 227, 203, 27, 87, 115, 25, 251, 219, 5, 84, 148, 117, 38, 84,
-            60, 87, 144, 161, 146, 42, 34, 91, 155, 158, 189, 121, 79,
-        ];
-        let invalid_point_va = 0x400000000;
-        let mut result_point: [u8; 32] = [0; 32];
-        let result_point_va = 0x500000000;
-
-        let mut memory_mapping = MemoryMapping::new(
-            vec![
-                MemoryRegion::new_readonly(bytes_of_slice(&left_point), left_point_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&right_point), right_point_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&scalar), scalar_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&invalid_point), invalid_point_va),
-                MemoryRegion::new_writable(bytes_of_slice_mut(&mut result_point), result_point_va),
-            ],
-            &config,
-            &SBPFVersion::V2,
-        )
-        .unwrap();
-
-        invoke_context.mock_set_remaining(
-            (invoke_context
-                .get_compute_budget()
-                .curve25519_edwards_add_cost
-                + invoke_context
-                    .get_compute_budget()
-                    .curve25519_edwards_subtract_cost
-                + invoke_context
-                    .get_compute_budget()
-                    .curve25519_edwards_multiply_cost)
-                * 2,
-        );
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            ADD,
-            left_point_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(0, result.unwrap());
-        let expected_sum = [
-            7, 251, 187, 86, 186, 232, 57, 242, 193, 236, 49, 200, 90, 29, 254, 82, 46, 80, 83, 70,
-            244, 153, 23, 156, 2, 138, 207, 51, 165, 38, 200, 85,
-        ];
-        assert_eq!(expected_sum, result_point);
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            ADD,
-            invalid_point_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-        assert_eq!(1, result.unwrap());
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            SUB,
-            left_point_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(0, result.unwrap());
-        let expected_difference = [
-            60, 87, 90, 68, 232, 25, 7, 172, 247, 120, 158, 104, 52, 127, 94, 244, 5, 79, 253, 15,
-            48, 69, 82, 134, 155, 70, 188, 81, 108, 95, 212, 9,
-        ];
-        assert_eq!(expected_difference, result_point);
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            SUB,
-            invalid_point_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-        assert_eq!(1, result.unwrap());
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            MUL,
-            scalar_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        result.unwrap();
-        let expected_product = [
-            64, 150, 40, 55, 80, 49, 217, 209, 105, 229, 181, 65, 241, 68, 2, 106, 220, 234, 211,
-            71, 159, 76, 156, 114, 242, 68, 147, 31, 243, 211, 191, 124,
-        ];
-        assert_eq!(expected_product, result_point);
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            MUL,
-            scalar_va,
-            invalid_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-        assert_eq!(1, result.unwrap());
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            MUL,
-            scalar_va,
-            invalid_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-        assert_matches!(
-            result,
-            Result::Err(error) if error.downcast_ref::<InstructionError>().unwrap() == &InstructionError::ComputationalBudgetExceeded
-        );
-    }
-
-    #[test]
-    fn test_syscall_ristretto_curve_group_ops() {
-        use solana_zk_token_sdk::curve25519::curve_syscall_traits::{
-            ADD, CURVE25519_RISTRETTO, MUL, SUB,
-        };
-
-        let config = Config::default();
-        prepare_mockup!(invoke_context, program_id, bpf_loader::id());
-
-        let left_point: [u8; 32] = [
-            208, 165, 125, 204, 2, 100, 218, 17, 170, 194, 23, 9, 102, 156, 134, 136, 217, 190, 98,
-            34, 183, 194, 228, 153, 92, 11, 108, 103, 28, 57, 88, 15,
-        ];
-        let left_point_va = 0x100000000;
-        let right_point: [u8; 32] = [
-            208, 241, 72, 163, 73, 53, 32, 174, 54, 194, 71, 8, 70, 181, 244, 199, 93, 147, 99,
-            231, 162, 127, 25, 40, 39, 19, 140, 132, 112, 212, 145, 108,
-        ];
-        let right_point_va = 0x200000000;
-        let scalar: [u8; 32] = [
-            254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
-            78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
-        ];
-        let scalar_va = 0x300000000;
-        let invalid_point: [u8; 32] = [
-            120, 140, 152, 233, 41, 227, 203, 27, 87, 115, 25, 251, 219, 5, 84, 148, 117, 38, 84,
-            60, 87, 144, 161, 146, 42, 34, 91, 155, 158, 189, 121, 79,
-        ];
-        let invalid_point_va = 0x400000000;
-        let mut result_point: [u8; 32] = [0; 32];
-        let result_point_va = 0x500000000;
-
-        let mut memory_mapping = MemoryMapping::new(
-            vec![
-                MemoryRegion::new_readonly(bytes_of_slice(&left_point), left_point_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&right_point), right_point_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&scalar), scalar_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&invalid_point), invalid_point_va),
-                MemoryRegion::new_writable(bytes_of_slice_mut(&mut result_point), result_point_va),
-            ],
-            &config,
-            &SBPFVersion::V2,
-        )
-        .unwrap();
-
-        invoke_context.mock_set_remaining(
-            (invoke_context
-                .get_compute_budget()
-                .curve25519_ristretto_add_cost
-                + invoke_context
-                    .get_compute_budget()
-                    .curve25519_ristretto_subtract_cost
-                + invoke_context
-                    .get_compute_budget()
-                    .curve25519_ristretto_multiply_cost)
-                * 2,
-        );
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            ADD,
-            left_point_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(0, result.unwrap());
-        let expected_sum = [
-            78, 173, 9, 241, 180, 224, 31, 107, 176, 210, 144, 240, 118, 73, 70, 191, 128, 119,
-            141, 113, 125, 215, 161, 71, 49, 176, 87, 38, 180, 177, 39, 78,
-        ];
-        assert_eq!(expected_sum, result_point);
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            ADD,
-            invalid_point_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-        assert_eq!(1, result.unwrap());
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            SUB,
-            left_point_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(0, result.unwrap());
-        let expected_difference = [
-            150, 72, 222, 61, 148, 79, 96, 130, 151, 176, 29, 217, 231, 211, 0, 215, 76, 86, 212,
-            146, 110, 128, 24, 151, 187, 144, 108, 233, 221, 208, 157, 52,
-        ];
-        assert_eq!(expected_difference, result_point);
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            SUB,
-            invalid_point_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(1, result.unwrap());
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            MUL,
-            scalar_va,
-            right_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        result.unwrap();
-        let expected_product = [
-            4, 16, 46, 2, 53, 151, 201, 133, 117, 149, 232, 164, 119, 109, 136, 20, 153, 24, 124,
-            21, 101, 124, 80, 19, 119, 100, 77, 108, 65, 187, 228, 5,
-        ];
-        assert_eq!(expected_product, result_point);
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            MUL,
-            scalar_va,
-            invalid_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(1, result.unwrap());
-
-        let result = SyscallCurveGroupOps::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            MUL,
-            scalar_va,
-            invalid_point_va,
-            result_point_va,
-            &mut memory_mapping,
-        );
-        assert_matches!(
-            result,
-            Result::Err(error) if error.downcast_ref::<InstructionError>().unwrap() == &InstructionError::ComputationalBudgetExceeded
-        );
-    }
-
-    #[test]
-    fn test_syscall_multiscalar_multiplication() {
-        use solana_zk_token_sdk::curve25519::curve_syscall_traits::{
-            CURVE25519_EDWARDS, CURVE25519_RISTRETTO,
-        };
-
-        let config = Config::default();
-        prepare_mockup!(invoke_context, program_id, bpf_loader::id());
-
-        let scalar_a: [u8; 32] = [
-            254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
-            78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
-        ];
-        let scalar_b: [u8; 32] = [
-            254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
-            78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
-        ];
-
-        let scalars = [scalar_a, scalar_b];
-        let scalars_va = 0x100000000;
-
-        let edwards_point_x: [u8; 32] = [
-            252, 31, 230, 46, 173, 95, 144, 148, 158, 157, 63, 10, 8, 68, 58, 176, 142, 192, 168,
-            53, 61, 105, 194, 166, 43, 56, 246, 236, 28, 146, 114, 133,
-        ];
-        let edwards_point_y: [u8; 32] = [
-            10, 111, 8, 236, 97, 189, 124, 69, 89, 176, 222, 39, 199, 253, 111, 11, 248, 186, 128,
-            90, 120, 128, 248, 210, 232, 183, 93, 104, 111, 150, 7, 241,
-        ];
-        let edwards_points = [edwards_point_x, edwards_point_y];
-        let edwards_points_va = 0x200000000;
-
-        let ristretto_point_x: [u8; 32] = [
-            130, 35, 97, 25, 18, 199, 33, 239, 85, 143, 119, 111, 49, 51, 224, 40, 167, 185, 240,
-            179, 25, 194, 213, 41, 14, 155, 104, 18, 181, 197, 15, 112,
-        ];
-        let ristretto_point_y: [u8; 32] = [
-            152, 156, 155, 197, 152, 232, 92, 206, 219, 159, 193, 134, 121, 128, 139, 36, 56, 191,
-            51, 143, 72, 204, 87, 76, 110, 124, 101, 96, 238, 158, 42, 108,
-        ];
-        let ristretto_points = [ristretto_point_x, ristretto_point_y];
-        let ristretto_points_va = 0x300000000;
-
-        let mut result_point: [u8; 32] = [0; 32];
-        let result_point_va = 0x400000000;
-
-        let mut memory_mapping = MemoryMapping::new(
-            vec![
-                MemoryRegion::new_readonly(bytes_of_slice(&scalars), scalars_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&edwards_points), edwards_points_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&ristretto_points), ristretto_points_va),
-                MemoryRegion::new_writable(bytes_of_slice_mut(&mut result_point), result_point_va),
-            ],
-            &config,
-            &SBPFVersion::V2,
-        )
-        .unwrap();
-
-        invoke_context.mock_set_remaining(
-            invoke_context
-                .get_compute_budget()
-                .curve25519_edwards_msm_base_cost
-                + invoke_context
-                    .get_compute_budget()
-                    .curve25519_edwards_msm_incremental_cost
-                + invoke_context
-                    .get_compute_budget()
-                    .curve25519_ristretto_msm_base_cost
-                + invoke_context
-                    .get_compute_budget()
-                    .curve25519_ristretto_msm_incremental_cost,
-        );
-
-        let result = SyscallCurveMultiscalarMultiplication::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            scalars_va,
-            edwards_points_va,
-            2,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(0, result.unwrap());
-        let expected_product = [
-            30, 174, 168, 34, 160, 70, 63, 166, 236, 18, 74, 144, 185, 222, 208, 243, 5, 54, 223,
-            172, 185, 75, 244, 26, 70, 18, 248, 46, 207, 184, 235, 60,
-        ];
-        assert_eq!(expected_product, result_point);
-
-        let result = SyscallCurveMultiscalarMultiplication::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            scalars_va,
-            ristretto_points_va,
-            2,
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(0, result.unwrap());
-        let expected_product = [
-            78, 120, 86, 111, 152, 64, 146, 84, 14, 236, 77, 147, 237, 190, 251, 241, 136, 167, 21,
-            94, 84, 118, 92, 140, 120, 81, 30, 246, 173, 140, 195, 86,
-        ];
-        assert_eq!(expected_product, result_point);
-    }
-
-    #[test]
-    fn test_syscall_multiscalar_multiplication_maximum_length_exceeded() {
-        use solana_zk_token_sdk::curve25519::curve_syscall_traits::{
-            CURVE25519_EDWARDS, CURVE25519_RISTRETTO,
-        };
-
-        let config = Config::default();
-        prepare_mockup!(invoke_context, program_id, bpf_loader::id());
-
-        let scalar: [u8; 32] = [
-            254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
-            78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
-        ];
-        let scalars = [scalar; 513];
-        let scalars_va = 0x100000000;
-
-        let edwards_point: [u8; 32] = [
-            252, 31, 230, 46, 173, 95, 144, 148, 158, 157, 63, 10, 8, 68, 58, 176, 142, 192, 168,
-            53, 61, 105, 194, 166, 43, 56, 246, 236, 28, 146, 114, 133,
-        ];
-        let edwards_points = [edwards_point; 513];
-        let edwards_points_va = 0x200000000;
-
-        let ristretto_point: [u8; 32] = [
-            130, 35, 97, 25, 18, 199, 33, 239, 85, 143, 119, 111, 49, 51, 224, 40, 167, 185, 240,
-            179, 25, 194, 213, 41, 14, 155, 104, 18, 181, 197, 15, 112,
-        ];
-        let ristretto_points = [ristretto_point; 513];
-        let ristretto_points_va = 0x300000000;
-
-        let mut result_point: [u8; 32] = [0; 32];
-        let result_point_va = 0x400000000;
-
-        let mut memory_mapping = MemoryMapping::new(
-            vec![
-                MemoryRegion::new_readonly(bytes_of_slice(&scalars), scalars_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&edwards_points), edwards_points_va),
-                MemoryRegion::new_readonly(bytes_of_slice(&ristretto_points), ristretto_points_va),
-                MemoryRegion::new_writable(bytes_of_slice_mut(&mut result_point), result_point_va),
-            ],
-            &config,
-            &SBPFVersion::V2,
-        )
-        .unwrap();
-
-        // test Edwards
-        invoke_context.mock_set_remaining(500_000);
-        let result = SyscallCurveMultiscalarMultiplication::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            scalars_va,
-            edwards_points_va,
-            512, // below maximum vector length
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(0, result.unwrap());
-        let expected_product = [
-            20, 146, 226, 37, 22, 61, 86, 249, 208, 40, 38, 11, 126, 101, 10, 82, 81, 77, 88, 209,
-            15, 76, 82, 251, 180, 133, 84, 243, 162, 0, 11, 145,
-        ];
-        assert_eq!(expected_product, result_point);
-
-        invoke_context.mock_set_remaining(500_000);
-        let result = SyscallCurveMultiscalarMultiplication::rust(
-            &mut invoke_context,
-            CURVE25519_EDWARDS,
-            scalars_va,
-            edwards_points_va,
-            513, // above maximum vector length
-            result_point_va,
-            &mut memory_mapping,
-        )
-        .unwrap_err()
-        .downcast::<SyscallError>()
-        .unwrap();
-
-        assert_eq!(*result, SyscallError::InvalidLength);
-
-        // test Ristretto
-        invoke_context.mock_set_remaining(500_000);
-        let result = SyscallCurveMultiscalarMultiplication::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            scalars_va,
-            ristretto_points_va,
-            512, // below maximum vector length
-            result_point_va,
-            &mut memory_mapping,
-        );
-
-        assert_eq!(0, result.unwrap());
-        let expected_product = [
-            146, 224, 127, 193, 252, 64, 196, 181, 246, 104, 27, 116, 183, 52, 200, 239, 2, 108,
-            21, 27, 97, 44, 95, 65, 26, 218, 223, 39, 197, 132, 51, 49,
-        ];
-        assert_eq!(expected_product, result_point);
-
-        invoke_context.mock_set_remaining(500_000);
-        let result = SyscallCurveMultiscalarMultiplication::rust(
-            &mut invoke_context,
-            CURVE25519_RISTRETTO,
-            scalars_va,
-            ristretto_points_va,
-            513, // above maximum vector length
-            result_point_va,
-            &mut memory_mapping,
-        )
-        .unwrap_err()
-        .downcast::<SyscallError>()
-        .unwrap();
-
-        assert_eq!(*result, SyscallError::InvalidLength);
-    }
+    // #[test]
+    // fn test_syscall_edwards_curve_point_validation() {
+    //     use solana_zk_token_sdk::curve25519::curve_syscall_traits::CURVE25519_EDWARDS;
+
+    //     let config = Config::default();
+    //     prepare_mockup!(invoke_context, program_id, bpf_loader::id());
+
+    //     let valid_bytes: [u8; 32] = [
+    //         201, 179, 241, 122, 180, 185, 239, 50, 183, 52, 221, 0, 153, 195, 43, 18, 22, 38, 187,
+    //         206, 179, 192, 210, 58, 53, 45, 150, 98, 89, 17, 158, 11,
+    //     ];
+    //     let valid_bytes_va = 0x100000000;
+
+    //     let invalid_bytes: [u8; 32] = [
+    //         120, 140, 152, 233, 41, 227, 203, 27, 87, 115, 25, 251, 219, 5, 84, 148, 117, 38, 84,
+    //         60, 87, 144, 161, 146, 42, 34, 91, 155, 158, 189, 121, 79,
+    //     ];
+    //     let invalid_bytes_va = 0x200000000;
+
+    //     let mut memory_mapping = MemoryMapping::new(
+    //         vec![
+    //             MemoryRegion::new_readonly(&valid_bytes, valid_bytes_va),
+    //             MemoryRegion::new_readonly(&invalid_bytes, invalid_bytes_va),
+    //         ],
+    //         &config,
+    //         &SBPFVersion::V2,
+    //     )
+    //     .unwrap();
+
+    //     invoke_context.mock_set_remaining(
+    //         (invoke_context
+    //             .get_compute_budget()
+    //             .curve25519_edwards_validate_point_cost)
+    //             * 2,
+    //     );
+
+    //     let result = SyscallCurvePointValidation::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         valid_bytes_va,
+    //         0,
+    //         0,
+    //         0,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_eq!(0, result.unwrap());
+
+    //     let result = SyscallCurvePointValidation::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         invalid_bytes_va,
+    //         0,
+    //         0,
+    //         0,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_eq!(1, result.unwrap());
+
+    //     let result = SyscallCurvePointValidation::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         valid_bytes_va,
+    //         0,
+    //         0,
+    //         0,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_matches!(
+    //         result,
+    //         Result::Err(error) if error.downcast_ref::<InstructionError>().unwrap() == &InstructionError::ComputationalBudgetExceeded
+    //     );
+    // }
+
+    // #[test]
+    // fn test_syscall_ristretto_curve_point_validation() {
+    //     use solana_zk_token_sdk::curve25519::curve_syscall_traits::CURVE25519_RISTRETTO;
+
+    //     let config = Config::default();
+    //     prepare_mockup!(invoke_context, program_id, bpf_loader::id());
+
+    //     let valid_bytes: [u8; 32] = [
+    //         226, 242, 174, 10, 106, 188, 78, 113, 168, 132, 169, 97, 197, 0, 81, 95, 88, 227, 11,
+    //         106, 165, 130, 221, 141, 182, 166, 89, 69, 224, 141, 45, 118,
+    //     ];
+    //     let valid_bytes_va = 0x100000000;
+
+    //     let invalid_bytes: [u8; 32] = [
+    //         120, 140, 152, 233, 41, 227, 203, 27, 87, 115, 25, 251, 219, 5, 84, 148, 117, 38, 84,
+    //         60, 87, 144, 161, 146, 42, 34, 91, 155, 158, 189, 121, 79,
+    //     ];
+    //     let invalid_bytes_va = 0x200000000;
+
+    //     let mut memory_mapping = MemoryMapping::new(
+    //         vec![
+    //             MemoryRegion::new_readonly(&valid_bytes, valid_bytes_va),
+    //             MemoryRegion::new_readonly(&invalid_bytes, invalid_bytes_va),
+    //         ],
+    //         &config,
+    //         &SBPFVersion::V2,
+    //     )
+    //     .unwrap();
+
+    //     invoke_context.mock_set_remaining(
+    //         (invoke_context
+    //             .get_compute_budget()
+    //             .curve25519_ristretto_validate_point_cost)
+    //             * 2,
+    //     );
+
+    //     let result = SyscallCurvePointValidation::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         valid_bytes_va,
+    //         0,
+    //         0,
+    //         0,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_eq!(0, result.unwrap());
+
+    //     let result = SyscallCurvePointValidation::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         invalid_bytes_va,
+    //         0,
+    //         0,
+    //         0,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_eq!(1, result.unwrap());
+
+    //     let result = SyscallCurvePointValidation::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         valid_bytes_va,
+    //         0,
+    //         0,
+    //         0,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_matches!(
+    //         result,
+    //         Result::Err(error) if error.downcast_ref::<InstructionError>().unwrap() == &InstructionError::ComputationalBudgetExceeded
+    //     );
+    // }
+
+    // #[test]
+    // fn test_syscall_edwards_curve_group_ops() {
+    //     use solana_zk_token_sdk::curve25519::curve_syscall_traits::{
+    //         ADD, CURVE25519_EDWARDS, MUL, SUB,
+    //     };
+
+    //     let config = Config::default();
+    //     prepare_mockup!(invoke_context, program_id, bpf_loader::id());
+
+    //     let left_point: [u8; 32] = [
+    //         33, 124, 71, 170, 117, 69, 151, 247, 59, 12, 95, 125, 133, 166, 64, 5, 2, 27, 90, 27,
+    //         200, 167, 59, 164, 52, 54, 52, 200, 29, 13, 34, 213,
+    //     ];
+    //     let left_point_va = 0x100000000;
+    //     let right_point: [u8; 32] = [
+    //         70, 222, 137, 221, 253, 204, 71, 51, 78, 8, 124, 1, 67, 200, 102, 225, 122, 228, 111,
+    //         183, 129, 14, 131, 210, 212, 95, 109, 246, 55, 10, 159, 91,
+    //     ];
+    //     let right_point_va = 0x200000000;
+    //     let scalar: [u8; 32] = [
+    //         254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
+    //         78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
+    //     ];
+    //     let scalar_va = 0x300000000;
+    //     let invalid_point: [u8; 32] = [
+    //         120, 140, 152, 233, 41, 227, 203, 27, 87, 115, 25, 251, 219, 5, 84, 148, 117, 38, 84,
+    //         60, 87, 144, 161, 146, 42, 34, 91, 155, 158, 189, 121, 79,
+    //     ];
+    //     let invalid_point_va = 0x400000000;
+    //     let mut result_point: [u8; 32] = [0; 32];
+    //     let result_point_va = 0x500000000;
+
+    //     let mut memory_mapping = MemoryMapping::new(
+    //         vec![
+    //             MemoryRegion::new_readonly(bytes_of_slice(&left_point), left_point_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&right_point), right_point_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&scalar), scalar_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&invalid_point), invalid_point_va),
+    //             MemoryRegion::new_writable(bytes_of_slice_mut(&mut result_point), result_point_va),
+    //         ],
+    //         &config,
+    //         &SBPFVersion::V2,
+    //     )
+    //     .unwrap();
+
+    //     invoke_context.mock_set_remaining(
+    //         (invoke_context
+    //             .get_compute_budget()
+    //             .curve25519_edwards_add_cost
+    //             + invoke_context
+    //                 .get_compute_budget()
+    //                 .curve25519_edwards_subtract_cost
+    //             + invoke_context
+    //                 .get_compute_budget()
+    //                 .curve25519_edwards_multiply_cost)
+    //             * 2,
+    //     );
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         ADD,
+    //         left_point_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(0, result.unwrap());
+    //     let expected_sum = [
+    //         7, 251, 187, 86, 186, 232, 57, 242, 193, 236, 49, 200, 90, 29, 254, 82, 46, 80, 83, 70,
+    //         244, 153, 23, 156, 2, 138, 207, 51, 165, 38, 200, 85,
+    //     ];
+    //     assert_eq!(expected_sum, result_point);
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         ADD,
+    //         invalid_point_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_eq!(1, result.unwrap());
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         SUB,
+    //         left_point_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(0, result.unwrap());
+    //     let expected_difference = [
+    //         60, 87, 90, 68, 232, 25, 7, 172, 247, 120, 158, 104, 52, 127, 94, 244, 5, 79, 253, 15,
+    //         48, 69, 82, 134, 155, 70, 188, 81, 108, 95, 212, 9,
+    //     ];
+    //     assert_eq!(expected_difference, result_point);
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         SUB,
+    //         invalid_point_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_eq!(1, result.unwrap());
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         MUL,
+    //         scalar_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     result.unwrap();
+    //     let expected_product = [
+    //         64, 150, 40, 55, 80, 49, 217, 209, 105, 229, 181, 65, 241, 68, 2, 106, 220, 234, 211,
+    //         71, 159, 76, 156, 114, 242, 68, 147, 31, 243, 211, 191, 124,
+    //     ];
+    //     assert_eq!(expected_product, result_point);
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         MUL,
+    //         scalar_va,
+    //         invalid_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_eq!(1, result.unwrap());
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         MUL,
+    //         scalar_va,
+    //         invalid_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_matches!(
+    //         result,
+    //         Result::Err(error) if error.downcast_ref::<InstructionError>().unwrap() == &InstructionError::ComputationalBudgetExceeded
+    //     );
+    // }
+
+    // #[test]
+    // fn test_syscall_ristretto_curve_group_ops() {
+    //     use solana_zk_token_sdk::curve25519::curve_syscall_traits::{
+    //         ADD, CURVE25519_RISTRETTO, MUL, SUB,
+    //     };
+
+    //     let config = Config::default();
+    //     prepare_mockup!(invoke_context, program_id, bpf_loader::id());
+
+    //     let left_point: [u8; 32] = [
+    //         208, 165, 125, 204, 2, 100, 218, 17, 170, 194, 23, 9, 102, 156, 134, 136, 217, 190, 98,
+    //         34, 183, 194, 228, 153, 92, 11, 108, 103, 28, 57, 88, 15,
+    //     ];
+    //     let left_point_va = 0x100000000;
+    //     let right_point: [u8; 32] = [
+    //         208, 241, 72, 163, 73, 53, 32, 174, 54, 194, 71, 8, 70, 181, 244, 199, 93, 147, 99,
+    //         231, 162, 127, 25, 40, 39, 19, 140, 132, 112, 212, 145, 108,
+    //     ];
+    //     let right_point_va = 0x200000000;
+    //     let scalar: [u8; 32] = [
+    //         254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
+    //         78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
+    //     ];
+    //     let scalar_va = 0x300000000;
+    //     let invalid_point: [u8; 32] = [
+    //         120, 140, 152, 233, 41, 227, 203, 27, 87, 115, 25, 251, 219, 5, 84, 148, 117, 38, 84,
+    //         60, 87, 144, 161, 146, 42, 34, 91, 155, 158, 189, 121, 79,
+    //     ];
+    //     let invalid_point_va = 0x400000000;
+    //     let mut result_point: [u8; 32] = [0; 32];
+    //     let result_point_va = 0x500000000;
+
+    //     let mut memory_mapping = MemoryMapping::new(
+    //         vec![
+    //             MemoryRegion::new_readonly(bytes_of_slice(&left_point), left_point_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&right_point), right_point_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&scalar), scalar_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&invalid_point), invalid_point_va),
+    //             MemoryRegion::new_writable(bytes_of_slice_mut(&mut result_point), result_point_va),
+    //         ],
+    //         &config,
+    //         &SBPFVersion::V2,
+    //     )
+    //     .unwrap();
+
+    //     invoke_context.mock_set_remaining(
+    //         (invoke_context
+    //             .get_compute_budget()
+    //             .curve25519_ristretto_add_cost
+    //             + invoke_context
+    //                 .get_compute_budget()
+    //                 .curve25519_ristretto_subtract_cost
+    //             + invoke_context
+    //                 .get_compute_budget()
+    //                 .curve25519_ristretto_multiply_cost)
+    //             * 2,
+    //     );
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         ADD,
+    //         left_point_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(0, result.unwrap());
+    //     let expected_sum = [
+    //         78, 173, 9, 241, 180, 224, 31, 107, 176, 210, 144, 240, 118, 73, 70, 191, 128, 119,
+    //         141, 113, 125, 215, 161, 71, 49, 176, 87, 38, 180, 177, 39, 78,
+    //     ];
+    //     assert_eq!(expected_sum, result_point);
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         ADD,
+    //         invalid_point_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_eq!(1, result.unwrap());
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         SUB,
+    //         left_point_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(0, result.unwrap());
+    //     let expected_difference = [
+    //         150, 72, 222, 61, 148, 79, 96, 130, 151, 176, 29, 217, 231, 211, 0, 215, 76, 86, 212,
+    //         146, 110, 128, 24, 151, 187, 144, 108, 233, 221, 208, 157, 52,
+    //     ];
+    //     assert_eq!(expected_difference, result_point);
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         SUB,
+    //         invalid_point_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(1, result.unwrap());
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         MUL,
+    //         scalar_va,
+    //         right_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     result.unwrap();
+    //     let expected_product = [
+    //         4, 16, 46, 2, 53, 151, 201, 133, 117, 149, 232, 164, 119, 109, 136, 20, 153, 24, 124,
+    //         21, 101, 124, 80, 19, 119, 100, 77, 108, 65, 187, 228, 5,
+    //     ];
+    //     assert_eq!(expected_product, result_point);
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         MUL,
+    //         scalar_va,
+    //         invalid_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(1, result.unwrap());
+
+    //     let result = SyscallCurveGroupOps::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         MUL,
+    //         scalar_va,
+    //         invalid_point_va,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+    //     assert_matches!(
+    //         result,
+    //         Result::Err(error) if error.downcast_ref::<InstructionError>().unwrap() == &InstructionError::ComputationalBudgetExceeded
+    //     );
+    // }
+
+    // #[test]
+    // fn test_syscall_multiscalar_multiplication() {
+    //     use solana_zk_token_sdk::curve25519::curve_syscall_traits::{
+    //         CURVE25519_EDWARDS, CURVE25519_RISTRETTO,
+    //     };
+
+    //     let config = Config::default();
+    //     prepare_mockup!(invoke_context, program_id, bpf_loader::id());
+
+    //     let scalar_a: [u8; 32] = [
+    //         254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
+    //         78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
+    //     ];
+    //     let scalar_b: [u8; 32] = [
+    //         254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
+    //         78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
+    //     ];
+
+    //     let scalars = [scalar_a, scalar_b];
+    //     let scalars_va = 0x100000000;
+
+    //     let edwards_point_x: [u8; 32] = [
+    //         252, 31, 230, 46, 173, 95, 144, 148, 158, 157, 63, 10, 8, 68, 58, 176, 142, 192, 168,
+    //         53, 61, 105, 194, 166, 43, 56, 246, 236, 28, 146, 114, 133,
+    //     ];
+    //     let edwards_point_y: [u8; 32] = [
+    //         10, 111, 8, 236, 97, 189, 124, 69, 89, 176, 222, 39, 199, 253, 111, 11, 248, 186, 128,
+    //         90, 120, 128, 248, 210, 232, 183, 93, 104, 111, 150, 7, 241,
+    //     ];
+    //     let edwards_points = [edwards_point_x, edwards_point_y];
+    //     let edwards_points_va = 0x200000000;
+
+    //     let ristretto_point_x: [u8; 32] = [
+    //         130, 35, 97, 25, 18, 199, 33, 239, 85, 143, 119, 111, 49, 51, 224, 40, 167, 185, 240,
+    //         179, 25, 194, 213, 41, 14, 155, 104, 18, 181, 197, 15, 112,
+    //     ];
+    //     let ristretto_point_y: [u8; 32] = [
+    //         152, 156, 155, 197, 152, 232, 92, 206, 219, 159, 193, 134, 121, 128, 139, 36, 56, 191,
+    //         51, 143, 72, 204, 87, 76, 110, 124, 101, 96, 238, 158, 42, 108,
+    //     ];
+    //     let ristretto_points = [ristretto_point_x, ristretto_point_y];
+    //     let ristretto_points_va = 0x300000000;
+
+    //     let mut result_point: [u8; 32] = [0; 32];
+    //     let result_point_va = 0x400000000;
+
+    //     let mut memory_mapping = MemoryMapping::new(
+    //         vec![
+    //             MemoryRegion::new_readonly(bytes_of_slice(&scalars), scalars_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&edwards_points), edwards_points_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&ristretto_points), ristretto_points_va),
+    //             MemoryRegion::new_writable(bytes_of_slice_mut(&mut result_point), result_point_va),
+    //         ],
+    //         &config,
+    //         &SBPFVersion::V2,
+    //     )
+    //     .unwrap();
+
+    //     invoke_context.mock_set_remaining(
+    //         invoke_context
+    //             .get_compute_budget()
+    //             .curve25519_edwards_msm_base_cost
+    //             + invoke_context
+    //                 .get_compute_budget()
+    //                 .curve25519_edwards_msm_incremental_cost
+    //             + invoke_context
+    //                 .get_compute_budget()
+    //                 .curve25519_ristretto_msm_base_cost
+    //             + invoke_context
+    //                 .get_compute_budget()
+    //                 .curve25519_ristretto_msm_incremental_cost,
+    //     );
+
+    //     let result = SyscallCurveMultiscalarMultiplication::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         scalars_va,
+    //         edwards_points_va,
+    //         2,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(0, result.unwrap());
+    //     let expected_product = [
+    //         30, 174, 168, 34, 160, 70, 63, 166, 236, 18, 74, 144, 185, 222, 208, 243, 5, 54, 223,
+    //         172, 185, 75, 244, 26, 70, 18, 248, 46, 207, 184, 235, 60,
+    //     ];
+    //     assert_eq!(expected_product, result_point);
+
+    //     let result = SyscallCurveMultiscalarMultiplication::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         scalars_va,
+    //         ristretto_points_va,
+    //         2,
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(0, result.unwrap());
+    //     let expected_product = [
+    //         78, 120, 86, 111, 152, 64, 146, 84, 14, 236, 77, 147, 237, 190, 251, 241, 136, 167, 21,
+    //         94, 84, 118, 92, 140, 120, 81, 30, 246, 173, 140, 195, 86,
+    //     ];
+    //     assert_eq!(expected_product, result_point);
+    // }
+
+    // #[test]
+    // fn test_syscall_multiscalar_multiplication_maximum_length_exceeded() {
+    //     use solana_zk_token_sdk::curve25519::curve_syscall_traits::{
+    //         CURVE25519_EDWARDS, CURVE25519_RISTRETTO,
+    //     };
+
+    //     let config = Config::default();
+    //     prepare_mockup!(invoke_context, program_id, bpf_loader::id());
+
+    //     let scalar: [u8; 32] = [
+    //         254, 198, 23, 138, 67, 243, 184, 110, 236, 115, 236, 205, 205, 215, 79, 114, 45, 250,
+    //         78, 137, 3, 107, 136, 237, 49, 126, 117, 223, 37, 191, 88, 6,
+    //     ];
+    //     let scalars = [scalar; 513];
+    //     let scalars_va = 0x100000000;
+
+    //     let edwards_point: [u8; 32] = [
+    //         252, 31, 230, 46, 173, 95, 144, 148, 158, 157, 63, 10, 8, 68, 58, 176, 142, 192, 168,
+    //         53, 61, 105, 194, 166, 43, 56, 246, 236, 28, 146, 114, 133,
+    //     ];
+    //     let edwards_points = [edwards_point; 513];
+    //     let edwards_points_va = 0x200000000;
+
+    //     let ristretto_point: [u8; 32] = [
+    //         130, 35, 97, 25, 18, 199, 33, 239, 85, 143, 119, 111, 49, 51, 224, 40, 167, 185, 240,
+    //         179, 25, 194, 213, 41, 14, 155, 104, 18, 181, 197, 15, 112,
+    //     ];
+    //     let ristretto_points = [ristretto_point; 513];
+    //     let ristretto_points_va = 0x300000000;
+
+    //     let mut result_point: [u8; 32] = [0; 32];
+    //     let result_point_va = 0x400000000;
+
+    //     let mut memory_mapping = MemoryMapping::new(
+    //         vec![
+    //             MemoryRegion::new_readonly(bytes_of_slice(&scalars), scalars_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&edwards_points), edwards_points_va),
+    //             MemoryRegion::new_readonly(bytes_of_slice(&ristretto_points), ristretto_points_va),
+    //             MemoryRegion::new_writable(bytes_of_slice_mut(&mut result_point), result_point_va),
+    //         ],
+    //         &config,
+    //         &SBPFVersion::V2,
+    //     )
+    //     .unwrap();
+
+    //     // test Edwards
+    //     invoke_context.mock_set_remaining(500_000);
+    //     let result = SyscallCurveMultiscalarMultiplication::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         scalars_va,
+    //         edwards_points_va,
+    //         512, // below maximum vector length
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(0, result.unwrap());
+    //     let expected_product = [
+    //         20, 146, 226, 37, 22, 61, 86, 249, 208, 40, 38, 11, 126, 101, 10, 82, 81, 77, 88, 209,
+    //         15, 76, 82, 251, 180, 133, 84, 243, 162, 0, 11, 145,
+    //     ];
+    //     assert_eq!(expected_product, result_point);
+
+    //     invoke_context.mock_set_remaining(500_000);
+    //     let result = SyscallCurveMultiscalarMultiplication::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_EDWARDS,
+    //         scalars_va,
+    //         edwards_points_va,
+    //         513, // above maximum vector length
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     )
+    //     .unwrap_err()
+    //     .downcast::<SyscallError>()
+    //     .unwrap();
+
+    //     assert_eq!(*result, SyscallError::InvalidLength);
+
+    //     // test Ristretto
+    //     invoke_context.mock_set_remaining(500_000);
+    //     let result = SyscallCurveMultiscalarMultiplication::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         scalars_va,
+    //         ristretto_points_va,
+    //         512, // below maximum vector length
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     );
+
+    //     assert_eq!(0, result.unwrap());
+    //     let expected_product = [
+    //         146, 224, 127, 193, 252, 64, 196, 181, 246, 104, 27, 116, 183, 52, 200, 239, 2, 108,
+    //         21, 27, 97, 44, 95, 65, 26, 218, 223, 39, 197, 132, 51, 49,
+    //     ];
+    //     assert_eq!(expected_product, result_point);
+
+    //     invoke_context.mock_set_remaining(500_000);
+    //     let result = SyscallCurveMultiscalarMultiplication::rust(
+    //         &mut invoke_context,
+    //         CURVE25519_RISTRETTO,
+    //         scalars_va,
+    //         ristretto_points_va,
+    //         513, // above maximum vector length
+    //         result_point_va,
+    //         &mut memory_mapping,
+    //     )
+    //     .unwrap_err()
+    //     .downcast::<SyscallError>()
+    //     .unwrap();
+
+    //     assert_eq!(*result, SyscallError::InvalidLength);
+    // }
 
     fn create_filled_type<T: Default>(zero_init: bool) -> T {
         let mut val = T::default();
@@ -4066,105 +4066,105 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_syscall_big_mod_exp() {
-        let config = Config::default();
-        prepare_mockup!(invoke_context, program_id, bpf_loader::id());
+    // #[test]
+    // fn test_syscall_big_mod_exp() {
+    //     let config = Config::default();
+    //     prepare_mockup!(invoke_context, program_id, bpf_loader::id());
 
-        const VADDR_PARAMS: u64 = 0x100000000;
-        const MAX_LEN: u64 = 512;
-        const INV_LEN: u64 = MAX_LEN + 1;
-        let data: [u8; INV_LEN as usize] = [0; INV_LEN as usize];
-        const VADDR_DATA: u64 = 0x200000000;
+    //     const VADDR_PARAMS: u64 = 0x100000000;
+    //     const MAX_LEN: u64 = 512;
+    //     const INV_LEN: u64 = MAX_LEN + 1;
+    //     let data: [u8; INV_LEN as usize] = [0; INV_LEN as usize];
+    //     const VADDR_DATA: u64 = 0x200000000;
 
-        let mut data_out: [u8; INV_LEN as usize] = [0; INV_LEN as usize];
-        const VADDR_OUT: u64 = 0x300000000;
+    //     let mut data_out: [u8; INV_LEN as usize] = [0; INV_LEN as usize];
+    //     const VADDR_OUT: u64 = 0x300000000;
 
-        // Test that SyscallBigModExp succeeds with the maximum param size
-        {
-            let params_max_len = BigModExpParams {
-                base: VADDR_DATA as *const u8,
-                base_len: MAX_LEN,
-                exponent: VADDR_DATA as *const u8,
-                exponent_len: MAX_LEN,
-                modulus: VADDR_DATA as *const u8,
-                modulus_len: MAX_LEN,
-            };
+    //     // Test that SyscallBigModExp succeeds with the maximum param size
+    //     {
+    //         let params_max_len = BigModExpParams {
+    //             base: VADDR_DATA as *const u8,
+    //             base_len: MAX_LEN,
+    //             exponent: VADDR_DATA as *const u8,
+    //             exponent_len: MAX_LEN,
+    //             modulus: VADDR_DATA as *const u8,
+    //             modulus_len: MAX_LEN,
+    //         };
 
-            let mut memory_mapping = MemoryMapping::new(
-                vec![
-                    MemoryRegion::new_readonly(bytes_of(&params_max_len), VADDR_PARAMS),
-                    MemoryRegion::new_readonly(&data, VADDR_DATA),
-                    MemoryRegion::new_writable(&mut data_out, VADDR_OUT),
-                ],
-                &config,
-                &SBPFVersion::V2,
-            )
-            .unwrap();
+    //         let mut memory_mapping = MemoryMapping::new(
+    //             vec![
+    //                 MemoryRegion::new_readonly(bytes_of(&params_max_len), VADDR_PARAMS),
+    //                 MemoryRegion::new_readonly(&data, VADDR_DATA),
+    //                 MemoryRegion::new_writable(&mut data_out, VADDR_OUT),
+    //             ],
+    //             &config,
+    //             &SBPFVersion::V2,
+    //         )
+    //         .unwrap();
 
-            let budget = invoke_context.get_compute_budget();
-            invoke_context.mock_set_remaining(
-                budget.syscall_base_cost
-                    + (MAX_LEN * MAX_LEN) / budget.big_modular_exponentiation_cost,
-            );
+    //         let budget = invoke_context.get_compute_budget();
+    //         invoke_context.mock_set_remaining(
+    //             budget.syscall_base_cost
+    //                 + (MAX_LEN * MAX_LEN) / budget.big_modular_exponentiation_cost,
+    //         );
 
-            let result = SyscallBigModExp::rust(
-                &mut invoke_context,
-                VADDR_PARAMS,
-                VADDR_OUT,
-                0,
-                0,
-                0,
-                &mut memory_mapping,
-            );
+    //         let result = SyscallBigModExp::rust(
+    //             &mut invoke_context,
+    //             VADDR_PARAMS,
+    //             VADDR_OUT,
+    //             0,
+    //             0,
+    //             0,
+    //             &mut memory_mapping,
+    //         );
 
-            assert_eq!(result.unwrap(), 0);
-        }
+    //         assert_eq!(result.unwrap(), 0);
+    //     }
 
-        // Test that SyscallBigModExp fails when the maximum param size is exceeded
-        {
-            let params_inv_len = BigModExpParams {
-                base: VADDR_DATA as *const u8,
-                base_len: INV_LEN,
-                exponent: VADDR_DATA as *const u8,
-                exponent_len: INV_LEN,
-                modulus: VADDR_DATA as *const u8,
-                modulus_len: INV_LEN,
-            };
+    //     // Test that SyscallBigModExp fails when the maximum param size is exceeded
+    //     {
+    //         let params_inv_len = BigModExpParams {
+    //             base: VADDR_DATA as *const u8,
+    //             base_len: INV_LEN,
+    //             exponent: VADDR_DATA as *const u8,
+    //             exponent_len: INV_LEN,
+    //             modulus: VADDR_DATA as *const u8,
+    //             modulus_len: INV_LEN,
+    //         };
 
-            let mut memory_mapping = MemoryMapping::new(
-                vec![
-                    MemoryRegion::new_readonly(bytes_of(&params_inv_len), VADDR_PARAMS),
-                    MemoryRegion::new_readonly(&data, VADDR_DATA),
-                    MemoryRegion::new_writable(&mut data_out, VADDR_OUT),
-                ],
-                &config,
-                &SBPFVersion::V2,
-            )
-            .unwrap();
+    //         let mut memory_mapping = MemoryMapping::new(
+    //             vec![
+    //                 MemoryRegion::new_readonly(bytes_of(&params_inv_len), VADDR_PARAMS),
+    //                 MemoryRegion::new_readonly(&data, VADDR_DATA),
+    //                 MemoryRegion::new_writable(&mut data_out, VADDR_OUT),
+    //             ],
+    //             &config,
+    //             &SBPFVersion::V2,
+    //         )
+    //         .unwrap();
 
-            let budget = invoke_context.get_compute_budget();
-            invoke_context.mock_set_remaining(
-                budget.syscall_base_cost
-                    + (INV_LEN * INV_LEN) / budget.big_modular_exponentiation_cost,
-            );
+    //         let budget = invoke_context.get_compute_budget();
+    //         invoke_context.mock_set_remaining(
+    //             budget.syscall_base_cost
+    //                 + (INV_LEN * INV_LEN) / budget.big_modular_exponentiation_cost,
+    //         );
 
-            let result = SyscallBigModExp::rust(
-                &mut invoke_context,
-                VADDR_PARAMS,
-                VADDR_OUT,
-                0,
-                0,
-                0,
-                &mut memory_mapping,
-            );
+    //         let result = SyscallBigModExp::rust(
+    //             &mut invoke_context,
+    //             VADDR_PARAMS,
+    //             VADDR_OUT,
+    //             0,
+    //             0,
+    //             0,
+    //             &mut memory_mapping,
+    //         );
 
-            assert_matches!(
-                result,
-                Result::Err(error) if error.downcast_ref::<SyscallError>().unwrap() == &SyscallError::InvalidLength
-            );
-        }
-    }
+    //         assert_matches!(
+    //             result,
+    //             Result::Err(error) if error.downcast_ref::<SyscallError>().unwrap() == &SyscallError::InvalidLength
+    //         );
+    //     }
+    // }
 
     #[test]
     fn test_check_type_assumptions() {

@@ -36,6 +36,7 @@ members = [
 	"vendor/solana/program-runtime",
 	"vendor/solana/programs/bpf_loader",
 	"vendor/solana/programs/loader-v4",
+	"vendor/solana/programs/system",
 	"vendor/solana/rbpf",
 	"vendor/solana/sdk",
 	"vendor/solana/sdk/macro",
@@ -87,6 +88,7 @@ solana-program-runtime = { path = "vendor/solana/program-runtime", default-featu
 solana_rbpf = { path = "vendor/solana/rbpf", default-features = false }
 solana-sdk = { path = "vendor/solana/sdk", default-features = false }
 solana-sdk-macro = { path = "vendor/solana/sdk/macro" }
+solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
 
 # no_std
 bv = { path = "vendor/no_std/bv", default-features = false }

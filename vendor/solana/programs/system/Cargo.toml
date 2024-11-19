@@ -1,0 +1,35 @@
+[package]
+name = "solana-system-program"
+description = "Solana System program"
+documentation = "https://docs.rs/solana-system-program"
+version = "1.18.26"
+authors = ["Solana Labs Maintainers <maintainers@solanalabs.com>"]
+repository = "https://github.com/solana-labs/solana"
+homepage = "https://solanalabs.com/"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+hashbrown = "0.15"
+log = { version = "0.4.2", default-features = false }
+serde = { version = "1.0.210", default-features = false, features = ["derive"] }
+serde_derive = "1.0"
+solana-program-runtime = { workspace = true, default-features = false }
+solana-sdk = { workspace = true, default-features = false }
+
+[dev-dependencies]
+bincode = "1.3.3"
+assert_matches = "1.5"
+solana-logger = "1.8.26"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ["std"]
+std = [
+    "log/std",
+    "serde/std",
+    "solana-program-runtime/std",
+    "solana-sdk/std",
+]

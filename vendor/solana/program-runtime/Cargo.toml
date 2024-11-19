@@ -19,7 +19,7 @@ itertools = { version = "0.13.0", default-features = false, features = ["use_all
 log = { version = "0.4.21", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 
-solana-program = { workspace = true }
+solana-program = { workspace = true, default-features = false }
 solana_rbpf = { workspace = true, default-features = false }
 solana-sdk = { workspace = true, features = ["full"] }
 

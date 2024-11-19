@@ -12,7 +12,8 @@ use {
         },
         clock::INITIAL_RENT_EPOCH,
     },
-    std::{collections::BinaryHeap, iter::FromIterator},
+    alloc::collections::BinaryHeap,
+    core::iter::FromIterator,
 };
 
 #[deprecated(
