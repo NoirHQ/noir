@@ -4,6 +4,7 @@
 
 use {
     crate::sanitize::Sanitize,
+    alloc::string::ToString,
     borsh::{BorshDeserialize, BorshSchema, BorshSerialize},
     core::{convert::TryFrom, fmt, mem, str::FromStr},
     thiserror::Error,

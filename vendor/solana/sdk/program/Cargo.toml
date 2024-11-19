@@ -17,12 +17,12 @@ bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde
 bitflags = { version = "2.6", default-features = false }
 blake3 = { version = "1.5", default-features = false, features = ["traits-preview"] }
 borsh = { version = "1.5", default-features = false, features = ["derive", "unstable__schema"] }
-bs58 = { version = "0.5", default-features = false }
+bs58 = { version = "0.5", default-features = false, features = ["alloc"] }
 bytemuck = { version = "1.14", features = ["derive"] }
 curve25519-dalek = { version = "4.1", optional = true }
 hashbrown = "0.15"
 itertools = { version = "0.13.0", default-features = false, features = ["use_alloc"] }
-libsecp256k1 = { version = "0.7", default-features = false, optional = true }
+libsecp256k1 = { version = "0.7", default-features = false, features = ["static-context"] }
 log = { version = "0.4.2", default-features = false }
 memoffset = "0.9"
 num-derive = "0.4.2"
