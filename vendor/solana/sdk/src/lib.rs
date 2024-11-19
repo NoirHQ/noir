@@ -63,10 +63,10 @@ extern crate self as solana_sdk;
 //};
 pub use solana_program::{
     account_info, blake3, borsh1, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable, clock,
-    decode_error, ed25519_program, epoch_schedule, hash, instruction, keccak, lamports,
-    loader_upgradeable_instruction, loader_v4, message, native_token, program, program_stubs, rent,
-    sanitize, secp256k1_program, secp256k1_recover, short_vec, stable_layout, syscalls,
-    system_instruction, system_program, sysvar,
+    decode_error, ed25519_program, epoch_schedule, fee_calculator, hash, instruction, keccak,
+    lamports, loader_upgradeable_instruction, loader_v4, loader_v4_instruction, message,
+    native_token, program, program_stubs, rent, sanitize, secp256k1_program, secp256k1_recover,
+    short_vec, slot_history, stable_layout, syscalls, system_instruction, system_program, sysvar,
 };
 
 pub mod account;
