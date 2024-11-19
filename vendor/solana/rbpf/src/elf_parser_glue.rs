@@ -546,6 +546,7 @@ impl From<GoblinError> for ElfError {
             GoblinError::Malformed(string) => Self::FailedToParse(format!("malformed: {string}")),
             GoblinError::BadMagic(magic) => Self::FailedToParse(format!("bad magic: {magic:#x}")),
             GoblinError::Scroll(error) => Self::FailedToParse(format!("read-write: {error}")),
+            #[cfg(feature = "std")]
             GoblinError::IO(error) => Self::FailedToParse(format!("io: {error}")),
             GoblinError::BufferTooShort(n, error) => {
                 Self::FailedToParse(format!("buffer too short {n} {error}"))
