@@ -3,6 +3,7 @@ use {
         advance_nonce_account, authorize_nonce_account, initialize_nonce_account,
         withdraw_nonce_account,
     },
+    hashbrown::HashSet,
     log::*,
     solana_program_runtime::{
         declare_process_instruction, ic_msg, invoke_context::InvokeContext,
@@ -19,7 +20,6 @@ use {
             BorrowedAccount, IndexOfAccount, InstructionContext, TransactionContext,
         },
     },
-    hashbrown::HashSet,
 };
 
 // represents an address that may or may not have been generated

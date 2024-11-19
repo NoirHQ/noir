@@ -42,7 +42,7 @@ declare_builtin_function!(
         arg5: u64,
         _memory_mapping: &mut MemoryMapping,
     ) -> Result<u64, Box<dyn error::Error>> {
-        println!("bpf_trace_printf: {arg3:#x}, {arg4:#x}, {arg5:#x}");
+        log::info!("bpf_trace_printf: {arg3:#x}, {arg4:#x}, {arg5:#x}");
         let size_arg = |x| {
             if x == 0 {
                 1
@@ -168,7 +168,7 @@ declare_builtin_function!(
             }
             let message = from_utf8(from_raw_parts(host_addr as *const u8, len as usize))
                 .unwrap_or("Invalid UTF-8 String");
-            println!("log: {message}");
+            log::info!("log: {message}");
         }
         Ok(0)
     }
@@ -186,7 +186,7 @@ declare_builtin_function!(
         arg5: u64,
         memory_mapping: &mut MemoryMapping,
     ) -> Result<u64, Box<dyn error::Error>> {
-        println!(
+        log::info!(
             "dump_64: {:#x}, {:#x}, {:#x}, {:#x}, {:#x}, {:?}",
             arg1, arg2, arg3, arg4, arg5, memory_mapping as *const _
         );

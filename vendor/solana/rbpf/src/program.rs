@@ -325,7 +325,9 @@ macro_rules! declare_builtin_function {
                     &mut *(($vm as *mut u64).offset(-($crate::vm::get_runtime_environment_key() as isize)) as *mut $crate::vm::EbpfVm<$ContextObject>)
                 };
                 #[cfg(not(feature = "std"))]
-                let vm = $vm;
+                let vm = unsafe {
+                    &mut *(($vm as *mut u64) as *mut $crate::vm::EbpfVm<$ContextObject>)
+                };
                 let config = vm.loader.get_config();
                 if config.enable_instruction_meter {
                     vm.context_object_pointer.consume(vm.previous_instruction_meter - vm.due_insn_count);
