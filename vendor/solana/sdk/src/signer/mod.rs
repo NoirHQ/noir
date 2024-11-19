@@ -23,7 +23,7 @@ use {
 pub mod keypair;
 // pub mod null_signer;
 pub mod presigner;
-// pub mod signers;
+pub mod signers;
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum SignerError {

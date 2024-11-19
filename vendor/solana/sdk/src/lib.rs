@@ -40,8 +40,8 @@ extern crate alloc;
 // Allows macro expansion of `use ::solana_sdk::*` to work within this crate
 extern crate self as solana_sdk;
 
-//#[cfg(feature = "full")]
-//pub use signer::signers;
+#[cfg(feature = "full")]
+pub use signer::signers;
 // These solana_program imports could be *-imported, but that causes a bunch of
 // confusing duplication in the docs due to a rustdoc bug. #26211
 //#[allow(deprecated)]

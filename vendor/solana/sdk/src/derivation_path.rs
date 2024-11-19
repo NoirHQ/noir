@@ -10,6 +10,13 @@
 //! with 501 being the Solana coin type.
 
 use {
+    alloc::{
+        boxed::Box,
+        format,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    },
     core::{
         convert::{Infallible, TryFrom},
         fmt,

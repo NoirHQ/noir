@@ -1,6 +1,7 @@
 use {
     super::VersionedTransaction,
     crate::{sanitize::SanitizeError, signature::Signature},
+    alloc::vec::Vec,
     solana_program::message::SanitizedVersionedMessage,
 };
 
