@@ -17,10 +17,7 @@
 //! <https://www.kernel.org/doc/Documentation/networking/filter.txt>, or for a shorter version of
 //! the list of the operation codes: <https://github.com/iovisor/bpf-docs/blob/master/eBPF.md>
 
-use {
-    crate::{elf::ElfError, lib::*, memory_region::AccessType, verifier::VerifierError},
-    core::error::Error,
-};
+use crate::{elf::ElfError, lib::*, memory_region::AccessType, verifier::VerifierError};
 
 /// Error definitions
 #[derive(Debug, thiserror::Error)]
@@ -85,7 +82,7 @@ pub enum EbpfError {
     VerifierError(#[from] VerifierError),
     /// Syscall error
     #[error("Syscall error: {0}")]
-    SyscallError(Box<dyn Error>),
+    SyscallError(Box<dyn error::Error>),
 }
 
 /// Same as `Result` but provides a stable memory layout
