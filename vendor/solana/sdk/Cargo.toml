@@ -16,7 +16,7 @@ publish = false
 bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
 borsh = { version = "1.5", default-features = false, features = ["derive", "unstable__schema"] }
 bs58 = { version = "0.5", default-features = false }
-bytemuck = { version = "1.19", features = ["derive"] }
+bytemuck = { version = "1.14", features = ["derive"] }
 core2 = { version = "0.4.0", default-features = false, features = ["alloc"] }
 ed25519-dalek = { version = "2.1.1", default-features = false, features = ["alloc"] }
 #curve25519-dalek = { version = "4.1", optional = true }
