@@ -1145,10 +1145,10 @@ impl<C: ContextObject> Executable<C> {
     #[allow(dead_code)]
     fn dump_data(name: &str, prog: &[u8]) {
         let mut eight_bytes: Vec<u8> = Vec::new();
-        println!("{name}");
+        log::info!("{name}");
         for i in prog.iter() {
             if eight_bytes.len() >= 7 {
-                println!("{eight_bytes:02X?}");
+                log::info!("{eight_bytes:02X?}");
                 eight_bytes.clear();
             } else {
                 eight_bytes.push(*i);
