@@ -39,6 +39,7 @@ members = [
 	"vendor/solana/programs/compute-budget",
 	"vendor/solana/programs/config",
 	"vendor/solana/programs/loader-v4",
+	"vendor/solana/programs/spl-token",
 	"vendor/solana/programs/system",
 	"vendor/solana/rbpf",
 	"vendor/solana/sdk",
@@ -97,6 +98,7 @@ solana-sdk = { path = "vendor/solana/sdk", default-features = false }
 solana-sdk-macro = { path = "vendor/solana/sdk/macro" }
 solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
 solana-zk-token-sdk = { path = "vendor/solana/zk-token-sdk", default-features = false }
+spl-token = { path = "vendor/solana/programs/spl-token", default-features = false }
 
 # no_std
 bv = { path = "vendor/no_std/bv", default-features = false }

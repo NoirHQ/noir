@@ -1,8 +1,11 @@
 #![allow(clippy::integer_arithmetic)]
 #![deny(missing_docs)]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(test), forbid(unsafe_code))]
 
 //! An ERC20-like Token program for the Solana blockchain
+
+extern crate alloc;
 
 pub mod error;
 pub mod instruction;
@@ -14,6 +17,10 @@ pub mod state;
 mod entrypoint;
 
 // Export current sdk types for downstream users building with a different sdk version
+use alloc::{
+    format,
+    string::{String, ToString},
+};
 pub use solana_program;
 use solana_program::{entrypoint::ProgramResult, program_error::ProgramError, pubkey::Pubkey};
 

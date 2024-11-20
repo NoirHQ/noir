@@ -94,7 +94,7 @@ impl PrintProgramError for TokenError {
     fn print<E>(&self)
     where
         E: 'static
-            + std::error::Error
+            + core::error::Error
             + DecodeError<E>
             + PrintProgramError
             + num_traits::FromPrimitive,

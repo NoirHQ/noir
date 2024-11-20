@@ -1,6 +1,9 @@
 //! Instruction types
 
 use crate::{check_program_account, error::TokenError};
+use alloc::{vec, vec::Vec};
+use core::convert::TryInto;
+use core::mem::size_of;
 use solana_program::{
     instruction::{AccountMeta, Instruction},
     program_error::ProgramError,
@@ -8,8 +11,6 @@ use solana_program::{
     pubkey::Pubkey,
     sysvar,
 };
-use std::convert::TryInto;
-use std::mem::size_of;
 
 /// Minimum number of multisignature signers (min N)
 pub const MIN_SIGNERS: usize = 1;
@@ -566,7 +567,7 @@ impl<'a> TokenInstruction<'a> {
                 Self::AmountToUiAmount { amount }
             }
             24 => {
-                let ui_amount = std::str::from_utf8(rest).map_err(|_| InvalidInstruction)?;
+                let ui_amount = core::str::from_utf8(rest).map_err(|_| InvalidInstruction)?;
                 Self::UiAmountToAmount { ui_amount }
             }
             _ => return Err(TokenError::InvalidInstruction.into()),
