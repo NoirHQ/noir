@@ -12,7 +12,12 @@ pub use self::{
 #[allow(deprecated)]
 use {
     alloc::{
-        alloc::Layout, boxed::Box, slice::from_raw_parts_mut, string::String, sync::Arc, vec::Vec,
+        alloc::Layout,
+        boxed::Box,
+        slice::from_raw_parts_mut,
+        string::{String, ToString},
+        sync::Arc,
+        vec::Vec,
     },
     core::{
         mem::{align_of, size_of},
@@ -46,7 +51,7 @@ use {
         feature_set::{
             self,
             blake3_syscall_enabled,
-            // curve25519_syscall_enabled,
+            curve25519_syscall_enabled,
             disable_deploy_of_alloc_free_syscall,
             disable_fees_sysvar,
             // enable_alt_bn128_compression_syscall,
@@ -282,7 +287,7 @@ pub fn create_program_runtime_environment_v1<'a>(
     //     feature_set.is_active(&enable_alt_bn128_compression_syscall::id());
     // let enable_big_mod_exp_syscall = feature_set.is_active(&enable_big_mod_exp_syscall::id());
     let blake3_syscall_enabled = feature_set.is_active(&blake3_syscall_enabled::id());
-    // let curve25519_syscall_enabled = feature_set.is_active(&curve25519_syscall_enabled::id());
+    let curve25519_syscall_enabled = feature_set.is_active(&curve25519_syscall_enabled::id());
     let disable_fees_sysvar = feature_set.is_active(&disable_fees_sysvar::id());
     let epoch_rewards_syscall_enabled =
         feature_set.is_active(&enable_partitioned_epoch_reward::id());
@@ -360,24 +365,24 @@ pub fn create_program_runtime_environment_v1<'a>(
     )?;
 
     // Elliptic Curve Operations
-    // register_feature_gated_function!(
-    //     result,
-    //     curve25519_syscall_enabled,
-    //     *b"sol_curve_validate_point",
-    //     SyscallCurvePointValidation::vm,
-    // )?;
-    // register_feature_gated_function!(
-    //     result,
-    //     curve25519_syscall_enabled,
-    //     *b"sol_curve_group_op",
-    //     SyscallCurveGroupOps::vm,
-    // )?;
-    // register_feature_gated_function!(
-    //     result,
-    //     curve25519_syscall_enabled,
-    //     *b"sol_curve_multiscalar_mul",
-    //     SyscallCurveMultiscalarMultiplication::vm,
-    // )?;
+    register_feature_gated_function!(
+        result,
+        curve25519_syscall_enabled,
+        *b"sol_curve_validate_point",
+        SyscallCurvePointValidation::vm,
+    )?;
+    register_feature_gated_function!(
+        result,
+        curve25519_syscall_enabled,
+        *b"sol_curve_group_op",
+        SyscallCurveGroupOps::vm,
+    )?;
+    register_feature_gated_function!(
+        result,
+        curve25519_syscall_enabled,
+        *b"sol_curve_multiscalar_mul",
+        SyscallCurveMultiscalarMultiplication::vm,
+    )?;
 
     // Sysvars
     result.register_function_hashed(*b"sol_get_clock_sysvar", SyscallGetClockSysvar::vm)?;
@@ -878,375 +883,375 @@ declare_builtin_function!(
     }
 );
 
-// declare_builtin_function!(
-//     // Elliptic Curve Point Validation
-//     //
-//     // Currently, only curve25519 Edwards and Ristretto representations are supported
-//     SyscallCurvePointValidation,
-//     fn rust(
-//         invoke_context: &mut InvokeContext,
-//         curve_id: u64,
-//         point_addr: u64,
-//         _arg3: u64,
-//         _arg4: u64,
-//         _arg5: u64,
-//         memory_mapping: &mut MemoryMapping,
-//     ) -> Result<u64, Error> {
-//         use solana_zk_token_sdk::curve25519::{curve_syscall_traits::*, edwards, ristretto};
-//         match curve_id {
-//             CURVE25519_EDWARDS => {
-//                 let cost = invoke_context
-//                     .get_compute_budget()
-//                     .curve25519_edwards_validate_point_cost;
-//                 consume_compute_meter(invoke_context, cost)?;
+declare_builtin_function!(
+    // Elliptic Curve Point Validation
+    //
+    // Currently, only curve25519 Edwards and Ristretto representations are supported
+    SyscallCurvePointValidation,
+    fn rust(
+        invoke_context: &mut InvokeContext,
+        curve_id: u64,
+        point_addr: u64,
+        _arg3: u64,
+        _arg4: u64,
+        _arg5: u64,
+        memory_mapping: &mut MemoryMapping,
+    ) -> Result<u64, Error> {
+        use solana_zk_token_sdk::curve25519::{curve_syscall_traits::*, edwards, ristretto};
+        match curve_id {
+            CURVE25519_EDWARDS => {
+                let cost = invoke_context
+                    .get_compute_budget()
+                    .curve25519_edwards_validate_point_cost;
+                consume_compute_meter(invoke_context, cost)?;
 
-//                 let point = translate_type::<edwards::PodEdwardsPoint>(
-//                     memory_mapping,
-//                     point_addr,
-//                     invoke_context.get_check_aligned(),
-//                 )?;
+                let point = translate_type::<edwards::PodEdwardsPoint>(
+                    memory_mapping,
+                    point_addr,
+                    invoke_context.get_check_aligned(),
+                )?;
 
-//                 if edwards::validate_edwards(point) {
-//                     Ok(0)
-//                 } else {
-//                     Ok(1)
-//                 }
-//             }
-//             CURVE25519_RISTRETTO => {
-//                 let cost = invoke_context
-//                     .get_compute_budget()
-//                     .curve25519_ristretto_validate_point_cost;
-//                 consume_compute_meter(invoke_context, cost)?;
+                if edwards::validate_edwards(point) {
+                    Ok(0)
+                } else {
+                    Ok(1)
+                }
+            }
+            CURVE25519_RISTRETTO => {
+                let cost = invoke_context
+                    .get_compute_budget()
+                    .curve25519_ristretto_validate_point_cost;
+                consume_compute_meter(invoke_context, cost)?;
 
-//                 let point = translate_type::<ristretto::PodRistrettoPoint>(
-//                     memory_mapping,
-//                     point_addr,
-//                     invoke_context.get_check_aligned(),
-//                 )?;
+                let point = translate_type::<ristretto::PodRistrettoPoint>(
+                    memory_mapping,
+                    point_addr,
+                    invoke_context.get_check_aligned(),
+                )?;
 
-//                 if ristretto::validate_ristretto(point) {
-//                     Ok(0)
-//                 } else {
-//                     Ok(1)
-//                 }
-//             }
-//             _ => Ok(1),
-//         }
-//     }
-// );
+                if ristretto::validate_ristretto(point) {
+                    Ok(0)
+                } else {
+                    Ok(1)
+                }
+            }
+            _ => Ok(1),
+        }
+    }
+);
 
-// declare_builtin_function!(
-//     // Elliptic Curve Group Operations
-//     //
-//     // Currently, only curve25519 Edwards and Ristretto representations are supported
-//     SyscallCurveGroupOps,
-//     fn rust(
-//         invoke_context: &mut InvokeContext,
-//         curve_id: u64,
-//         group_op: u64,
-//         left_input_addr: u64,
-//         right_input_addr: u64,
-//         result_point_addr: u64,
-//         memory_mapping: &mut MemoryMapping,
-//     ) -> Result<u64, Error> {
-//         use solana_zk_token_sdk::curve25519::{
-//             curve_syscall_traits::*, edwards, ristretto, scalar,
-//         };
-//         match curve_id {
-//             CURVE25519_EDWARDS => match group_op {
-//                 ADD => {
-//                     let cost = invoke_context
-//                         .get_compute_budget()
-//                         .curve25519_edwards_add_cost;
-//                     consume_compute_meter(invoke_context, cost)?;
+declare_builtin_function!(
+    // Elliptic Curve Group Operations
+    //
+    // Currently, only curve25519 Edwards and Ristretto representations are supported
+    SyscallCurveGroupOps,
+    fn rust(
+        invoke_context: &mut InvokeContext,
+        curve_id: u64,
+        group_op: u64,
+        left_input_addr: u64,
+        right_input_addr: u64,
+        result_point_addr: u64,
+        memory_mapping: &mut MemoryMapping,
+    ) -> Result<u64, Error> {
+        use solana_zk_token_sdk::curve25519::{
+            curve_syscall_traits::*, edwards, ristretto, scalar,
+        };
+        match curve_id {
+            CURVE25519_EDWARDS => match group_op {
+                ADD => {
+                    let cost = invoke_context
+                        .get_compute_budget()
+                        .curve25519_edwards_add_cost;
+                    consume_compute_meter(invoke_context, cost)?;
 
-//                     let left_point = translate_type::<edwards::PodEdwardsPoint>(
-//                         memory_mapping,
-//                         left_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
-//                     let right_point = translate_type::<edwards::PodEdwardsPoint>(
-//                         memory_mapping,
-//                         right_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
+                    let left_point = translate_type::<edwards::PodEdwardsPoint>(
+                        memory_mapping,
+                        left_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
+                    let right_point = translate_type::<edwards::PodEdwardsPoint>(
+                        memory_mapping,
+                        right_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
 
-//                     if let Some(result_point) = edwards::add_edwards(left_point, right_point) {
-//                         *translate_type_mut::<edwards::PodEdwardsPoint>(
-//                             memory_mapping,
-//                             result_point_addr,
-//                             invoke_context.get_check_aligned(),
-//                         )? = result_point;
-//                         Ok(0)
-//                     } else {
-//                         Ok(1)
-//                     }
-//                 }
-//                 SUB => {
-//                     let cost = invoke_context
-//                         .get_compute_budget()
-//                         .curve25519_edwards_subtract_cost;
-//                     consume_compute_meter(invoke_context, cost)?;
+                    if let Some(result_point) = edwards::add_edwards(left_point, right_point) {
+                        *translate_type_mut::<edwards::PodEdwardsPoint>(
+                            memory_mapping,
+                            result_point_addr,
+                            invoke_context.get_check_aligned(),
+                        )? = result_point;
+                        Ok(0)
+                    } else {
+                        Ok(1)
+                    }
+                }
+                SUB => {
+                    let cost = invoke_context
+                        .get_compute_budget()
+                        .curve25519_edwards_subtract_cost;
+                    consume_compute_meter(invoke_context, cost)?;
 
-//                     let left_point = translate_type::<edwards::PodEdwardsPoint>(
-//                         memory_mapping,
-//                         left_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
-//                     let right_point = translate_type::<edwards::PodEdwardsPoint>(
-//                         memory_mapping,
-//                         right_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
+                    let left_point = translate_type::<edwards::PodEdwardsPoint>(
+                        memory_mapping,
+                        left_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
+                    let right_point = translate_type::<edwards::PodEdwardsPoint>(
+                        memory_mapping,
+                        right_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
 
-//                     if let Some(result_point) = edwards::subtract_edwards(left_point, right_point) {
-//                         *translate_type_mut::<edwards::PodEdwardsPoint>(
-//                             memory_mapping,
-//                             result_point_addr,
-//                             invoke_context.get_check_aligned(),
-//                         )? = result_point;
-//                         Ok(0)
-//                     } else {
-//                         Ok(1)
-//                     }
-//                 }
-//                 MUL => {
-//                     let cost = invoke_context
-//                         .get_compute_budget()
-//                         .curve25519_edwards_multiply_cost;
-//                     consume_compute_meter(invoke_context, cost)?;
+                    if let Some(result_point) = edwards::subtract_edwards(left_point, right_point) {
+                        *translate_type_mut::<edwards::PodEdwardsPoint>(
+                            memory_mapping,
+                            result_point_addr,
+                            invoke_context.get_check_aligned(),
+                        )? = result_point;
+                        Ok(0)
+                    } else {
+                        Ok(1)
+                    }
+                }
+                MUL => {
+                    let cost = invoke_context
+                        .get_compute_budget()
+                        .curve25519_edwards_multiply_cost;
+                    consume_compute_meter(invoke_context, cost)?;
 
-//                     let scalar = translate_type::<scalar::PodScalar>(
-//                         memory_mapping,
-//                         left_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
-//                     let input_point = translate_type::<edwards::PodEdwardsPoint>(
-//                         memory_mapping,
-//                         right_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
+                    let scalar = translate_type::<scalar::PodScalar>(
+                        memory_mapping,
+                        left_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
+                    let input_point = translate_type::<edwards::PodEdwardsPoint>(
+                        memory_mapping,
+                        right_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
 
-//                     if let Some(result_point) = edwards::multiply_edwards(scalar, input_point) {
-//                         *translate_type_mut::<edwards::PodEdwardsPoint>(
-//                             memory_mapping,
-//                             result_point_addr,
-//                             invoke_context.get_check_aligned(),
-//                         )? = result_point;
-//                         Ok(0)
-//                     } else {
-//                         Ok(1)
-//                     }
-//                 }
-//                 _ => Ok(1),
-//             },
+                    if let Some(result_point) = edwards::multiply_edwards(scalar, input_point) {
+                        *translate_type_mut::<edwards::PodEdwardsPoint>(
+                            memory_mapping,
+                            result_point_addr,
+                            invoke_context.get_check_aligned(),
+                        )? = result_point;
+                        Ok(0)
+                    } else {
+                        Ok(1)
+                    }
+                }
+                _ => Ok(1),
+            },
 
-//             CURVE25519_RISTRETTO => match group_op {
-//                 ADD => {
-//                     let cost = invoke_context
-//                         .get_compute_budget()
-//                         .curve25519_ristretto_add_cost;
-//                     consume_compute_meter(invoke_context, cost)?;
+            CURVE25519_RISTRETTO => match group_op {
+                ADD => {
+                    let cost = invoke_context
+                        .get_compute_budget()
+                        .curve25519_ristretto_add_cost;
+                    consume_compute_meter(invoke_context, cost)?;
 
-//                     let left_point = translate_type::<ristretto::PodRistrettoPoint>(
-//                         memory_mapping,
-//                         left_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
-//                     let right_point = translate_type::<ristretto::PodRistrettoPoint>(
-//                         memory_mapping,
-//                         right_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
+                    let left_point = translate_type::<ristretto::PodRistrettoPoint>(
+                        memory_mapping,
+                        left_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
+                    let right_point = translate_type::<ristretto::PodRistrettoPoint>(
+                        memory_mapping,
+                        right_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
 
-//                     if let Some(result_point) = ristretto::add_ristretto(left_point, right_point) {
-//                         *translate_type_mut::<ristretto::PodRistrettoPoint>(
-//                             memory_mapping,
-//                             result_point_addr,
-//                             invoke_context.get_check_aligned(),
-//                         )? = result_point;
-//                         Ok(0)
-//                     } else {
-//                         Ok(1)
-//                     }
-//                 }
-//                 SUB => {
-//                     let cost = invoke_context
-//                         .get_compute_budget()
-//                         .curve25519_ristretto_subtract_cost;
-//                     consume_compute_meter(invoke_context, cost)?;
+                    if let Some(result_point) = ristretto::add_ristretto(left_point, right_point) {
+                        *translate_type_mut::<ristretto::PodRistrettoPoint>(
+                            memory_mapping,
+                            result_point_addr,
+                            invoke_context.get_check_aligned(),
+                        )? = result_point;
+                        Ok(0)
+                    } else {
+                        Ok(1)
+                    }
+                }
+                SUB => {
+                    let cost = invoke_context
+                        .get_compute_budget()
+                        .curve25519_ristretto_subtract_cost;
+                    consume_compute_meter(invoke_context, cost)?;
 
-//                     let left_point = translate_type::<ristretto::PodRistrettoPoint>(
-//                         memory_mapping,
-//                         left_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
-//                     let right_point = translate_type::<ristretto::PodRistrettoPoint>(
-//                         memory_mapping,
-//                         right_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
+                    let left_point = translate_type::<ristretto::PodRistrettoPoint>(
+                        memory_mapping,
+                        left_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
+                    let right_point = translate_type::<ristretto::PodRistrettoPoint>(
+                        memory_mapping,
+                        right_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
 
-//                     if let Some(result_point) =
-//                         ristretto::subtract_ristretto(left_point, right_point)
-//                     {
-//                         *translate_type_mut::<ristretto::PodRistrettoPoint>(
-//                             memory_mapping,
-//                             result_point_addr,
-//                             invoke_context.get_check_aligned(),
-//                         )? = result_point;
-//                         Ok(0)
-//                     } else {
-//                         Ok(1)
-//                     }
-//                 }
-//                 MUL => {
-//                     let cost = invoke_context
-//                         .get_compute_budget()
-//                         .curve25519_ristretto_multiply_cost;
-//                     consume_compute_meter(invoke_context, cost)?;
+                    if let Some(result_point) =
+                        ristretto::subtract_ristretto(left_point, right_point)
+                    {
+                        *translate_type_mut::<ristretto::PodRistrettoPoint>(
+                            memory_mapping,
+                            result_point_addr,
+                            invoke_context.get_check_aligned(),
+                        )? = result_point;
+                        Ok(0)
+                    } else {
+                        Ok(1)
+                    }
+                }
+                MUL => {
+                    let cost = invoke_context
+                        .get_compute_budget()
+                        .curve25519_ristretto_multiply_cost;
+                    consume_compute_meter(invoke_context, cost)?;
 
-//                     let scalar = translate_type::<scalar::PodScalar>(
-//                         memory_mapping,
-//                         left_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
-//                     let input_point = translate_type::<ristretto::PodRistrettoPoint>(
-//                         memory_mapping,
-//                         right_input_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )?;
+                    let scalar = translate_type::<scalar::PodScalar>(
+                        memory_mapping,
+                        left_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
+                    let input_point = translate_type::<ristretto::PodRistrettoPoint>(
+                        memory_mapping,
+                        right_input_addr,
+                        invoke_context.get_check_aligned(),
+                    )?;
 
-//                     if let Some(result_point) = ristretto::multiply_ristretto(scalar, input_point) {
-//                         *translate_type_mut::<ristretto::PodRistrettoPoint>(
-//                             memory_mapping,
-//                             result_point_addr,
-//                             invoke_context.get_check_aligned(),
-//                         )? = result_point;
-//                         Ok(0)
-//                     } else {
-//                         Ok(1)
-//                     }
-//                 }
-//                 _ => Ok(1),
-//             },
+                    if let Some(result_point) = ristretto::multiply_ristretto(scalar, input_point) {
+                        *translate_type_mut::<ristretto::PodRistrettoPoint>(
+                            memory_mapping,
+                            result_point_addr,
+                            invoke_context.get_check_aligned(),
+                        )? = result_point;
+                        Ok(0)
+                    } else {
+                        Ok(1)
+                    }
+                }
+                _ => Ok(1),
+            },
 
-//             _ => Ok(1),
-//         }
-//     }
-// );
+            _ => Ok(1),
+        }
+    }
+);
 
-// declare_builtin_function!(
-//     // Elliptic Curve Multiscalar Multiplication
-//     //
-//     // Currently, only curve25519 Edwards and Ristretto representations are supported
-//     SyscallCurveMultiscalarMultiplication,
-//     fn rust(
-//         invoke_context: &mut InvokeContext,
-//         curve_id: u64,
-//         scalars_addr: u64,
-//         points_addr: u64,
-//         points_len: u64,
-//         result_point_addr: u64,
-//         memory_mapping: &mut MemoryMapping,
-//     ) -> Result<u64, Error> {
-//         use solana_zk_token_sdk::curve25519::{
-//             curve_syscall_traits::*, edwards, ristretto, scalar,
-//         };
+declare_builtin_function!(
+    // Elliptic Curve Multiscalar Multiplication
+    //
+    // Currently, only curve25519 Edwards and Ristretto representations are supported
+    SyscallCurveMultiscalarMultiplication,
+    fn rust(
+        invoke_context: &mut InvokeContext,
+        curve_id: u64,
+        scalars_addr: u64,
+        points_addr: u64,
+        points_len: u64,
+        result_point_addr: u64,
+        memory_mapping: &mut MemoryMapping,
+    ) -> Result<u64, Error> {
+        use solana_zk_token_sdk::curve25519::{
+            curve_syscall_traits::*, edwards, ristretto, scalar,
+        };
 
-//         let restrict_msm_length = invoke_context
-//             .feature_set
-//             .is_active(&feature_set::curve25519_restrict_msm_length::id());
-//         #[allow(clippy::collapsible_if)]
-//         if restrict_msm_length {
-//             if points_len > 512 {
-//                 return Err(Box::new(SyscallError::InvalidLength));
-//             }
-//         }
+        let restrict_msm_length = invoke_context
+            .feature_set
+            .is_active(&feature_set::curve25519_restrict_msm_length::id());
+        #[allow(clippy::collapsible_if)]
+        if restrict_msm_length {
+            if points_len > 512 {
+                return Err(Box::new(SyscallError::InvalidLength));
+            }
+        }
 
-//         match curve_id {
-//             CURVE25519_EDWARDS => {
-//                 let cost = invoke_context
-//                     .get_compute_budget()
-//                     .curve25519_edwards_msm_base_cost
-//                     .saturating_add(
-//                         invoke_context
-//                             .get_compute_budget()
-//                             .curve25519_edwards_msm_incremental_cost
-//                             .saturating_mul(points_len.saturating_sub(1)),
-//                     );
-//                 consume_compute_meter(invoke_context, cost)?;
+        match curve_id {
+            CURVE25519_EDWARDS => {
+                let cost = invoke_context
+                    .get_compute_budget()
+                    .curve25519_edwards_msm_base_cost
+                    .saturating_add(
+                        invoke_context
+                            .get_compute_budget()
+                            .curve25519_edwards_msm_incremental_cost
+                            .saturating_mul(points_len.saturating_sub(1)),
+                    );
+                consume_compute_meter(invoke_context, cost)?;
 
-//                 let scalars = translate_slice::<scalar::PodScalar>(
-//                     memory_mapping,
-//                     scalars_addr,
-//                     points_len,
-//                     invoke_context.get_check_aligned(),
-//                 )?;
+                let scalars = translate_slice::<scalar::PodScalar>(
+                    memory_mapping,
+                    scalars_addr,
+                    points_len,
+                    invoke_context.get_check_aligned(),
+                )?;
 
-//                 let points = translate_slice::<edwards::PodEdwardsPoint>(
-//                     memory_mapping,
-//                     points_addr,
-//                     points_len,
-//                     invoke_context.get_check_aligned(),
-//                 )?;
+                let points = translate_slice::<edwards::PodEdwardsPoint>(
+                    memory_mapping,
+                    points_addr,
+                    points_len,
+                    invoke_context.get_check_aligned(),
+                )?;
 
-//                 if let Some(result_point) = edwards::multiscalar_multiply_edwards(scalars, points) {
-//                     *translate_type_mut::<edwards::PodEdwardsPoint>(
-//                         memory_mapping,
-//                         result_point_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )? = result_point;
-//                     Ok(0)
-//                 } else {
-//                     Ok(1)
-//                 }
-//             }
+                if let Some(result_point) = edwards::multiscalar_multiply_edwards(scalars, points) {
+                    *translate_type_mut::<edwards::PodEdwardsPoint>(
+                        memory_mapping,
+                        result_point_addr,
+                        invoke_context.get_check_aligned(),
+                    )? = result_point;
+                    Ok(0)
+                } else {
+                    Ok(1)
+                }
+            }
 
-//             CURVE25519_RISTRETTO => {
-//                 let cost = invoke_context
-//                     .get_compute_budget()
-//                     .curve25519_ristretto_msm_base_cost
-//                     .saturating_add(
-//                         invoke_context
-//                             .get_compute_budget()
-//                             .curve25519_ristretto_msm_incremental_cost
-//                             .saturating_mul(points_len.saturating_sub(1)),
-//                     );
-//                 consume_compute_meter(invoke_context, cost)?;
+            CURVE25519_RISTRETTO => {
+                let cost = invoke_context
+                    .get_compute_budget()
+                    .curve25519_ristretto_msm_base_cost
+                    .saturating_add(
+                        invoke_context
+                            .get_compute_budget()
+                            .curve25519_ristretto_msm_incremental_cost
+                            .saturating_mul(points_len.saturating_sub(1)),
+                    );
+                consume_compute_meter(invoke_context, cost)?;
 
-//                 let scalars = translate_slice::<scalar::PodScalar>(
-//                     memory_mapping,
-//                     scalars_addr,
-//                     points_len,
-//                     invoke_context.get_check_aligned(),
-//                 )?;
+                let scalars = translate_slice::<scalar::PodScalar>(
+                    memory_mapping,
+                    scalars_addr,
+                    points_len,
+                    invoke_context.get_check_aligned(),
+                )?;
 
-//                 let points = translate_slice::<ristretto::PodRistrettoPoint>(
-//                     memory_mapping,
-//                     points_addr,
-//                     points_len,
-//                     invoke_context.get_check_aligned(),
-//                 )?;
+                let points = translate_slice::<ristretto::PodRistrettoPoint>(
+                    memory_mapping,
+                    points_addr,
+                    points_len,
+                    invoke_context.get_check_aligned(),
+                )?;
 
-//                 if let Some(result_point) =
-//                     ristretto::multiscalar_multiply_ristretto(scalars, points)
-//                 {
-//                     *translate_type_mut::<ristretto::PodRistrettoPoint>(
-//                         memory_mapping,
-//                         result_point_addr,
-//                         invoke_context.get_check_aligned(),
-//                     )? = result_point;
-//                     Ok(0)
-//                 } else {
-//                     Ok(1)
-//                 }
-//             }
+                if let Some(result_point) =
+                    ristretto::multiscalar_multiply_ristretto(scalars, points)
+                {
+                    *translate_type_mut::<ristretto::PodRistrettoPoint>(
+                        memory_mapping,
+                        result_point_addr,
+                        invoke_context.get_check_aligned(),
+                    )? = result_point;
+                    Ok(0)
+                } else {
+                    Ok(1)
+                }
+            }
 
-//             _ => Ok(1),
-//         }
-//     }
-// );
+            _ => Ok(1),
+        }
+    }
+);
 
 declare_builtin_function!(
     /// Set return data

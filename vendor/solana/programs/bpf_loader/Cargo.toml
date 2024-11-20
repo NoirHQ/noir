@@ -21,7 +21,7 @@ scopeguard = { version = "1.2", default-features = false }
 # solana-measure = { workspace = true }
 solana-program-runtime = { workspace = true, default-features = false }
 solana-sdk = { workspace = true, default-features = false }
-# solana-zk-token-sdk = { workspace = true }
+solana-zk-token-sdk = { workspace = true, default-features = false }
 solana_rbpf = { workspace = true, default-features = false }
 thiserror = { version = "2.0", default-features = false }
 
@@ -44,5 +44,6 @@ std = [
     "solana-program-runtime/std",
     "solana-sdk/std",
     "solana_rbpf/std",
+    "solana-zk-token-sdk/std",
     "thiserror/std",
 ]
