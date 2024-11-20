@@ -36,6 +36,7 @@ members = [
 	"vendor/solana/program-runtime",
 	"vendor/solana/programs/address-lookup-table",
 	"vendor/solana/programs/bpf_loader",
+	"vendor/solana/programs/compute-budget",
 	"vendor/solana/programs/config",
 	"vendor/solana/programs/loader-v4",
 	"vendor/solana/programs/system",
@@ -85,6 +86,7 @@ pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/bal
 pallet-multimap = { path = "frame/multimap", default-features = false }
 solana-address-lookup-table-program = { path = "vendor/solana/programs/address-lookup-table", default-features = false }
 solana-bpf-loader-program = { path = "vendor/solana/programs/bpf_loader", default-features = false }
+solana-compute-budget-program = { path = "vendor/solana/programs/compute-budget", default-features = false }
 solana-config-program = { path = "vendor/solana/programs/config", default-features = false }
 solana-frozen-abi-macro = { path = "vendor/solana/frozen-abi/macro" }
 solana-loader-v4-program = { path = "vendor/solana/programs/loader-v4", default-features = false }
