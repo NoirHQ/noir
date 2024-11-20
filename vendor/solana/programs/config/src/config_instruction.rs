@@ -1,5 +1,6 @@
 use {
     crate::{id, ConfigKeys, ConfigState},
+    alloc::{vec, vec::Vec},
     solana_sdk::{
         instruction::{AccountMeta, Instruction},
         pubkey::Pubkey,

@@ -63,7 +63,7 @@ pub use signer::signers;
 //};
 pub use solana_program::{
     account_info, blake3, borsh1, bpf_loader, bpf_loader_deprecated, bpf_loader_upgradeable, clock,
-    decode_error, ed25519_program, epoch_rewards, epoch_schedule, fee_calculator, hash,
+    config, decode_error, ed25519_program, epoch_rewards, epoch_schedule, fee_calculator, hash,
     incinerator, instruction, keccak, lamports, loader_upgradeable_instruction, loader_v4,
     loader_v4_instruction, message, native_token, nonce, program, program_error, program_stubs,
     rent, sanitize, secp256k1_program, secp256k1_recover, short_vec, slot_hashes, slot_history,

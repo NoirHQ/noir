@@ -2,13 +2,14 @@
 
 use {
     crate::ConfigKeys,
-    bincode::deserialize,
+    alloc::{collections::BTreeSet, vec::Vec},
+    // bincode::deserialize,
+    solana_program::bincode::deserialize,
     solana_program_runtime::{declare_process_instruction, ic_msg},
     solana_sdk::{
         instruction::InstructionError, program_utils::limited_deserialize, pubkey::Pubkey,
         transaction_context::IndexOfAccount,
     },
-    std::collections::BTreeSet,
 };
 
 pub const DEFAULT_COMPUTE_UNITS: u64 = 450;
@@ -136,8 +137,9 @@ mod tests {
     use {
         super::*,
         crate::{config_instruction, get_config_data, id, ConfigKeys, ConfigState},
-        bincode::serialized_size,
         serde_derive::{Deserialize, Serialize},
+        // bincode::serialized_size,
+        solana_program::bincode::serialized_size,
         solana_program_runtime::invoke_context::mock_process_instruction,
         solana_sdk::{
             account::{AccountSharedData, ReadableAccount},

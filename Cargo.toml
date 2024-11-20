@@ -35,6 +35,7 @@ members = [
 	"vendor/solana/frozen-abi/macro",
 	"vendor/solana/program-runtime",
 	"vendor/solana/programs/bpf_loader",
+	"vendor/solana/programs/config",
 	"vendor/solana/programs/loader-v4",
 	"vendor/solana/programs/system",
 	"vendor/solana/rbpf",
@@ -82,6 +83,7 @@ pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/as
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 solana-bpf-loader-program = { path = "vendor/solana/programs/bpf_loader", default-features = false }
+solana-config-program = { path = "vendor/solana/programs/config", default-features = false }
 solana-frozen-abi-macro = { path = "vendor/solana/frozen-abi/macro" }
 solana-loader-v4-program = { path = "vendor/solana/programs/loader-v4", default-features = false }
 solana-program = { path = "vendor/solana/sdk/program", default-features = false }

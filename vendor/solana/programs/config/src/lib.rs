@@ -1,14 +1,19 @@
 #![allow(clippy::arithmetic_side_effects)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+
 pub mod config_instruction;
 pub mod config_processor;
 pub mod date_instruction;
 
 pub use solana_sdk::config::program::id;
-#[allow(deprecated)]
-use solana_sdk::stake::config::Config as StakeConfig;
+// #[allow(deprecated)]
+// use solana_sdk::stake::config::Config as StakeConfig;
 use {
-    bincode::{deserialize, serialize, serialized_size},
+    alloc::{boxed::Box, vec::Vec},
     serde_derive::{Deserialize, Serialize},
+    solana_program::bincode::{deserialize, serialize, serialized_size},
     solana_sdk::{
         account::{Account, AccountSharedData},
         pubkey::Pubkey,
@@ -22,12 +27,12 @@ pub trait ConfigState: serde::Serialize + Default {
 }
 
 // TODO move ConfigState into `solana_program` to implement trait locally
-#[allow(deprecated)]
-impl ConfigState for StakeConfig {
-    fn max_space() -> u64 {
-        serialized_size(&StakeConfig::default()).unwrap()
-    }
-}
+// #[allow(deprecated)]
+// impl ConfigState for StakeConfig {
+//     fn max_space() -> u64 {
+//         serialized_size(&StakeConfig::default()).unwrap()
+//     }
+// }
 
 /// A collection of keys to be stored in Config account data.
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -44,10 +49,18 @@ impl ConfigKeys {
     }
 }
 
-pub fn get_config_data(bytes: &[u8]) -> Result<&[u8], bincode::Error> {
-    deserialize::<ConfigKeys>(bytes)
-        .and_then(|keys| serialized_size(&keys))
-        .map(|offset| &bytes[offset as usize..])
+// pub fn get_config_data(bytes: &[u8]) -> Result<&[u8], bincode::Error> {
+//     deserialize::<ConfigKeys>(bytes)
+//         .and_then(|keys| serialized_size(&keys))
+//         .map(|offset| &bytes[offset as usize..])
+// }
+
+pub fn get_config_data(bytes: &[u8]) -> Result<&[u8], Box<dyn core::error::Error>> {
+    let config_data = deserialize::<ConfigKeys>(bytes)
+        .map(|keys| serialized_size(&keys))?
+        .map(|offset| &bytes[offset as usize..])?;
+
+    Ok(config_data)
 }
 
 // utility for pre-made Accounts

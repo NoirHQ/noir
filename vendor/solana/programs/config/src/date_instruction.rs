@@ -1,9 +1,11 @@
 ///
 /// A library for creating a trusted date oracle.
 ///
-use bincode::{deserialize, serialized_size};
+// use bincode::{deserialize, serialized_size};
+use solana_program::bincode::{deserialize, serialized_size};
 use {
     crate::{config_instruction, ConfigState},
+    alloc::{vec, vec::Vec},
     chrono::{
         prelude::{DateTime, TimeZone, Utc},
         serde::ts_seconds,
