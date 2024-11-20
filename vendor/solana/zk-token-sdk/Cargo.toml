@@ -1,0 +1,41 @@
+[package]
+name = "solana-zk-token-sdk"
+description = "Solana Zk Token SDK"
+documentation = "https://docs.rs/solana-zk-token-sdk"
+version = "1.18.26"
+authors = ["Solana Labs Maintainers <maintainers@solanalabs.com>"]
+repository = "https://github.com/solana-labs/solana"
+homepage = "https://solanalabs.com/"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+base64 = { workspace = true }
+bytemuck = { workspace = true, features = ["derive"] }
+num-derive = { workspace = true }
+num-traits = { workspace = true }
+solana-program = { workspace = true }
+
+[dev-dependencies]
+tiny-bip39 = { workspace = true }
+
+[target.'cfg(not(target_os = "solana"))'.dependencies]
+aes-gcm-siv = { workspace = true }
+bincode = { workspace = true }
+byteorder = { workspace = true }
+curve25519-dalek = { workspace = true, features = ["serde"] }
+getrandom = { version = "0.1", features = ["dummy"] }
+itertools = { workspace = true }
+lazy_static = { workspace = true }
+merlin = { workspace = true }
+rand = { version = "0.7" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sha3 = "0.9"
+solana-sdk = { workspace = true }
+subtle = { workspace = true }
+thiserror = { workspace = true }
+zeroize = { workspace = true, features = ["zeroize_derive"] }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
