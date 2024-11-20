@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use bytemuck::{Pod, Zeroable};
 pub use target_arch::*;
 
@@ -63,7 +64,11 @@ mod target_arch {
         type Error = Curve25519Error;
 
         fn try_from(pod: &PodRistrettoPoint) -> Result<Self, Self::Error> {
+            // CompressedRistretto::from_slice(&pod.0)
+            //     .decompress()
+            //     .ok_or(Curve25519Error::PodConversion)
             CompressedRistretto::from_slice(&pod.0)
+                .map_err(|_| Curve25519Error::PodConversion)?
                 .decompress()
                 .ok_or(Curve25519Error::PodConversion)
         }
@@ -73,8 +78,12 @@ mod target_arch {
         type Point = Self;
 
         fn validate_point(&self) -> bool {
+            // CompressedRistretto::from_slice(&self.0)
+            //     .decompress()
+            //     .is_some()
             CompressedRistretto::from_slice(&self.0)
-                .decompress()
+                .ok()
+                .and_then(|compressed| compressed.decompress())
                 .is_some()
         }
     }

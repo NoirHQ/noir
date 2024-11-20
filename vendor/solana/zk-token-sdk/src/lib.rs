@@ -1,4 +1,7 @@
 #![allow(clippy::arithmetic_side_effects, clippy::op_ref)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
 
 // The warning `clippy::op_ref` is disabled to allow efficient operator arithmetic of structs that
 // implement the `Copy` trait.
@@ -17,31 +20,31 @@
 //
 // `clippy::op_ref` is turned off to prevent clippy from warning that this is not idiomatic code.
 
-#[cfg(not(target_os = "solana"))]
-#[macro_use]
-pub(crate) mod macros;
-#[cfg(not(target_os = "solana"))]
-pub mod encryption;
-#[cfg(not(target_os = "solana"))]
-pub mod errors;
-#[cfg(not(target_os = "solana"))]
-mod range_proof;
-#[cfg(not(target_os = "solana"))]
-mod sigma_proofs;
-#[cfg(not(target_os = "solana"))]
-mod transcript;
+// #[cfg(not(target_os = "solana"))]
+// #[macro_use]
+// pub(crate) mod macros;
+// #[cfg(not(target_os = "solana"))]
+// pub mod encryption;
+// #[cfg(not(target_os = "solana"))]
+// pub mod errors;
+// #[cfg(not(target_os = "solana"))]
+// mod range_proof;
+// #[cfg(not(target_os = "solana"))]
+// mod sigma_proofs;
+// #[cfg(not(target_os = "solana"))]
+// mod transcript;
 
 // TODO: re-organize visibility
 pub mod curve25519;
-pub mod instruction;
-pub mod zk_token_elgamal;
-pub mod zk_token_proof_instruction;
-pub mod zk_token_proof_program;
-pub mod zk_token_proof_state;
+// pub mod instruction;
+// pub mod zk_token_elgamal;
+// pub mod zk_token_proof_instruction;
+// pub mod zk_token_proof_program;
+// pub mod zk_token_proof_state;
 
-/// Byte length of a compressed Ristretto point or scalar in Curve255519
-const UNIT_LEN: usize = 32;
-/// Byte length of a compressed Ristretto point in Curve25519
-const RISTRETTO_POINT_LEN: usize = UNIT_LEN;
-/// Byte length of a scalar in Curve25519
-const SCALAR_LEN: usize = UNIT_LEN;
+// /// Byte length of a compressed Ristretto point or scalar in Curve255519
+// const UNIT_LEN: usize = 32;
+// /// Byte length of a compressed Ristretto point in Curve25519
+// const RISTRETTO_POINT_LEN: usize = UNIT_LEN;
+// /// Byte length of a scalar in Curve25519
+// const SCALAR_LEN: usize = UNIT_LEN;
