@@ -12,7 +12,6 @@ use {
         str::FromStr,
     },
     num_derive::{FromPrimitive, ToPrimitive},
-    thiserror::Error,
 };
 
 /// Number of bytes in a pubkey
@@ -26,7 +25,8 @@ const MAX_BASE58_LEN: usize = 44;
 
 const PDA_MARKER: &[u8; 21] = b"ProgramDerivedAddress";
 
-#[derive(Error, Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub enum PubkeyError {
     /// Length of the seed is too long for address generation
     #[cfg_attr(
@@ -96,7 +96,8 @@ pub struct Pubkey(pub(crate) [u8; 32]);
 
 impl crate::sanitize::Sanitize for Pubkey {}
 
-#[derive(Error, Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub enum ParsePubkeyError {
     #[cfg_attr(feature = "std", error("String is the wrong size"))]
     WrongSize,

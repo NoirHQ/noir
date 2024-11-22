@@ -6,7 +6,6 @@ use crate::{
 use {
     crate::{instruction::Instruction, message::MessageHeader, pubkey::Pubkey},
     alloc::{collections::BTreeMap, vec::Vec},
-    thiserror::Error,
 };
 
 /// A helper struct to collect pubkeys compiled for a set of instructions
@@ -17,7 +16,8 @@ pub(crate) struct CompiledKeys {
 }
 
 #[cfg_attr(target_os = "solana", allow(dead_code))]
-#[derive(PartialEq, Debug, Error, Eq, Clone)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(PartialEq, Debug, Eq, Clone)]
 pub enum CompileError {
     #[cfg_attr(feature = "std", error("account index overflowed during compilation"))]
     AccountIndexOverflow,

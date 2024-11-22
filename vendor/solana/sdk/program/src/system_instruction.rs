@@ -55,10 +55,10 @@ use {
         vec::Vec,
     },
     num_derive::{FromPrimitive, ToPrimitive},
-    thiserror::Error,
 };
 
-#[derive(Error, Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub enum SystemError {
     #[cfg_attr(
         feature = "std",

@@ -1,8 +1,8 @@
 #[cfg(not(target_os = "solana"))]
 use solana_program::message::AddressLoaderError;
-use thiserror::Error;
 
-#[derive(Debug, Error, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum AddressLookupError {
     /// Attempted to lookup addresses from a table that does not exist
     #[cfg_attr(

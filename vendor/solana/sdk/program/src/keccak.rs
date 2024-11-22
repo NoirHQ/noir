@@ -8,7 +8,6 @@ use {
     borsh::{BorshDeserialize, BorshSchema, BorshSerialize},
     core::{convert::TryFrom, fmt, mem, str::FromStr},
     sha3::{Digest, Keccak256},
-    thiserror::Error,
 };
 
 pub const HASH_BYTES: usize = 32;
@@ -75,7 +74,8 @@ impl fmt::Display for Hash {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseHashError {
     #[cfg_attr(feature = "std", error("string decoded to wrong size for hash"))]
     WrongSize,

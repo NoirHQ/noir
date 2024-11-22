@@ -10,7 +10,6 @@ use {
     bytemuck::{Pod, Zeroable},
     core::{convert::TryFrom, fmt, mem, str::FromStr},
     sha2::{Digest, Sha256},
-    thiserror::Error,
 };
 
 /// Size of a hash in bytes.
@@ -96,7 +95,8 @@ impl fmt::Display for Hash {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseHashError {
     #[cfg_attr(feature = "std", error("string decoded to wrong size for hash"))]
     WrongSize,

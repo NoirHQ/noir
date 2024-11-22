@@ -19,7 +19,6 @@ use {
     },
     alloc::{borrow::Cow, vec::Vec},
     core::convert::TryFrom,
-    thiserror::Error,
 };
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -77,16 +76,18 @@ pub enum SanitizedMessage {
     V0(v0::LoadedMessage<'static>),
 }
 
-#[derive(PartialEq, Debug, Error, Eq, Clone)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(PartialEq, Debug, Eq, Clone)]
 pub enum SanitizeMessageError {
-    #[error("index out of bounds")]
+    #[cfg_attr(feature = "std", error("index out of bounds"))]
     IndexOutOfBounds,
-    #[error("value out of bounds")]
+    #[cfg_attr(feature = "std", error("value out of bounds"))]
     ValueOutOfBounds,
-    #[error("invalid value")]
+    #[cfg_attr(feature = "std", error("invalid value"))]
     InvalidValue,
-    #[error("{0}")]
-    AddressLoaderError(#[from] AddressLoaderError),
+    #[cfg_attr(feature = "std", error("{0}"))]
+    // AddressLoaderError(#[from] AddressLoaderError),
+    AddressLoaderError(AddressLoaderError),
 }
 
 impl From<SanitizeError> for SanitizeMessageError {
@@ -96,6 +97,12 @@ impl From<SanitizeError> for SanitizeMessageError {
             SanitizeError::ValueOutOfBounds => Self::ValueOutOfBounds,
             SanitizeError::InvalidValue => Self::InvalidValue,
         }
+    }
+}
+
+impl From<AddressLoaderError> for SanitizeMessageError {
+    fn from(err: AddressLoaderError) -> Self {
+        SanitizeMessageError::AddressLoaderError(err)
     }
 }
 

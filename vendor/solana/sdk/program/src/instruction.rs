@@ -19,7 +19,6 @@ use {
     alloc::{string::String, vec::Vec},
     borsh::BorshSerialize,
     serde::Serialize,
-    thiserror::Error,
 };
 
 /// Reasons the runtime might have rejected an instruction.
@@ -30,7 +29,8 @@ use {
 /// dangerous to include error strings from 3rd party crates because they could
 /// change at any time and changes to them are difficult to detect.
 //#[cfg_attr(not(target_os = "solana"), derive(AbiExample, AbiEnumVisitor))]
-#[derive(Serialize, Deserialize, Debug, Error, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub enum InstructionError {
     /// Deprecated! Use CustomError instead!
     /// The program instruction returned an error

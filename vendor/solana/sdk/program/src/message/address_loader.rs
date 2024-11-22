@@ -1,9 +1,7 @@
-use {
-    super::v0::{LoadedAddresses, MessageAddressTableLookup},
-    thiserror::Error,
-};
+use super::v0::{LoadedAddresses, MessageAddressTableLookup};
 
-#[derive(Debug, Error, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum AddressLoaderError {
     /// Address loading from lookup tables is disabled
     #[cfg_attr(

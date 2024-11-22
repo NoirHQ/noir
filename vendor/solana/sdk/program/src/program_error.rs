@@ -10,11 +10,11 @@ use {
     borsh::io::Error as BorshIoError,
     core::convert::TryFrom,
     num_traits::{FromPrimitive, ToPrimitive},
-    thiserror::Error,
 };
 
 /// Reasons the program may fail
-#[derive(Clone, Debug, Deserialize, Eq, Error, PartialEq, Serialize)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum ProgramError {
     /// Allows on-chain programs to implement program-specific error types and see them returned
     /// by the Solana runtime. A program-specific error may be any type that is represented as

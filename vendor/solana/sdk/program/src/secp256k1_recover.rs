@@ -28,10 +28,10 @@ use {
     alloc::string::ToString,
     borsh::{BorshDeserialize, BorshSchema, BorshSerialize},
     core::convert::TryFrom,
-    thiserror::Error,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Secp256k1RecoverError {
     #[cfg_attr(
         feature = "std",

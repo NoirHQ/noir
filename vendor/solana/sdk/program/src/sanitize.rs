@@ -1,9 +1,9 @@
 //! A trait for sanitizing values and members of over the wire messages.
 
 use alloc::vec::Vec;
-use thiserror::Error;
 
-#[derive(PartialEq, Debug, Error, Eq, Clone)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(PartialEq, Debug, Eq, Clone)]
 pub enum SanitizeError {
     #[cfg_attr(feature = "std", error("index out of bounds"))]
     IndexOutOfBounds,
