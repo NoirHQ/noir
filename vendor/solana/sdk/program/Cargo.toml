@@ -70,4 +70,5 @@ std = [
 ]
 serde = [
 	"dep:serde",
+	"bincode/serde",
 ]
