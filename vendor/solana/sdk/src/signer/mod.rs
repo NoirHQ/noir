@@ -12,7 +12,6 @@ use {
     alloc::{boxed::Box, string::String, vec::Vec},
     core::{error, ops::Deref},
     itertools::Itertools,
-    thiserror::Error,
 };
 
 pub mod keypair;
@@ -20,42 +19,55 @@ pub mod keypair;
 pub mod presigner;
 pub mod signers;
 
-#[derive(Debug, Error, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(thiserror::Error))]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SignerError {
-    #[error("keypair-pubkey mismatch")]
+    #[cfg_attr(feature = "std", error("keypair-pubkey mismatch"))]
     KeypairPubkeyMismatch,
 
-    #[error("not enough signers")]
+    #[cfg_attr(feature = "std", error("not enough signers"))]
     NotEnoughSigners,
 
-    #[error("transaction error")]
-    TransactionError(#[from] TransactionError),
+    #[cfg_attr(feature = "std", error("transaction error"))]
+    TransactionError(TransactionError),
 
-    #[error("custom error: {0}")]
+    #[cfg_attr(feature = "std", error("custom error: {0}"))]
     Custom(String),
 
     // Presigner-specific Errors
-    #[error("presigner error")]
-    PresignerError(#[from] PresignerError),
+    #[cfg_attr(feature = "std", error("presigner error"))]
+    PresignerError(PresignerError),
 
     // Remote Keypair-specific Errors
-    #[error("connection error: {0}")]
+    #[cfg_attr(feature = "std", error("connection error: {0}"))]
     Connection(String),
 
-    #[error("invalid input: {0}")]
+    #[cfg_attr(feature = "std", error("invalid input: {0}"))]
     InvalidInput(String),
 
-    #[error("no device found")]
+    #[cfg_attr(feature = "std", error("no device found"))]
     NoDeviceFound,
 
-    #[error("{0}")]
+    #[cfg_attr(feature = "std", error("{0}"))]
     Protocol(String),
 
-    #[error("{0}")]
+    #[cfg_attr(feature = "std", error("{0}"))]
     UserCancel(String),
 
-    #[error("too many signers")]
+    #[cfg_attr(feature = "std", error("too many signers"))]
     TooManySigners,
+}
+
+impl From<TransactionError> for SignerError {
+    fn from(err: TransactionError) -> Self {
+        SignerError::TransactionError(err)
+    }
+}
+
+impl From<PresignerError> for SignerError {
+    fn from(err: PresignerError) -> Self {
+        SignerError::PresignerError(err)
+    }
 }
 
 /// The `Signer` trait declares operations that all digital signature providers

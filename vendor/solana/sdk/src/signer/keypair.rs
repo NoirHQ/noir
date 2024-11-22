@@ -57,6 +57,7 @@ impl Keypair {
     }
 
     /// Recovers a `Keypair` from a byte array
+    #[cfg(feature = "std")]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, ed25519_dalek::SignatureError> {
         if bytes.len() < ed25519_dalek::KEYPAIR_LENGTH {
             return Err(ed25519_dalek::SignatureError::from_source(String::from(
