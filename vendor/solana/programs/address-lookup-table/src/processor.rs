@@ -1,5 +1,5 @@
 use {
-    alloc::vec::Vec,
+    alloc::{boxed::Box, vec::Vec},
     core::convert::TryFrom,
     solana_program_runtime::{declare_process_instruction, ic_msg, invoke_context::InvokeContext},
     solana_sdk::{

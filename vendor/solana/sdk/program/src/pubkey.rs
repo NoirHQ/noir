@@ -12,6 +12,7 @@ use {
         str::FromStr,
     },
     num_derive::{FromPrimitive, ToPrimitive},
+    thiserror::Error,
 };
 
 /// Number of bytes in a pubkey
@@ -25,21 +26,14 @@ const MAX_BASE58_LEN: usize = 44;
 
 const PDA_MARKER: &[u8; 21] = b"ProgramDerivedAddress";
 
-#[cfg_attr(feature = "std", derive(thiserror::Error))]
-#[derive(Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
+#[derive(Error, Debug, Serialize, Clone, PartialEq, Eq, FromPrimitive, ToPrimitive)]
 pub enum PubkeyError {
     /// Length of the seed is too long for address generation
-    #[cfg_attr(
-        feature = "std",
-        error("Length of the seed is too long for address generation")
-    )]
+    #[error("Length of the seed is too long for address generation")]
     MaxSeedLengthExceeded,
-    #[cfg_attr(
-        feature = "std",
-        error("Provided seeds do not result in a valid address")
-    )]
+    #[error("Provided seeds do not result in a valid address")]
     InvalidSeeds,
-    #[cfg_attr(feature = "std", error("Provided owner is not allowed"))]
+    #[error("Provided owner is not allowed")]
     IllegalOwner,
 }
 impl<T> DecodeError<T> for PubkeyError {

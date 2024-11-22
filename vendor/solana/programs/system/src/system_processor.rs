@@ -1,4 +1,5 @@
 use {
+    alloc::boxed::Box,
     crate::system_instruction::{
         advance_nonce_account, authorize_nonce_account, initialize_nonce_account,
         withdraw_nonce_account,
