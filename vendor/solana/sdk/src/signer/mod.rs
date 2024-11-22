@@ -9,13 +9,8 @@ use {
         signature::{PresignerError, Signature},
         transaction::TransactionError,
     },
-    alloc::{
-        boxed::Box,
-        string::{String, ToString},
-        vec::Vec,
-    },
+    alloc::{boxed::Box, string::String, vec::Vec},
     core::{error, ops::Deref},
-    core2::io::{Read, Write},
     itertools::Itertools,
     thiserror::Error,
 };
@@ -139,39 +134,39 @@ pub fn unique_signers(signers: Vec<&dyn Signer>) -> Vec<&dyn Signer> {
 
 /// The `EncodableKey` trait defines the interface by which cryptographic keys/keypairs are read,
 /// written, and derived from sources.
-pub trait EncodableKey: Sized {
-    fn read<R: Read>(reader: &mut R) -> Result<Self, Box<dyn error::Error>>;
-    // fn read_from_file<F: AsRef<Path>>(path: F) -> Result<Self, Box<dyn error::Error>> {
-    //     let mut file = File::open(path.as_ref())?;
-    //     Self::read(&mut file)
-    // }
-    fn write<W: Write>(&self, writer: &mut W) -> Result<String, Box<dyn error::Error>>;
-    // fn write_to_file<F: AsRef<Path>>(&self, outfile: F) -> Result<String, Box<dyn error::Error>> {
-    //     let outfile = outfile.as_ref();
+// pub trait EncodableKey: Sized {
+//     fn read<R: Read>(reader: &mut R) -> Result<Self, Box<dyn error::Error>>;
+//     fn read_from_file<F: AsRef<Path>>(path: F) -> Result<Self, Box<dyn error::Error>> {
+//         let mut file = File::open(path.as_ref())?;
+//         Self::read(&mut file)
+//     }
+//     fn write<W: Write>(&self, writer: &mut W) -> Result<String, Box<dyn error::Error>>;
+//     fn write_to_file<F: AsRef<Path>>(&self, outfile: F) -> Result<String, Box<dyn error::Error>> {
+//         let outfile = outfile.as_ref();
 
-    //     if let Some(outdir) = outfile.parent() {
-    //         fs::create_dir_all(outdir)?;
-    //     }
+//         if let Some(outdir) = outfile.parent() {
+//             fs::create_dir_all(outdir)?;
+//         }
 
-    //     let mut f = {
-    //         #[cfg(not(unix))]
-    //         {
-    //             OpenOptions::new()
-    //         }
-    //         #[cfg(unix)]
-    //         {
-    //             use std::os::unix::fs::OpenOptionsExt;
-    //             OpenOptions::new().mode(0o600)
-    //         }
-    //     }
-    //     .write(true)
-    //     .truncate(true)
-    //     .create(true)
-    //     .open(outfile)?;
+//         let mut f = {
+//             #[cfg(not(unix))]
+//             {
+//                 OpenOptions::new()
+//             }
+//             #[cfg(unix)]
+//             {
+//                 use std::os::unix::fs::OpenOptionsExt;
+//                 OpenOptions::new().mode(0o600)
+//             }
+//         }
+//         .write(true)
+//         .truncate(true)
+//         .create(true)
+//         .open(outfile)?;
 
-    //     self.write(&mut f)
-    // }
-}
+//         self.write(&mut f)
+//     }
+// }
 
 /// The `SeedDerivable` trait defines the interface by which cryptographic keys/keypairs are
 /// derived from byte seeds, derivation paths, and passphrases.
@@ -189,12 +184,12 @@ pub trait SeedDerivable: Sized {
 
 /// The `EncodableKeypair` trait extends `EncodableKey` for asymmetric keypairs, i.e. have
 /// associated public keys.
-pub trait EncodableKeypair: EncodableKey {
-    type Pubkey: ToString;
+// pub trait EncodableKeypair: EncodableKey {
+//     type Pubkey: ToString;
 
-    /// Returns an encodable representation of the associated public key.
-    fn encodable_pubkey(&self) -> Self::Pubkey;
-}
+//     /// Returns an encodable representation of the associated public key.
+//     fn encodable_pubkey(&self) -> Self::Pubkey;
+// }
 
 #[cfg(test)]
 mod tests {

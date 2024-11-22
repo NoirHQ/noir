@@ -17,7 +17,6 @@ bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde
 borsh = { version = "1.5", default-features = false, features = ["derive", "unstable__schema"] }
 bs58 = { version = "0.5", default-features = false }
 bytemuck = { version = "1.14", features = ["derive"] }
-core2 = { version = "0.4.0", default-features = false, features = ["alloc"] }
 derivation-path = { version = "0.2", default-features = false }
 ed25519-dalek = { version = "2.1.1", default-features = false, features = ["alloc"] }
 #curve25519-dalek = { version = "4.1", optional = true }
@@ -49,7 +48,6 @@ default = ["std", "full"]
 std = [
 	"borsh/std",
 	"bs58/std",
-	"core2/std",
 	"derivation-path/std",
 	"ed25519-dalek/std",
 	"ed25519-dalek/rand_core",

@@ -8,8 +8,8 @@ use {
         pubkey::Pubkey,
         signature::Signature,
         signer::{
-            EncodableKey,
-            EncodableKeypair,
+            // EncodableKey,
+            // EncodableKeypair,
             // SeedDerivable,
             Signer,
             SignerError,
@@ -18,7 +18,6 @@ use {
     alloc::{
         boxed::Box,
         string::{String, ToString},
-        vec::Vec,
     },
     // ed25519_dalek_bip32::Error as Bip32Error,
     // hmac::Hmac,
@@ -151,18 +150,15 @@ where
     }
 }
 
-impl EncodableKey for Keypair {
-    fn read<R: core2::io::Read>(reader: &mut R) -> Result<Self, Box<dyn core::error::Error>> {
-        read_keypair(reader)
-    }
+// impl EncodableKey for Keypair {
+//     fn read<R: Read>(reader: &mut R) -> Result<Self, Box<dyn error::Error>> {
+//         read_keypair(reader)
+//     }
 
-    fn write<W: core2::io::Write>(
-        &self,
-        writer: &mut W,
-    ) -> Result<String, Box<dyn core::error::Error>> {
-        write_keypair(self, writer)
-    }
-}
+//     fn write<W: Write>(&self, writer: &mut W) -> Result<String, Box<dyn error::Error>> {
+//         write_keypair(self, writer)
+//     }
+// }
 
 // impl SeedDerivable for Keypair {
 //     fn from_seed(seed: &[u8]) -> Result<Self, Box<dyn error::Error>> {
@@ -184,41 +180,38 @@ impl EncodableKey for Keypair {
 //     }
 // }
 
-impl EncodableKeypair for Keypair {
-    type Pubkey = Pubkey;
+// impl EncodableKeypair for Keypair {
+//     type Pubkey = Pubkey;
 
-    /// Returns the associated pubkey. Use this function specifically for settings that involve
-    /// reading or writing pubkeys. For other settings, use `Signer::pubkey()` instead.
-    fn encodable_pubkey(&self) -> Self::Pubkey {
-        self.pubkey()
-    }
-}
+//     /// Returns the associated pubkey. Use this function specifically for settings that involve
+//     /// reading or writing pubkeys. For other settings, use `Signer::pubkey()` instead.
+//     fn encodable_pubkey(&self) -> Self::Pubkey {
+//         self.pubkey()
+//     }
+// }
 
 /// Reads a JSON-encoded `Keypair` from a `Reader` implementor
-pub fn read_keypair<R: core2::io::Read>(
-    reader: &mut R,
-) -> Result<Keypair, Box<dyn core::error::Error>> {
-    let bytes: Vec<u8> = serde_json::from_reader(reader)?;
-    Keypair::from_bytes(&bytes).map_err(|e| {
-        core2::io::Error::new(core2::io::ErrorKind::Other, e.to_string().as_str()).into()
-    })
-}
+// pub fn read_keypair<R: Read>(reader: &mut R) -> Result<Keypair, Box<dyn error::Error>> {
+//     let bytes: Vec<u8> = serde_json::from_reader(reader)?;
+//     Keypair::from_bytes(&bytes)
+//         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()).into())
+// }
 
 /// Reads a `Keypair` from a file
-// pub fn read_keypair_file<F: AsRef<Path>>(path: F) -> Result<Keypair, Box<dyn  core::error::Error>> {
+// pub fn read_keypair_file<F: AsRef<Path>>(path: F) -> Result<Keypair, Box<dyn error::Error>> {
 //     Keypair::read_from_file(path)
 // }
 
 /// Writes a `Keypair` to a `Write` implementor with JSON-encoding
-pub fn write_keypair<W: core2::io::Write>(
-    keypair: &Keypair,
-    writer: &mut W,
-) -> Result<String, Box<dyn core::error::Error>> {
-    let keypair_bytes = keypair.0.to_bytes();
-    let serialized = serde_json::to_string(&keypair_bytes.to_vec())?;
-    writer.write_all(serialized.as_bytes())?;
-    Ok(serialized)
-}
+// pub fn write_keypair<W: Write>(
+//     keypair: &Keypair,
+//     writer: &mut W,
+// ) -> Result<String, Box<dyn error::Error>> {
+//     let keypair_bytes = keypair.0.to_bytes();
+//     let serialized = serde_json::to_string(&keypair_bytes.to_vec())?;
+//     writer.write_all(serialized.as_bytes())?;
+//     Ok(serialized)
+// }
 
 /// Writes a `Keypair` to a file with JSON-encoding
 // pub fn write_keypair_file<F: AsRef<Path>>(
