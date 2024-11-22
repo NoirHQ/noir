@@ -66,3 +66,6 @@ full = []
 dev-context-only-utils = [
 	"qualifier_attr",
 ]
+serde = [
+	"dep:serde",
+]
