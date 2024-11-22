@@ -20,8 +20,6 @@ use {
         string::{String, ToString},
         vec::Vec,
     },
-    core::error,
-    core2::io::{Read, Write},
     // ed25519_dalek_bip32::Error as Bip32Error,
     // hmac::Hmac,
     // rand0_7::{rngs::OsRng, CryptoRng, RngCore},
@@ -53,6 +51,7 @@ impl Keypair {
     }
 
     /// Constructs a new, random `Keypair` using `OsRng`
+    #[cfg(feature = "std")]
     pub fn new() -> Self {
         let mut rng = OsRng;
         Self::generate(&mut rng)
@@ -153,11 +152,14 @@ where
 }
 
 impl EncodableKey for Keypair {
-    fn read<R: Read>(reader: &mut R) -> Result<Self, Box<dyn error::Error>> {
+    fn read<R: core2::io::Read>(reader: &mut R) -> Result<Self, Box<dyn core::error::Error>> {
         read_keypair(reader)
     }
 
-    fn write<W: Write>(&self, writer: &mut W) -> Result<String, Box<dyn error::Error>> {
+    fn write<W: core2::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> Result<String, Box<dyn core::error::Error>> {
         write_keypair(self, writer)
     }
 }
@@ -193,22 +195,25 @@ impl EncodableKeypair for Keypair {
 }
 
 /// Reads a JSON-encoded `Keypair` from a `Reader` implementor
-pub fn read_keypair<R: Read>(reader: &mut R) -> Result<Keypair, Box<dyn error::Error>> {
+pub fn read_keypair<R: core2::io::Read>(
+    reader: &mut R,
+) -> Result<Keypair, Box<dyn core::error::Error>> {
     let bytes: Vec<u8> = serde_json::from_reader(reader)?;
-    Keypair::from_bytes(&bytes)
-        .map_err(|e| core2::io::Error::new(core2::io::ErrorKind::Other, e.to_string()).into())
+    Keypair::from_bytes(&bytes).map_err(|e| {
+        core2::io::Error::new(core2::io::ErrorKind::Other, e.to_string().as_str()).into()
+    })
 }
 
 /// Reads a `Keypair` from a file
-// pub fn read_keypair_file<F: AsRef<Path>>(path: F) -> Result<Keypair, Box<dyn error::Error>> {
+// pub fn read_keypair_file<F: AsRef<Path>>(path: F) -> Result<Keypair, Box<dyn  core::error::Error>> {
 //     Keypair::read_from_file(path)
 // }
 
 /// Writes a `Keypair` to a `Write` implementor with JSON-encoding
-pub fn write_keypair<W: Write>(
+pub fn write_keypair<W: core2::io::Write>(
     keypair: &Keypair,
     writer: &mut W,
-) -> Result<String, Box<dyn error::Error>> {
+) -> Result<String, Box<dyn core::error::Error>> {
     let keypair_bytes = keypair.0.to_bytes();
     let serialized = serde_json::to_string(&keypair_bytes.to_vec())?;
     writer.write_all(serialized.as_bytes())?;
@@ -219,12 +224,12 @@ pub fn write_keypair<W: Write>(
 // pub fn write_keypair_file<F: AsRef<Path>>(
 //     keypair: &Keypair,
 //     outfile: F,
-// ) -> Result<String, Box<dyn error::Error>> {
+// ) -> Result<String, Box<dyn  core::error::Error>> {
 //     keypair.write_to_file(outfile)
 // }
 
 /// Constructs a `Keypair` from caller-provided seed entropy
-pub fn keypair_from_seed(seed: &[u8]) -> Result<Keypair, Box<dyn error::Error>> {
+pub fn keypair_from_seed(seed: &[u8]) -> Result<Keypair, Box<dyn core::error::Error>> {
     if seed.len() < ed25519_dalek::SECRET_KEY_LENGTH {
         return Err("Seed is too short".into());
     }

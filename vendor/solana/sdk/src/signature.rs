@@ -43,6 +43,7 @@ impl Signature {
     //     Self(GenericArray::clone_from_slice(signature_slice))
     // }
 
+    #[cfg(feature = "std")]
     pub fn new_unique() -> Self {
         Self::from(core::array::from_fn(|_| rand::random()))
     }

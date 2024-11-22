@@ -35,7 +35,7 @@ rustversion = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 serde_bytes = { version = "0.11.15", default-features = false, features = ["alloc"] }
 serde_derive = "1.0"
-serde_json = { version = "1.0", optional = true }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"], optional = true }
 #sha2 = { version = "0.10", default-features = false }
 sha3 = { version = "0.10.8", default-features = false }
 thiserror = { version = "2.0", default-features = false }
@@ -59,7 +59,7 @@ std = [
 	"rand",
 	"serde/std",
 	"serde_bytes/std",
-	"serde_json",
+	"serde_json/std",
 	"sha3/std",
 	"solana-program/std",
 	"thiserror/std",
@@ -67,7 +67,4 @@ std = [
 full = []
 dev-context-only-utils = [
 	"qualifier_attr",
-]
-serde = [
-	"dep:serde",
 ]
