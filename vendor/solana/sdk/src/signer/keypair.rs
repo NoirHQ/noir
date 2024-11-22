@@ -57,12 +57,14 @@ impl Keypair {
     }
 
     /// Recovers a `Keypair` from a byte array
-    #[cfg(feature = "std")]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, ed25519_dalek::SignatureError> {
         if bytes.len() < ed25519_dalek::KEYPAIR_LENGTH {
+            #[cfg(feature = "std")]
             return Err(ed25519_dalek::SignatureError::from_source(String::from(
                 "candidate keypair byte array is too short",
             )));
+            #[cfg(not(feature = "std"))]
+            return Err(ed25519_dalek::SignatureError::default());
         }
         let secret = ed25519_dalek::SecretKey::try_from(&bytes[..ed25519_dalek::SECRET_KEY_LENGTH])
             .map_err(|_| ed25519_dalek::SignatureError::default())?;
@@ -74,9 +76,18 @@ impl Keypair {
         (public == expected_public)
             // .then_some(Self(ed25519_dalek::Keypair { secret, public }))
             .then_some(Self(ed25519_dalek::SigningKey::from_bytes(&secret)))
-            .ok_or(ed25519_dalek::SignatureError::from_source(String::from(
-                "keypair bytes do not specify same pubkey as derived from their secret key",
-            )))
+            .ok_or_else(|| {
+                #[cfg(feature = "std")]
+                {
+                    ed25519_dalek::SignatureError::from_source(String::from(
+                        "keypair bytes do not specify same pubkey as derived from their secret key",
+                    ))
+                }
+                #[cfg(not(feature = "std"))]
+                {
+                    ed25519_dalek::SignatureError::default()
+                }
+            })
     }
 
     /// Returns this `Keypair` as a byte array
