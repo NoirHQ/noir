@@ -2,9 +2,11 @@
 
 #![cfg(feature = "full")]
 
+#[cfg(feature = "dev-context-only-utils")]
+use alloc::vec::Vec;
 use {
     crate::instruction::Instruction,
-    alloc::{vec, vec::Vec},
+    alloc::vec,
     borsh::{BorshDeserialize, BorshSerialize},
 };
 

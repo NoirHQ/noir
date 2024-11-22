@@ -5,7 +5,7 @@ use {
         pubkey::Pubkey,
         signature::{Signature, Signer, SignerError},
     },
-    std::sync::Arc,
+    alloc::{boxed::Box, sync::Arc, vec::Vec},
 };
 
 /// Convenience trait for working with mixed collections of `Signer`s

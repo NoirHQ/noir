@@ -204,50 +204,50 @@ mod tests {
         signers.iter().map(|x| x.pubkey()).collect()
     }
 
-    // #[test]
-    // fn test_unique_signers() {
-    //     let alice = Keypair::new();
-    //     let bob = Keypair::new();
-    //     assert_eq!(
-    //         pubkeys(&unique_signers(vec![&alice, &bob, &alice])),
-    //         pubkeys(&[&alice, &bob])
-    //     );
-    // }
+    #[test]
+    fn test_unique_signers() {
+        let alice = Keypair::new();
+        let bob = Keypair::new();
+        assert_eq!(
+            pubkeys(&unique_signers(vec![&alice, &bob, &alice])),
+            pubkeys(&[&alice, &bob])
+        );
+    }
 
-    // #[test]
-    // fn test_containers() {
-    //     use std::{rc::Rc, sync::Arc};
+    #[test]
+    fn test_containers() {
+        use std::{rc::Rc, sync::Arc};
 
-    //     struct Foo<S: Signer> {
-    //         #[allow(unused)]
-    //         signer: S,
-    //     }
+        struct Foo<S: Signer> {
+            #[allow(unused)]
+            signer: S,
+        }
 
-    //     fn foo(_s: impl Signer) {}
+        fn foo(_s: impl Signer) {}
 
-    //     let _arc_signer = Foo {
-    //         signer: Arc::new(Keypair::new()),
-    //     };
-    //     foo(Arc::new(Keypair::new()));
+        let _arc_signer = Foo {
+            signer: Arc::new(Keypair::new()),
+        };
+        foo(Arc::new(Keypair::new()));
 
-    //     let _rc_signer = Foo {
-    //         signer: Rc::new(Keypair::new()),
-    //     };
-    //     foo(Rc::new(Keypair::new()));
+        let _rc_signer = Foo {
+            signer: Rc::new(Keypair::new()),
+        };
+        foo(Rc::new(Keypair::new()));
 
-    //     let _ref_signer = Foo {
-    //         signer: &Keypair::new(),
-    //     };
-    //     foo(&Keypair::new());
+        let _ref_signer = Foo {
+            signer: &Keypair::new(),
+        };
+        foo(&Keypair::new());
 
-    //     let _box_signer = Foo {
-    //         signer: Box::new(Keypair::new()),
-    //     };
-    //     foo(Box::new(Keypair::new()));
+        let _box_signer = Foo {
+            signer: Box::new(Keypair::new()),
+        };
+        foo(Box::new(Keypair::new()));
 
-    //     let _signer = Foo {
-    //         signer: Keypair::new(),
-    //     };
-    //     foo(Keypair::new());
-    // }
+        let _signer = Foo {
+            signer: Keypair::new(),
+        };
+        foo(Keypair::new());
+    }
 }
