@@ -13,7 +13,7 @@ publish = false
 
 [dependencies]
 base64 = { version = "0.22", default-features = false, features = ["alloc"] }
-bincode = { version = "2.0.0-rc.3", default-features = false, features = ["serde"] }
+bincode = { version = "2.0.0-rc.3", default-features = false, features = ["alloc", "serde"] }
 bitflags = { version = "2.6", default-features = false }
 blake3 = { version = "1.5", default-features = false, features = ["traits-preview"] }
 borsh = { version = "1.5", default-features = false, features = ["derive", "unstable__schema"] }
@@ -70,5 +70,6 @@ std = [
 ]
 serde = [
 	"dep:serde",
+	"bincode/alloc",
 	"bincode/serde",
 ]
