@@ -11,7 +11,6 @@ use {
     },
     alloc::{boxed::Box, string::String, vec::Vec},
     core::{error, ops::Deref},
-    itertools::Itertools,
 };
 
 pub mod keypair;
@@ -141,7 +140,20 @@ impl core::fmt::Debug for dyn Signer {
 
 /// Removes duplicate signers while preserving order. O(n²)
 pub fn unique_signers(signers: Vec<&dyn Signer>) -> Vec<&dyn Signer> {
-    signers.into_iter().unique_by(|s| s.pubkey()).collect()
+    #[cfg(feature = "std")]
+    {
+        use itertools::Itertools;
+
+        signers.into_iter().unique_by(|s| s.pubkey()).collect()
+    }
+    #[cfg(not(feature = "std"))]
+    {
+        let mut seen = hashbrown::HashSet::new();
+        signers
+            .into_iter()
+            .filter(|signer| seen.insert(signer.pubkey()))
+            .collect()
+    }
 }
 
 /// The `EncodableKey` trait defines the interface by which cryptographic keys/keypairs are read,
