@@ -1,7 +1,5 @@
 #![cfg(feature = "full")]
 
-#[cfg(feature = "std")]
-use rand::{rngs::OsRng, CryptoRng, RngCore};
 use {
     crate::{
         // derivation_path::DerivationPath,
@@ -29,6 +27,7 @@ use {
     // },
     // wasm_bindgen::prelude::*,
     ed25519_dalek::Signer as DalekSigner,
+    rand::{rngs::OsRng, CryptoRng, RngCore},
 };
 
 /// A vanilla Ed25519 key pair
@@ -41,7 +40,6 @@ impl Keypair {
     pub const SECRET_KEY_LENGTH: usize = 32;
 
     /// Constructs a new, random `Keypair` using a caller-provided RNG
-    #[cfg(feature = "std")]
     pub fn generate<R>(csprng: &mut R) -> Self
     where
         R: CryptoRng + RngCore,
@@ -50,7 +48,6 @@ impl Keypair {
     }
 
     /// Constructs a new, random `Keypair` using `OsRng`
-    #[cfg(feature = "std")]
     pub fn new() -> Self {
         let mut rng = OsRng;
         Self::generate(&mut rng)
