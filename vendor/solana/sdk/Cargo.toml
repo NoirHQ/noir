@@ -25,7 +25,7 @@ generic-array = { version = "1.1.0", default-features = false, features = ["allo
 hashbrown = "0.15"
 itertools = { version = "0.13.0", default-features = false, features = ["use_alloc"] }
 lazy_static = { version = "1.5.0", default-features = false, features = ["spin_no_std"] }
-libsecp256k1 = { version = "0.7", default-features = false }
+libsecp256k1 = { version = "0.7", default-features = false, features = ["hmac"] }
 log = { version = "0.4.2", default-features = false }
 #num-derive = "0.4.2"
 #num-traits = { version = "0.2", default-features = false }
