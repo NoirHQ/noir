@@ -1,0 +1,8 @@
+[package]
+name = "pallet-solana"
+version = "0.4.0"
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/noirhq/noir.git"
+publish = false

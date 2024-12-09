@@ -106,7 +106,7 @@ impl Verify for MultiSignature {
 			Self::Ecdsa(sig) => {
 				let m = sp_io::hashing::blake2_256(msg.get());
 				sp_io::crypto::secp256k1_ecdsa_recover_compressed(sig.as_ref(), &m)
-					.map_or(false, |pubkey| sp_io::hashing::blake2_256(&pubkey) == who)
+					.is_ok_and(|pubkey| sp_io::hashing::blake2_256(&pubkey) == who)
 			},
 		}
 	}
@@ -133,7 +133,7 @@ impl VerifyMut for MultiSignature {
 			Self::Ecdsa(sig) => {
 				let m = sp_io::hashing::blake2_256(msg.get());
 				sp_io::crypto::secp256k1_ecdsa_recover_compressed(sig.as_ref(), &m)
-					.map_or(false, |pubkey| signer.check(ecdsa::Public::from(pubkey)))
+					.is_ok_and(|pubkey| signer.check(ecdsa::Public::from(pubkey)))
 			},
 		}
 	}
