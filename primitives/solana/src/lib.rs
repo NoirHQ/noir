@@ -21,6 +21,15 @@
 
 extern crate alloc;
 
+pub mod account;
+pub mod clock;
+pub mod commitment_config;
+pub mod config;
+pub mod epoch_info;
+pub mod instruction_error;
+pub mod response;
+pub mod transaction_error;
+
 #[cfg(feature = "serde")]
 use alloc::string::String;
 use buidl::FixedBytes;
