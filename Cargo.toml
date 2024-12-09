@@ -15,6 +15,7 @@ members = [
 	"frame/cosmos/x/wasm",
 	"frame/cosmos/x/wasm/types",
 	"frame/multimap",
+	"frame/solana",
 	"primitives/babel",
 	"primitives/cosmos",
 	"primitives/ethereum",
@@ -70,6 +71,7 @@ pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = fals
 pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
+pallet-solana = { path = "frame/solana", default-features = false }
 
 [profile.release]
 panic = "unwind"
