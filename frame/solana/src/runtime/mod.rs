@@ -21,5 +21,6 @@
 pub mod account;
 mod lamports;
 pub mod log_collector;
+pub mod nonce_account;
 
 pub use lamports::Lamports;
