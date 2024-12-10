@@ -2,12 +2,12 @@
 name = "solana-program-runtime"
 description = "Solana program runtime"
 documentation = "https://docs.rs/solana-program-runtime"
-version = { workspace = true }
-authors = { workspace = true }
-repository = { workspace = true }
-homepage = { workspace = true }
-license = { workspace = true }
-edition = { workspace = true }
+version = "2.0.18"
+authors = ["Anza Maintainers <maintainers@anza.xyz>"]
+repository = "https://github.com/anza-xyz/agave"
+homepage = "https://anza.xyz/"
+license = "Apache-2.0"
+edition = "2021"
 
 [dependencies]
 base64 = { workspace = true }
@@ -15,27 +15,26 @@ bincode = { workspace = true }
 eager = { workspace = true }
 enum-iterator = { workspace = true }
 itertools = { workspace = true }
-libc = { workspace = true }
 log = { workspace = true }
+nostd = { workspace = true, features = ["hashbrown"] }
 num-derive = { workspace = true }
 num-traits = { workspace = true }
-percentage = { workspace = true }
-rand = { workspace = true }
+percentage = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
 serde = { workspace = true }
 solana-compute-budget = { workspace = true }
 solana-frozen-abi = { workspace = true, optional = true }
 solana-frozen-abi-macro = { workspace = true, optional = true }
-solana-measure = { workspace = true }
+#solana-measure = { workspace = true }
 solana-metrics = { workspace = true }
 solana-sdk = { workspace = true }
-solana-type-overrides = { workspace = true }
-solana-vote = { workspace = true }
+#solana-type-overrides = { workspace = true }
+#solana-vote = { workspace = true }
 solana_rbpf = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
-solana-logger = { workspace = true }
 solana-sdk = { workspace = true, features = ["dev-context-only-utils"] }
 test-case = { workspace = true }
 
@@ -50,10 +49,25 @@ targets = ["x86_64-unknown-linux-gnu"]
 rustc_version = { workspace = true }
 
 [features]
+default = ["std"]
+std = [
+    "base64/std",
+    "bincode/std",
+    "itertools/use_std",
+    "log/std",
+    "nostd/std",
+    "num-traits/std",
+    "percentage",
+    "rand/std",
+    "serde/std",
+    "solana-compute-budget/std",
+    "solana-sdk/std",
+    "thiserror/std",
+]
 frozen-abi = [
     "dep:solana-frozen-abi",
     "dep:solana-frozen-abi-macro",
     "solana-compute-budget/frozen-abi",
     "solana-sdk/frozen-abi",
 ]
-shuttle-test = ["solana-type-overrides/shuttle-test"]
+shuttle-test = []

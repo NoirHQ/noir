@@ -6,8 +6,8 @@ use {
     crate::{ic_logger_msg, log_collector::LogCollector},
     base64::{prelude::BASE64_STANDARD, Engine},
     itertools::Itertools,
+    nostd::{cell::RefCell, rc::Rc},
     solana_sdk::pubkey::Pubkey,
-    std::{cell::RefCell, rc::Rc},
 };
 
 /// Log a program invoke.
@@ -101,7 +101,7 @@ pub fn program_success(log_collector: &Option<Rc<RefCell<LogCollector>>>, progra
 /// ```notrust
 /// "Program <address> failed: <program error details>"
 /// ```
-pub fn program_failure<E: std::fmt::Display>(
+pub fn program_failure<E: core::fmt::Display>(
     log_collector: &Option<Rc<RefCell<LogCollector>>>,
     program_id: &Pubkey,
     err: &E,

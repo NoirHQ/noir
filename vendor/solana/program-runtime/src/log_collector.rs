@@ -1,5 +1,5 @@
 pub use log;
-use std::{cell::RefCell, rc::Rc};
+use nostd::{cell::RefCell, prelude::*, rc::Rc};
 
 const LOG_MESSAGES_BYTES_LIMIT: usize = 10 * 1000;
 
@@ -83,7 +83,7 @@ macro_rules! ic_logger_msg {
         );
         if let Some(log_collector) = $log_collector.as_ref() {
             if let Ok(mut log_collector) = log_collector.try_borrow_mut() {
-                log_collector.log(&format!($fmt, $($arg)*));
+                log_collector.log(&nostd::format!($fmt, $($arg)*));
             }
         }
     };

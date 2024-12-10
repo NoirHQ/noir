@@ -1,11 +1,30 @@
+#[cfg(feature = "std")]
 use {
-    crate::{
-        invoke_context::{BuiltinFunctionWithContext, InvokeContext},
-        timings::ExecuteDetailsTimings,
-    },
+    crate::timings::ExecuteDetailsTimings,
     log::{debug, error, log_enabled, trace},
     percentage::PercentageInteger,
-    solana_measure::measure::Measure,
+    rand::{thread_rng, Rng},
+    solana_sdk::saturating_add_assign,
+    std::{
+        collections::hash_map::Entry,
+        sync::{Condvar, Mutex, RwLock, Weak},
+        thread,
+    },
+};
+use {
+    crate::{
+        dummy::Measure,
+        invoke_context::{BuiltinFunctionWithContext, InvokeContext},
+    },
+    nostd::{
+        collections::HashMap,
+        fmt::{Debug, Formatter},
+        prelude::*,
+        sync::{
+            atomic::{AtomicU64, Ordering},
+            Arc,
+        },
+    },
     solana_rbpf::{
         elf::Executable,
         program::{BuiltinProgram, FunctionRegistry},
@@ -17,20 +36,6 @@ use {
         clock::{Epoch, Slot},
         loader_v4, native_loader,
         pubkey::Pubkey,
-        saturating_add_assign,
-    },
-    solana_type_overrides::{
-        rand::{thread_rng, Rng},
-        sync::{
-            atomic::{AtomicU64, Ordering},
-            Arc, Condvar, Mutex, RwLock,
-        },
-        thread,
-    },
-    std::{
-        collections::{hash_map::Entry, HashMap},
-        fmt::{Debug, Formatter},
-        sync::Weak,
     },
 };
 
@@ -39,6 +44,7 @@ pub const MAX_LOADED_ENTRY_COUNT: usize = 512;
 pub const DELAY_VISIBILITY_SLOT_OFFSET: Slot = 1;
 
 /// Relationship between two fork IDs
+#[cfg(feature = "std")]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BlockRelation {
     /// The slot is on the same fork and is an ancestor of the other slot
@@ -54,6 +60,7 @@ pub enum BlockRelation {
 }
 
 /// Maps relationship between two slots.
+#[cfg(feature = "std")]
 pub trait ForkGraph {
     /// Returns the BlockRelation of A to B
     fn relationship(&self, a: Slot, b: Slot) -> BlockRelation;
@@ -157,7 +164,7 @@ pub enum ProgramCacheEntryType {
 }
 
 impl Debug for ProgramCacheEntryType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
             ProgramCacheEntryType::FailedVerification(_) => {
                 write!(f, "ProgramCacheEntryType::FailedVerification")
@@ -209,6 +216,7 @@ pub struct ProgramCacheEntry {
 }
 
 /// Global cache statistics for [ProgramCache].
+#[cfg(feature = "std")]
 #[derive(Debug, Default)]
 pub struct ProgramCacheStats {
     /// a program was already in the cache
@@ -237,6 +245,7 @@ pub struct ProgramCacheStats {
     pub water_level: AtomicU64,
 }
 
+#[cfg(feature = "std")]
 impl ProgramCacheStats {
     pub fn reset(&mut self) {
         *self = ProgramCacheStats::default();
@@ -294,6 +303,7 @@ pub struct LoadProgramMetrics {
     pub jit_compile_us: u64,
 }
 
+#[cfg(feature = "std")]
 impl LoadProgramMetrics {
     pub fn submit_datapoint(&self, timings: &mut ExecuteDetailsTimings) {
         saturating_add_assign!(
@@ -332,7 +342,7 @@ impl ProgramCacheEntry {
         elf_bytes: &[u8],
         account_size: usize,
         metrics: &mut LoadProgramMetrics,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    ) -> Result<Self, Box<dyn core::error::Error>> {
         Self::new_internal(
             loader_key,
             program_runtime_environment,
@@ -361,7 +371,7 @@ impl ProgramCacheEntry {
         elf_bytes: &[u8],
         account_size: usize,
         metrics: &mut LoadProgramMetrics,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    ) -> Result<Self, Box<dyn core::error::Error>> {
         Self::new_internal(
             loader_key,
             program_runtime_environment,
@@ -383,7 +393,7 @@ impl ProgramCacheEntry {
         account_size: usize,
         metrics: &mut LoadProgramMetrics,
         reloading: bool,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    ) -> Result<Self, Box<dyn core::error::Error>> {
         let load_elf_time = Measure::start("load_elf_time");
         // The following unused_mut exception is needed for architectures that do not
         // support JIT compilation.
@@ -504,7 +514,7 @@ impl ProgramCacheEntry {
     pub fn decayed_usage_counter(&self, now: Slot) -> u64 {
         let last_access = self.latest_access_slot.load(Ordering::Relaxed);
         // Shifting the u64 value for more than 63 will cause an overflow.
-        let decaying_for = std::cmp::min(63, now.saturating_sub(last_access));
+        let decaying_for = core::cmp::min(63, now.saturating_sub(last_access));
         self.tx_usage_counter.load(Ordering::Relaxed) >> decaying_for
     }
 
@@ -537,9 +547,11 @@ impl Default for ProgramRuntimeEnvironments {
     }
 }
 
+#[cfg(feature = "std")]
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct LoadingTaskCookie(u64);
 
+#[cfg(feature = "std")]
 impl LoadingTaskCookie {
     fn new() -> Self {
         Self(0)
@@ -552,12 +564,14 @@ impl LoadingTaskCookie {
 }
 
 /// Suspends the thread in case no cooprative loading task was assigned
+#[cfg(feature = "std")]
 #[derive(Debug, Default)]
 pub struct LoadingTaskWaiter {
     cookie: Mutex<LoadingTaskCookie>,
     cond: Condvar,
 }
 
+#[cfg(feature = "std")]
 impl LoadingTaskWaiter {
     pub fn new() -> Self {
         Self {
@@ -585,6 +599,7 @@ impl LoadingTaskWaiter {
     }
 }
 
+#[cfg(feature = "std")]
 #[derive(Debug)]
 enum IndexImplementation {
     /// Fork-graph aware index implementation
@@ -621,6 +636,7 @@ enum IndexImplementation {
 /// - allows for cooperative loading of TX batches which hit the same missing programs simultaneously.
 /// - enforces that all programs used in a batch are eagerly loaded ahead of execution.
 /// - is not persisted to disk or a snapshot, so it needs to cold start and warm up first.
+#[cfg(feature = "std")]
 pub struct ProgramCache<FG: ForkGraph> {
     /// Index of the cached entries and cooperative loading tasks
     index: IndexImplementation,
@@ -646,6 +662,7 @@ pub struct ProgramCache<FG: ForkGraph> {
     pub loading_task_waiter: Arc<LoadingTaskWaiter>,
 }
 
+#[cfg(feature = "std")]
 impl<FG: ForkGraph> Debug for ProgramCache<FG> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ProgramCache")
@@ -706,6 +723,7 @@ impl ProgramCacheForTxBatch {
         }
     }
 
+    #[cfg(feature = "std")]
     pub fn new_from_cache<FG: ForkGraph>(
         slot: Slot,
         epoch: Epoch,
@@ -756,7 +774,7 @@ impl ProgramCacheForTxBatch {
     /// Drain the program cache's modified entries, returning the owned
     /// collection.
     pub fn drain_modified_entries(&mut self) -> HashMap<Pubkey, Arc<ProgramCacheEntry>> {
-        std::mem::take(&mut self.modified_entries)
+        core::mem::take(&mut self.modified_entries)
     }
 
     pub fn find(&self, key: &Pubkey) -> Option<Arc<ProgramCacheEntry>> {
@@ -808,6 +826,7 @@ pub enum ProgramCacheMatchCriteria {
     NoCriteria,
 }
 
+#[cfg(feature = "std")]
 impl<FG: ForkGraph> ProgramCache<FG> {
     pub fn new(root_slot: Slot, root_epoch: Epoch) -> Self {
         Self {

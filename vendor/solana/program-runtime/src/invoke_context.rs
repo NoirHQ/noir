@@ -1,5 +1,6 @@
 use {
     crate::{
+        dummy::{Measure, VoteAccountsHashMap},
         ic_msg,
         loaded_programs::{
             ProgramCacheEntry, ProgramCacheEntryType, ProgramCacheForTxBatch,
@@ -10,8 +11,15 @@ use {
         sysvar_cache::SysvarCache,
         timings::{ExecuteDetailsTimings, ExecuteTimings},
     },
+    nostd::{
+        alloc::Layout,
+        cell::RefCell,
+        fmt::{self, Debug},
+        prelude::*,
+        rc::Rc,
+        sync::{atomic::Ordering, Arc},
+    },
     solana_compute_budget::compute_budget::ComputeBudget,
-    solana_measure::measure::Measure,
     solana_rbpf::{
         ebpf::MM_HEAP_START,
         error::{EbpfError, ProgramResult},
@@ -36,14 +44,6 @@ use {
             IndexOfAccount, InstructionAccount, TransactionAccount, TransactionContext,
         },
     },
-    solana_type_overrides::sync::{atomic::Ordering, Arc},
-    solana_vote::vote_account::VoteAccountsHashMap,
-    std::{
-        alloc::Layout,
-        cell::RefCell,
-        fmt::{self, Debug},
-        rc::Rc,
-    },
 };
 
 pub type BuiltinFunctionWithContext = BuiltinFunction<InvokeContext<'static>>;
@@ -62,10 +62,10 @@ macro_rules! declare_process_instruction {
                 _arg3: u64,
                 _arg4: u64,
                 _memory_mapping: &mut $crate::solana_rbpf::memory_region::MemoryMapping,
-            ) -> std::result::Result<u64, Box<dyn std::error::Error>> {
+            ) -> core::result::Result<u64, Box<dyn core::error::Error>> {
                 fn process_instruction_inner(
                     $invoke_context: &mut $crate::invoke_context::InvokeContext,
-                ) -> std::result::Result<(), solana_sdk::instruction::InstructionError>
+                ) -> core::result::Result<(), solana_sdk::instruction::InstructionError>
                     $inner
 
                 let consumption_result = if $cu_to_consume > 0
@@ -78,7 +78,7 @@ macro_rules! declare_process_instruction {
                     .and_then(|_| {
                         process_instruction_inner(invoke_context)
                             .map(|_| 0)
-                            .map_err(|err| Box::new(err) as Box<dyn std::error::Error>)
+                            .map_err(|err| Box::new(err) as Box<dyn core::error::Error>)
                     })
                     .into()
             }
@@ -522,7 +522,7 @@ impl<'a> InvokeContext<'a> {
                 .clone(),
             &SBPFVersion::V1,
             // Removes lifetime tracking
-            unsafe { std::mem::transmute::<&mut InvokeContext, &mut InvokeContext>(self) },
+            unsafe { core::mem::transmute::<&mut InvokeContext, &mut InvokeContext>(self) },
             empty_memory_mapping,
             0,
         );
@@ -571,7 +571,7 @@ impl<'a> InvokeContext<'a> {
     }
 
     /// Consume compute units
-    pub fn consume_checked(&self, amount: u64) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn consume_checked(&self, amount: u64) -> Result<(), Box<dyn core::error::Error>> {
         let mut compute_meter = self.compute_meter.borrow_mut();
         let exceeded = *compute_meter < amount;
         *compute_meter = compute_meter.saturating_sub(amount);
@@ -650,7 +650,7 @@ impl<'a> InvokeContext<'a> {
     pub fn get_syscall_context(&self) -> Result<&SyscallContext, InstructionError> {
         self.syscall_context
             .last()
-            .and_then(std::option::Option::as_ref)
+            .and_then(core::option::Option::as_ref)
             .ok_or(InstructionError::CallDepth)
     }
 
@@ -676,12 +676,12 @@ macro_rules! with_mock_invoke_context {
         $transaction_accounts:expr $(,)?
     ) => {
         use {
+            nostd::sync::Arc,
             solana_compute_budget::compute_budget::ComputeBudget,
             solana_sdk::{
                 account::ReadableAccount, feature_set::FeatureSet, hash::Hash, sysvar::rent::Rent,
                 transaction_context::TransactionContext,
             },
-            solana_type_overrides::sync::Arc,
             $crate::{
                 invoke_context::{EnvironmentConfig, InvokeContext},
                 loaded_programs::ProgramCacheForTxBatch,

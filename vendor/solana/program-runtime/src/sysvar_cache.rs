@@ -2,6 +2,7 @@
 use solana_sdk::sysvar::{fees::Fees, recent_blockhashes::RecentBlockhashes};
 use {
     crate::invoke_context::InvokeContext,
+    nostd::{prelude::*, sync::Arc},
     serde::de::DeserializeOwned,
     solana_sdk::{
         instruction::InstructionError,
@@ -13,7 +14,6 @@ use {
         },
         transaction_context::{IndexOfAccount, InstructionContext, TransactionContext},
     },
-    solana_type_overrides::sync::Arc,
 };
 
 #[cfg(all(RUSTC_WITH_SPECIALIZATION, feature = "frozen-abi"))]
