@@ -52,3 +52,50 @@ pub trait Property<T = ()> {
 	/// Set the property.
 	fn set(&mut self, value: Self::Value);
 }
+
+pub trait LossyFrom<T>: Sized {
+	fn lossy_from(value: T) -> Self;
+}
+
+macro_rules! impl_lossy_from {
+	($($from:ty => $to:ty),*) => {
+		$(
+			impl LossyFrom<$from> for $to {
+				fn lossy_from(value: $from) -> Self {
+					value as Self
+				}
+			}
+		)*
+	};
+}
+
+impl_lossy_from! {
+	u128 => u128,
+	u128 => u64,
+	u128 => u32,
+	u128 => u16,
+	u128 => u8,
+	u64 => u64,
+	u64 => u32,
+	u64 => u16,
+	u64 => u8,
+	u32 => u32,
+	u32 => u16,
+	u32 => u8,
+	u16 => u16,
+	u16 => u8,
+	u8 => u8
+}
+
+pub trait LossyInto<T>: Sized {
+	fn lossy_into(self) -> T;
+}
+
+impl<T, U> LossyInto<U> for T
+where
+	U: LossyFrom<T>,
+{
+	fn lossy_into(self) -> U {
+		U::lossy_from(self)
+	}
+}

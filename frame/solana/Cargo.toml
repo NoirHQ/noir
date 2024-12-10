@@ -7,3 +7,48 @@ version = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
 publish = false
+
+[dependencies]
+bincode = { workspace = true }
+derive-where = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+nostd = { workspace = true }
+np-runtime = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+solana-program-runtime = { workspace = true }
+solana-sdk = { workspace = true, features = ["full", "scale"] }
+solana_rbpf = { workspace = true }
+
+[dev-dependencies]
+pallet-balances = { workspace = true, default-features = true }
+sp-io = { workspace = true, default-features = true }
+
+[features]
+default = ["std"]
+std = [
+	"bincode/std",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"nostd/std",
+	"np-runtime/std",
+	"pallet-balances/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"serde/std",
+	"solana-program-runtime/std",
+	"solana-sdk/std",
+	"solana_rbpf/std",
+]
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+]

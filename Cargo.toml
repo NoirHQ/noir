@@ -58,6 +58,7 @@ bs58 = { version = "0.5.1", default-features = false }
 buidl = { version = "0.2", default-features = false, features = ["derive"] }
 const-hex = { version = "1.13", default-features = false }
 cosmos-sdk-proto = { version = "0.24", default-features = false }
+derive-where = "1.2"
 eager = "0.1.0"
 enum-iterator = "1.5.0"
 ethereum = { version = "0.15.0", default-features = false }
@@ -69,12 +70,12 @@ nostd = "0.1.1"
 num-derive = "0.4"
 num-traits = { version = "0.2", default-features = false }
 num_enum = { version = "0.7", default-features = false }
-parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
+parity-scale-codec = { version = "3.6", default-features = false }
 percentage = "0.1.0"
 rand = { version = "0.8.5", default-features = false }
 ripemd = { version = "0.1", default-features = false }
 rustc_version = "0.4"
-scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false }
 serde = { version = "1.0", default-features = false }
 serde-json-wasm = { version = "1.0", default-features = false }
 smallvec = "1.13"
