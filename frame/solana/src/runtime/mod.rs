@@ -19,9 +19,15 @@
 #![allow(unexpected_cfgs)]
 
 pub mod account;
-mod lamports;
-pub mod log_collector;
+pub mod invoke_context;
+pub mod lamports;
+pub mod loaded_programs;
 pub mod nonce_account;
+pub mod rbpf;
+pub mod sysvar_cache;
 pub mod transaction_context;
 
+pub use invoke_context::declare_process_instruction;
 pub use lamports::Lamports;
+pub use rbpf::declare_builtin_function;
+pub use solana_program_runtime::ic_msg;
