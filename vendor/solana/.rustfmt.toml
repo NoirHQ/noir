@@ -1,0 +1,7 @@
+# Basic
+edition = "2021"
+# Imports
+imports_granularity = "One"
+group_imports = "One"
+# Misc
+trailing_comma = "Vertical"
