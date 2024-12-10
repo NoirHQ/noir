@@ -18,6 +18,7 @@
 
 #![allow(unexpected_cfgs)]
 
+pub mod account;
 mod lamports;
 
 pub use lamports::Lamports;
