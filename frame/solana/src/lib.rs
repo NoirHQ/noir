@@ -31,6 +31,7 @@ pub use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction as Transa
 
 #[cfg(test)]
 mod mock;
+mod programs;
 mod runtime;
 #[cfg(test)]
 mod tests;

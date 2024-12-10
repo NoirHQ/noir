@@ -25,6 +25,7 @@ solana-sdk = { workspace = true, features = ["full", "scale"] }
 solana_rbpf = { workspace = true }
 
 [dev-dependencies]
+assert_matches = { workspace = true }
 pallet-balances = { workspace = true, default-features = true }
 sp-io = { workspace = true, default-features = true }
 
