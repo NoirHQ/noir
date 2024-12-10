@@ -2,21 +2,25 @@
 name = "solana-compute-budget"
 description = "Solana compute budget"
 documentation = "https://docs.rs/solana-compute-budget"
-version = { workspace = true }
-authors = { workspace = true }
-repository = { workspace = true }
-homepage = { workspace = true }
-license = { workspace = true }
-edition = { workspace = true }
+version = "2.0.18"
+authors = ["Anza Maintainers <maintainers@anza.xyz>"]
+repository = "https://github.com/anza-xyz/agave"
+homepage = "https://anza.xyz/"
+license = "Apache-2.0"
+edition = "2021"
 
 [dependencies]
 solana-frozen-abi = { workspace = true, optional = true }
-solana-sdk = { workspace = true }
+solana-sdk = { workspace = true, features = ["borsh", "full"] }
 
 [build-dependencies]
 rustc_version = { workspace = true }
 
 [features]
+default = ["std"]
+std = [
+    "solana-sdk/std",
+]
 frozen-abi = [
     "dep:solana-frozen-abi",
     "solana-sdk/frozen-abi",

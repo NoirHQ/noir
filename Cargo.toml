@@ -32,6 +32,7 @@ members = [
 	"vendor/composable/cosmwasm/runtime-api",
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
+	"vendor/solana/compute-budget",
 ]
 default-members = [
 	"core-primitives",
@@ -41,6 +42,10 @@ default-members = [
 ]
 
 [workspace.dependencies]
+rustc_version = "0.4"
+solana-frozen-abi = "2.0.18"
+solana-sdk = { git = "https://github.com/noirhq/solana-sdk", default-features = false }
+
 composable-support = { path = "vendor/composable/composable-support", default-features = false }
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
@@ -72,6 +77,7 @@ pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/as
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 pallet-solana = { path = "frame/solana", default-features = false }
+solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
 
 [profile.release]
 panic = "unwind"
