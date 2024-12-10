@@ -20,11 +20,15 @@
 
 extern crate alloc;
 
+#[macro_use]
+extern crate derive_where;
+
 pub use pallet::*;
 pub use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction as Transaction};
 
 #[cfg(test)]
 mod mock;
+mod runtime;
 #[cfg(test)]
 mod tests;
 
