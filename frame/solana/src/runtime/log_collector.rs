@@ -16,10 +16,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(unexpected_cfgs)]
+#[macro_export]
+macro_rules! ic_msg {
+    ($invoke_context:expr, $message:expr) => {
+		log::debug!(
+            target: "solana_runtime::message_processor::stable_log",
+			"{}",
+			$message
+		);
+    };
+    ($invoke_context:expr, $fmt:expr, $($arg:tt)*) => {
+		log::debug!(
+            target: "solana_runtime::message_processor::stable_log",
+			$fmt,
+            $($arg)*
+		);
+    };
+}
 
-pub mod account;
-mod lamports;
-pub mod log_collector;
-
-pub use lamports::Lamports;
+pub use ic_msg;
