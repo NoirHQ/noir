@@ -18,10 +18,12 @@
 
 //! Functions related to nonce accounts.
 
-use crate::{runtime::account::AccountSharedData, Config};
+use crate::{
+	runtime::account::{AccountSharedData, ReadableAccount},
+	Config,
+};
 use nostd::cell::RefCell;
 use solana_sdk::{
-	account::ReadableAccount,
 	account_utils::StateMut,
 	hash::Hash,
 	nonce::{
