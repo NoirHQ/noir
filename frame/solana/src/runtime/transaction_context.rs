@@ -17,7 +17,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	runtime::{account::AccountSharedData, Lamports},
+	runtime::{
+		account::{AccountSharedData, ReadableAccount},
+		Lamports,
+	},
 	BalanceOf, Config,
 };
 use nostd::{
@@ -33,7 +36,6 @@ pub use solana_sdk::transaction_context::{
 	IndexOfAccount, InstructionAccount, TransactionReturnData,
 };
 use solana_sdk::{
-	account::ReadableAccount,
 	entrypoint::MAX_PERMITTED_DATA_INCREASE,
 	instruction::InstructionError,
 	pubkey::Pubkey,

@@ -19,9 +19,10 @@
 use crate::{runtime::Lamports, Config};
 use bincode::{self, EncodeError, Error, ErrorKind};
 use nostd::{cell::RefCell, mem::MaybeUninit, ptr, rc::Rc, sync::Arc};
+pub use solana_sdk::account::{ReadableAccount, WritableAccount};
 use solana_sdk::{
-	account::ReadableAccount, account_utils::StateMut, clock::Epoch, instruction::InstructionError,
-	lamports::LamportsError, pubkey::Pubkey,
+	account_utils::StateMut, clock::Epoch, instruction::InstructionError, lamports::LamportsError,
+	pubkey::Pubkey,
 };
 
 /// An Account with data that is stored on chain
