@@ -24,6 +24,9 @@ extern crate alloc;
 extern crate derive_where;
 
 pub use pallet::*;
+
+pub use crate::runtime::invoke_context;
+pub use solana_rbpf;
 pub use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction as Transaction};
 
 #[cfg(test)]

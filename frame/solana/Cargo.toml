@@ -19,6 +19,7 @@ np-runtime = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+solana-compute-budget = { workspace = true }
 solana-program-runtime = { workspace = true }
 solana-sdk = { workspace = true, features = ["full", "scale"] }
 solana_rbpf = { workspace = true }
@@ -40,6 +41,7 @@ std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",
+	"solana-compute-budget/std",
 	"solana-program-runtime/std",
 	"solana-sdk/std",
 	"solana_rbpf/std",
