@@ -1,11 +1,12 @@
 use {
     core::fmt,
     enum_iterator::Sequence,
-    solana_sdk::{pubkey::Pubkey, saturating_add_assign},
-    std::{
+    nostd::{
         collections::HashMap,
         ops::{Index, IndexMut},
+        prelude::*,
     },
+    solana_sdk::{pubkey::Pubkey, saturating_add_assign},
 };
 
 #[derive(Default, Debug, PartialEq, Eq)]
@@ -22,7 +23,7 @@ impl ProgramTiming {
     pub fn coalesce_error_timings(&mut self, current_estimated_program_cost: u64) {
         for tx_error_compute_consumed in self.errored_txs_compute_consumed.drain(..) {
             let compute_units_update =
-                std::cmp::max(current_estimated_program_cost, tx_error_compute_consumed);
+                nostd::cmp::max(current_estimated_program_cost, tx_error_compute_consumed);
             saturating_add_assign!(self.accumulated_units, compute_units_update);
             saturating_add_assign!(self.count, 1);
         }

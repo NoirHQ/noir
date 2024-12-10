@@ -33,6 +33,7 @@ members = [
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
 	"vendor/solana/compute-budget",
+	"vendor/solana/program-runtime",
 ]
 default-members = [
 	"core-primitives",
@@ -42,9 +43,27 @@ default-members = [
 ]
 
 [workspace.dependencies]
+assert_matches = "1.5.0"
+base64 = { version = "0.22", default-features = false }
+bincode = { package = "solana-bincode", git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
+eager = "0.1.0"
+enum-iterator = "1.5.0"
+itertools = { version = "0.12.1", default-features = false }
+log = { version = "0.4", default-features = false }
+nostd = "0.1.1"
+num-derive = "0.4"
+num-traits = { version = "0.2", default-features = false }
+percentage = "0.1.0"
+rand = { version = "0.8.5", default-features = false }
 rustc_version = "0.4"
+serde = { version = "1.0", default-features = false }
 solana-frozen-abi = "2.0.18"
-solana-sdk = { git = "https://github.com/noirhq/solana-sdk", default-features = false }
+solana-frozen-abi-macro = "2.0.18"
+solana-metrics = "2.0.18"
+solana-sdk = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
+solana_rbpf = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
+test-case = "3.3.1"
+thiserror = { version = "2.0", default-features = false }
 
 composable-support = { path = "vendor/composable/composable-support", default-features = false }
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
@@ -78,6 +97,7 @@ pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/bal
 pallet-multimap = { path = "frame/multimap", default-features = false }
 pallet-solana = { path = "frame/solana", default-features = false }
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
+solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
 
 [profile.release]
 panic = "unwind"
