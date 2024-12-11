@@ -167,7 +167,7 @@ fn create_account<T: Config>(
 	{
 		let mut to = instruction_context
 			.try_borrow_instruction_account(transaction_context, to_account_index)?;
-		if to.get_lamports() > 0.into() {
+		if to.get_lamports() > 0 {
 			ic_msg!(invoke_context, "Create Account: account {:?} already in use", to_address);
 			return Err(SystemError::AccountAlreadyInUse.into());
 		}
@@ -198,7 +198,6 @@ fn transfer_verified<T: Config>(
 		ic_msg!(invoke_context, "Transfer: `from` must not carry data");
 		return Err(InstructionError::InvalidArgument);
 	}
-	let lamports = lamports.into();
 	if lamports > from.get_lamports() {
 		ic_msg!(
 			invoke_context,
@@ -415,7 +414,7 @@ declare_process_instruction!(Entrypoint, DEFAULT_COMPUTE_UNITS, |invoke_context|
 			let rent = get_sysvar_with_account_check::rent(invoke_context, instruction_context, 3)?;
 			withdraw_nonce_account(
 				0,
-				lamports.into(),
+				lamports,
 				1,
 				&rent,
 				&signers,

@@ -852,7 +852,7 @@ mod tests {
 				MockInstruction::UnbalancedPush => {
 					instruction_context
 						.try_borrow_instruction_account(transaction_context, 0)?
-						.checked_add(1)?;
+						.checked_add_lamports(1)?;
 					let program_id = *transaction_context.get_key_of_account_at_index(3)?;
 					let metas = vec![
 						AccountMeta::new_readonly(
@@ -883,7 +883,7 @@ mod tests {
 				},
 				MockInstruction::UnbalancedPop => instruction_context
 					.try_borrow_instruction_account(transaction_context, 0)?
-					.checked_add(1)?,
+					.checked_add_lamports(1)?,
 				MockInstruction::ConsumeComputeUnits {
 					compute_units_to_consume,
 					desired_result,

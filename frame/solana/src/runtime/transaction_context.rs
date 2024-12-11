@@ -801,13 +801,13 @@ impl<'a, T: Config> BorrowedAccount<'a, T> {
 
 	/// Returns the number of lamports of this account (transaction wide)
 	#[inline]
-	pub fn lamports(&self) -> u64 {
+	pub fn get_lamports(&self) -> u64 {
 		self.account.lamports()
 	}
 
 	/// Returns the number of lamports of this account (transaction wide)
 	#[inline]
-	pub fn get_lamports(&self) -> Lamports<T> {
+	pub fn lamports(&self) -> Lamports<T> {
 		self.account.get_lamports()
 	}
 
@@ -815,7 +815,7 @@ impl<'a, T: Config> BorrowedAccount<'a, T> {
 	#[cfg(not(target_os = "solana"))]
 	pub fn set_lamports(&mut self, lamports: Lamports<T>) -> Result<(), InstructionError> {
 		// An account not owned by the program cannot have its balance decrease
-		if !self.is_owned_by_current_program() && lamports < self.get_lamports() {
+		if !self.is_owned_by_current_program() && lamports < self.lamports() {
 			return Err(InstructionError::ExternalAccountLamportSpend);
 		}
 		// The balance of read-only may not change
@@ -827,7 +827,7 @@ impl<'a, T: Config> BorrowedAccount<'a, T> {
 			return Err(InstructionError::ExecutableLamportChange);
 		}
 		// don't touch the account if the lamports do not change
-		if self.get_lamports() == lamports {
+		if self.lamports() == lamports {
 			return Ok(());
 		}
 		self.touch()?;
@@ -837,18 +837,18 @@ impl<'a, T: Config> BorrowedAccount<'a, T> {
 
 	/// Adds lamports to this account (transaction wide)
 	#[cfg(not(target_os = "solana"))]
-	pub fn checked_add_lamports(&mut self, lamports: Lamports<T>) -> Result<(), InstructionError> {
+	pub fn checked_add(&mut self, lamports: Lamports<T>) -> Result<(), InstructionError> {
 		self.set_lamports(
-			self.get_lamports()
+			self.lamports()
 				.checked_add_lamports(lamports)
 				.ok_or(InstructionError::ArithmeticOverflow)?,
 		)
 	}
 
 	#[cfg(not(target_os = "solana"))]
-	pub fn checked_add(&mut self, lamports: u64) -> Result<(), InstructionError> {
+	pub fn checked_add_lamports(&mut self, lamports: u64) -> Result<(), InstructionError> {
 		self.set_lamports(
-			self.get_lamports()
+			self.lamports()
 				.checked_add(lamports)
 				.ok_or(InstructionError::ArithmeticOverflow)?,
 		)
@@ -856,18 +856,18 @@ impl<'a, T: Config> BorrowedAccount<'a, T> {
 
 	/// Subtracts lamports from this account (transaction wide)
 	#[cfg(not(target_os = "solana"))]
-	pub fn checked_sub_lamports(&mut self, lamports: Lamports<T>) -> Result<(), InstructionError> {
+	pub fn checked_sub(&mut self, lamports: Lamports<T>) -> Result<(), InstructionError> {
 		self.set_lamports(
-			self.get_lamports()
+			self.lamports()
 				.checked_sub_lamports(lamports)
 				.ok_or(InstructionError::ArithmeticOverflow)?,
 		)
 	}
 
 	#[cfg(not(target_os = "solana"))]
-	pub fn checked_sub(&mut self, lamports: u64) -> Result<(), InstructionError> {
+	pub fn checked_sub_lamports(&mut self, lamports: u64) -> Result<(), InstructionError> {
 		self.set_lamports(
-			self.get_lamports()
+			self.lamports()
 				.checked_sub(lamports)
 				.ok_or(InstructionError::ArithmeticOverflow)?,
 		)
@@ -1046,7 +1046,7 @@ impl<'a, T: Config> BorrowedAccount<'a, T> {
 	// should the data be resized to the given size
 	#[cfg(not(target_os = "solana"))]
 	pub fn is_rent_exempt_at_data_length(&self, data_length: usize) -> bool {
-		self.transaction_context.rent.is_exempt(self.lamports(), data_length)
+		self.transaction_context.rent.is_exempt(self.get_lamports(), data_length)
 	}
 
 	/// Returns whether this account is executable (transaction wide)
@@ -1059,7 +1059,11 @@ impl<'a, T: Config> BorrowedAccount<'a, T> {
 	#[cfg(not(target_os = "solana"))]
 	pub fn set_executable(&mut self, is_executable: bool) -> Result<(), InstructionError> {
 		// To become executable an account must be rent exempt
-		if !self.transaction_context.rent.is_exempt(self.lamports(), self.get_data().len()) {
+		if !self
+			.transaction_context
+			.rent
+			.is_exempt(self.get_lamports(), self.get_data().len())
+		{
 			return Err(InstructionError::ExecutableAccountNotRentExempt);
 		}
 		// Only the owner can set the executable flag
