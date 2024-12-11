@@ -79,31 +79,37 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O> for Ensure
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::runtime::transaction_processing_callback::TransactionProcessingCallback;
 	use core::fmt::Debug;
-	use frame_support::{pallet_prelude::*, traits::fungible};
-	use frame_system::pallet_prelude::*;
+	use frame_support::{dispatch::DispatchInfo, pallet_prelude::*, traits::fungible};
+	use frame_system::{pallet_prelude::*, CheckWeight};
 	use np_runtime::traits::LossyInto;
 	use parity_scale_codec::Codec;
+	use solana_sdk::{
+		message::SimpleAddressLoader,
+		reserved_account_keys::ReservedAccountKeys,
+		transaction::{MessageHash, SanitizedTransaction},
+	};
 	use sp_runtime::{
-		traits::{AtLeast32BitUnsigned, One, Saturating},
+		traits::{AtLeast32BitUnsigned, DispatchInfoOf, Dispatchable, One, Saturating},
+		transaction_validity::{
+			InvalidTransaction, TransactionValidity, TransactionValidityError,
+			ValidTransactionBuilder,
+		},
 		FixedPointOperand,
 	};
 
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
-		// NOTE: Set `Balance` type here to avoid specifying trait bounds repeatedly.
 		#[pallet::no_default]
 		type Balance: Parameter
 			+ Member
 			+ AtLeast32BitUnsigned
-			+ Codec
 			+ Default
 			+ Copy
 			+ MaybeSerializeDeserialize
-			+ Debug
 			+ MaxEncodedLen
 			+ TypeInfo
-			+ FixedPointOperand
 			+ From<u64>
 			+ LossyInto<u64>;
 
@@ -160,6 +166,11 @@ pub mod pallet {
 	// AccountRentState?
 
 	#[pallet::storage]
+	#[pallet::getter(fn account_meta)]
+	pub type AccountMeta<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, crate::runtime::meta::AccountMeta>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn account_data)]
 	pub type AccountData<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, BoundedVec<u8, T::MaxPermittedDataLength>>;
@@ -202,6 +213,91 @@ pub mod pallet {
 			_transaction: Transaction,
 		) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo> {
 			Ok(().into())
+		}
+
+		// TODO: unimplemented.
+		fn validate_transaction_in_pool(
+			origin: Pubkey,
+			transaction: &Transaction,
+		) -> TransactionValidity {
+			let mut builder = ValidTransactionBuilder::default();
+
+			builder.build()
+		}
+
+		// TODO: unimplemented.
+		fn validate_transaction_in_block(
+			origin: Pubkey,
+			transaction: &Transaction,
+		) -> Result<(), TransactionValidityError> {
+			Ok(())
+		}
+	}
+
+	impl<T> Call<T>
+	where
+		T: Config + Send + Sync,
+		T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+		OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+	{
+		pub fn is_self_contained(&self) -> bool {
+			matches!(self, Call::transact { .. })
+		}
+
+		pub fn check_self_contained(&self) -> Option<Result<Pubkey, TransactionValidityError>> {
+			if let Call::transact { transaction } = self {
+				let sanitized = match SanitizedTransaction::try_create(
+					transaction.clone(),
+					MessageHash::Compute,
+					None,
+					SimpleAddressLoader::Disabled,
+					&ReservedAccountKeys::empty_key_set(),
+				) {
+					Ok(tx) => tx,
+					// TODO: Update error code.
+					Err(_) => return Some(Err(InvalidTransaction::Custom(0).into())),
+				};
+				match sanitized.verify() {
+					Ok(_) => Some(Ok(sanitized.message().fee_payer().clone())),
+					Err(_) => Some(Err(InvalidTransaction::BadProof.into())),
+				}
+			} else {
+				None
+			}
+		}
+
+		pub fn pre_dispatch_self_contained(
+			&self,
+			origin: &Pubkey,
+			dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+			len: usize,
+		) -> Option<Result<(), TransactionValidityError>> {
+			if let Call::transact { transaction } = self {
+				if let Err(e) = CheckWeight::<T>::do_pre_dispatch(dispatch_info, len) {
+					return Some(Err(e));
+				}
+
+				Some(Pallet::<T>::validate_transaction_in_block(*origin, transaction))
+			} else {
+				None
+			}
+		}
+
+		pub fn validate_self_contained(
+			&self,
+			origin: &Pubkey,
+			dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
+			len: usize,
+		) -> Option<TransactionValidity> {
+			if let Call::transact { transaction } = self {
+				if let Err(e) = CheckWeight::<T>::do_validate(dispatch_info, len) {
+					return Some(Err(e));
+				}
+
+				Some(Pallet::<T>::validate_transaction_in_pool(*origin, transaction))
+			} else {
+				None
+			}
 		}
 	}
 }
