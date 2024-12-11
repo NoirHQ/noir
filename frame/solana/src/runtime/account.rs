@@ -22,7 +22,7 @@ use nostd::{cell::RefCell, mem::MaybeUninit, ptr, rc::Rc, sync::Arc};
 pub use solana_sdk::account::{ReadableAccount, WritableAccount};
 use solana_sdk::{
 	account_utils::StateMut, clock::Epoch, instruction::InstructionError, lamports::LamportsError,
-	pubkey::Pubkey,
+	pubkey::Pubkey, sysvar::Sysvar,
 };
 
 /// An Account with data that is stored on chain
@@ -86,6 +86,12 @@ impl<T: Config> From<solana_sdk::account::AccountSharedData> for AccountSharedDa
 	fn from(other: solana_sdk::account::AccountSharedData) -> Self {
 		solana_sdk::account::Account::from(other).into()
 	}
+}
+
+pub fn create_account_shared_data_for_test<S: Sysvar, T: Config>(
+	sysvar: &S,
+) -> AccountSharedData<T> {
+	solana_sdk::account::create_account_shared_data_for_test(sysvar).into()
 }
 
 impl<T: Config> AccountSharedData<T> {
