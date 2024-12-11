@@ -16,23 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#![allow(unexpected_cfgs)]
+use crate::{runtime::account::AccountSharedData, Config};
+use solana_sdk::pubkey::Pubkey;
 
-pub mod account;
-pub mod bank;
-pub mod invoke_context;
-pub mod lamports;
-pub mod loaded_programs;
-pub mod meta;
-pub mod nonce_account;
-pub mod program_loader;
-pub mod rbpf;
-pub mod sysvar_cache;
-pub mod transaction_context;
-pub mod transaction_processing_callback;
-pub mod transaction_processor;
+/// Runtime callbacks for transaction processing.
+pub trait TransactionProcessingCallback<T: Config> {
+	fn account_matches_owners(&self, account: &Pubkey, owners: &[Pubkey]) -> Option<usize>;
 
-pub use invoke_context::declare_process_instruction;
-pub use lamports::Lamports;
-pub use rbpf::declare_builtin_function;
-pub use solana_program_runtime::ic_msg;
+	fn get_account_shared_data(&self, pubkey: &Pubkey) -> Option<AccountSharedData<T>>;
+
+	fn add_builtin_account(&self, _name: &str, _program_id: &Pubkey) {}
+}

@@ -33,15 +33,15 @@ use solana_sdk::{
 //#[serde(from = "Account")]
 pub struct AccountSharedData<T: Config> {
 	/// lamports in the account
-	lamports: Lamports<T>,
+	pub(super) lamports: Lamports<T>,
 	/// data held in this account
-	data: Arc<Vec<u8>>,
+	pub(super) data: Arc<Vec<u8>>,
 	/// the program that owns this account. If executable, the program that loads this account.
-	owner: Pubkey,
+	pub(super) owner: Pubkey,
 	/// this account's data contains a loaded program (and is now read-only)
-	executable: bool,
+	pub(super) executable: bool,
 	/// the epoch at which this account will next owe rent
-	rent_epoch: Epoch,
+	pub(super) rent_epoch: Epoch,
 }
 
 impl<T: Config> Default for AccountSharedData<T> {
@@ -56,6 +56,7 @@ impl<T: Config> Default for AccountSharedData<T> {
 	}
 }
 
+#[cfg(feature = "std")]
 impl<T: Config> From<solana_sdk::account::Account> for AccountSharedData<T> {
 	fn from(other: solana_sdk::account::Account) -> Self {
 		Self {
