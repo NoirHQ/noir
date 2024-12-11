@@ -20,14 +20,13 @@ use crate::{
 	runtime::{
 		ic_msg,
 		invoke_context::InvokeContext,
-		lamports::{checked_add, Lamports},
 		transaction_context::{BorrowedAccount, InstructionContext, TransactionContext},
 	},
 	Config,
 };
 use nostd::collections::HashSet;
 use solana_sdk::{
-	instruction::InstructionError,
+	instruction::{checked_add, InstructionError},
 	nonce::{
 		self,
 		state::{AuthorizeNonceError, DurableNonce, Versions},
@@ -94,7 +93,7 @@ pub fn advance_nonce_account<T: Config>(
 
 pub fn withdraw_nonce_account<T: Config>(
 	from_account_index: IndexOfAccount,
-	lamports: Lamports<T>,
+	lamports: u64,
 	to_account_index: IndexOfAccount,
 	rent: &Rent,
 	signers: &HashSet<Pubkey>,
@@ -188,11 +187,11 @@ pub fn initialize_nonce_account<T: Config>(
 	match account.get_state::<Versions>()?.state() {
 		State::Uninitialized => {
 			let min_balance = rent.minimum_balance(account.get_data().len());
-			if account.lamports() < min_balance {
+			if account.get_lamports() < min_balance {
 				ic_msg!(
 					invoke_context,
 					"Initialize nonce account: insufficient lamports {}, need {}",
-					account.lamports(),
+					account.get_lamports(),
 					min_balance
 				);
 				return Err(InstructionError::InsufficientFunds);
@@ -752,7 +751,7 @@ mod test {
 			invoke_context.environment_config.lamports_per_signature,
 		);
 		assert_eq!(versions.state(), &State::Initialized(data.clone()));
-		let withdraw_lamports = 42.into();
+		let withdraw_lamports = 42;
 		let from_expect_lamports = nonce_account.get_lamports() - withdraw_lamports;
 		let to_expect_lamports = to_account.get_lamports() + withdraw_lamports;
 		drop(nonce_account);
@@ -899,7 +898,7 @@ mod test {
 		set_invoke_context_blockhash!(invoke_context, 63);
 		let mut signers = HashSet::new();
 		signers.insert(*nonce_account.get_key());
-		let withdraw_lamports = (42 + 1).into();
+		let withdraw_lamports = 42 + 1;
 		drop(nonce_account);
 		let result = withdraw_nonce_account(
 			NONCE_ACCOUNT_INDEX,
@@ -932,7 +931,7 @@ mod test {
 		set_invoke_context_blockhash!(invoke_context, 63);
 		let mut signers = HashSet::new();
 		signers.insert(*nonce_account.get_key());
-		let withdraw_lamports = (u64::MAX - 54).into();
+		let withdraw_lamports = u64::MAX - 54;
 		drop(nonce_account);
 		let result = withdraw_nonce_account(
 			NONCE_ACCOUNT_INDEX,
@@ -1010,7 +1009,7 @@ mod test {
 		let mut nonce_account = instruction_context
 			.try_borrow_instruction_account(transaction_context, NONCE_ACCOUNT_INDEX)
 			.unwrap();
-		nonce_account.checked_sub(42 * 2).unwrap();
+		nonce_account.checked_sub_lamports(42 * 2).unwrap();
 		set_invoke_context_blockhash!(invoke_context, 63);
 		let authorized = *nonce_account.get_key();
 		let result =
