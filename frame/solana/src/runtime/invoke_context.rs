@@ -21,7 +21,10 @@ use crate::mock::Test;
 use crate::runtime::{
 	account::AccountSharedData,
 	ic_msg,
-	loaded_programs::{ProgramCacheEntry, ProgramCacheEntryType, ProgramCacheForTxBatch},
+	loaded_programs::{
+		ProgramCacheEntry, ProgramCacheEntryType, ProgramCacheForTxBatch,
+		ProgramRuntimeEnvironments,
+	},
 	transaction_context::{TransactionAccount, TransactionContext},
 };
 use nostd::{
@@ -42,6 +45,7 @@ use solana_rbpf::{
 use solana_sdk::{
 	account::create_account_shared_data_for_test,
 	bpf_loader_deprecated,
+	clock::Slot,
 	feature_set::FeatureSet,
 	hash::Hash,
 	instruction::{AccountMeta, InstructionError},
@@ -229,18 +233,14 @@ impl<'a, T: crate::Config> InvokeContext<'a, T> {
 		}
 	}
 
-	/*
 	pub fn get_environments_for_slot(
 		&self,
 		effective_slot: Slot,
-	) -> Result<&ProgramRuntimeEnvironments, InstructionError> {
+	) -> Result<&ProgramRuntimeEnvironments<T>, InstructionError> {
 		let epoch_schedule = self.environment_config.sysvar_cache.get_epoch_schedule()?;
 		let epoch = epoch_schedule.get_epoch(effective_slot);
-		Ok(self
-			.program_cache_for_tx_batch
-			.get_environments_for_epoch(epoch))
+		Ok(self.program_cache_for_tx_batch.get_environments_for_epoch(epoch))
 	}
-	*/
 
 	/// Push a stack frame onto the invocation stack
 	pub fn push(&mut self) -> Result<(), InstructionError> {

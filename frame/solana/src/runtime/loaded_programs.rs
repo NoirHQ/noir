@@ -24,6 +24,7 @@ use nostd::{
 		Arc,
 	},
 };
+pub use solana_program_runtime::loaded_programs::LoadProgramMetrics;
 use solana_rbpf::{
 	elf::Executable,
 	program::{BuiltinProgram, FunctionRegistry},
@@ -207,7 +208,7 @@ impl<T: crate::Config> ProgramCacheEntry<T> {
 		effective_slot: Slot,
 		elf_bytes: &[u8],
 		account_size: usize,
-		//metrics: &mut LoadProgramMetrics,
+		metrics: &mut LoadProgramMetrics,
 	) -> Result<Self, Box<dyn core::error::Error>> {
 		Self::new_internal(
 			loader_key,
@@ -216,7 +217,7 @@ impl<T: crate::Config> ProgramCacheEntry<T> {
 			effective_slot,
 			elf_bytes,
 			account_size,
-			//metrics,
+			metrics,
 			false, /* reloading */
 		)
 	}
@@ -236,7 +237,7 @@ impl<T: crate::Config> ProgramCacheEntry<T> {
 		effective_slot: Slot,
 		elf_bytes: &[u8],
 		account_size: usize,
-		//metrics: &mut LoadProgramMetrics,
+		metrics: &mut LoadProgramMetrics,
 	) -> Result<Self, Box<dyn core::error::Error>> {
 		Self::new_internal(
 			loader_key,
@@ -245,7 +246,7 @@ impl<T: crate::Config> ProgramCacheEntry<T> {
 			effective_slot,
 			elf_bytes,
 			account_size,
-			//metrics,
+			metrics,
 			true, /* reloading */
 		)
 	}
@@ -257,7 +258,7 @@ impl<T: crate::Config> ProgramCacheEntry<T> {
 		effective_slot: Slot,
 		elf_bytes: &[u8],
 		account_size: usize,
-		//metrics: &mut LoadProgramMetrics,
+		metrics: &mut LoadProgramMetrics,
 		reloading: bool,
 	) -> Result<Self, Box<dyn core::error::Error>> {
 		//let load_elf_time = Measure::start("load_elf_time");
