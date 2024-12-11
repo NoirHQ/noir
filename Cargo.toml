@@ -22,6 +22,7 @@ members = [
 	"frame/cosmos/x/wasm/types",
 	"frame/multimap",
 	"frame/solana",
+	"frame/solana/runtime-api",
 	"primitives/babel",
 	"primitives/cosmos",
 	"primitives/ethereum",
@@ -184,6 +185,8 @@ solana-poseidon = { path = "vendor/solana/poseidon", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
 solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
 spl-token = { path = "vendor/solana/programs/token" }
+
+solana-runtime-api = { path = "frame/solana/runtime-api", default-features = false }
 
 [profile.release]
 panic = "unwind"
