@@ -9,19 +9,13 @@ publish = false
 
 [dependencies]
 sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-np-solana = { workspace = true, default-features = false, features = ["scale"] }
-parity-scale-codec = { version = "3.6", default-features = false, features = [
-    "derive",
-] }
-scale-info = { version = "2.11", default-features = false, features = [
-    "derive",
-] }
+parity-scale-codec = { version = "3.6", default-features = false, features = [ "derive" ] }
+scale-info = { version = "2.11", default-features = false, features = [ "derive" ] }
 
 [features]
 default = ["std"]
 std = [
-    "sp-api/std",
-    "np-solana/std",
+    "sp-api/std", 
     "parity-scale-codec/std",
-    "scale-info/std",
+    "scale-info/std"
 ]
