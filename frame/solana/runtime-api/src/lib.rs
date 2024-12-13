@@ -19,7 +19,7 @@
 
 extern crate alloc;
 
-mod error;
+pub mod error;
 
 use alloc::{string::String, vec::Vec};
 use error::Error;
