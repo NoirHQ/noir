@@ -24,7 +24,7 @@ mod error;
 use alloc::{string::String, vec::Vec};
 use error::Error;
 use np_solana::{
-	account::{RpcKeyedAccount, UiAccount},
+	account::{KeyedAccount, UiAccount},
 	commitment_config::CommitmentConfig,
 	config::{
 		AccountInfoConfig, ContextConfig, EpochConfig, ProgramAccountsConfig,
@@ -50,13 +50,13 @@ decl_runtime_apis! {
 		fn get_program_accounts(
 			program_id_str: String,
 			config: Option<ProgramAccountsConfig>,
-		) -> Result<Response<Vec<RpcKeyedAccount>>, Error>;
+		) -> Result<Response<Vec<KeyedAccount>>, Error>;
 
 		fn get_token_accounts_by_owner(
 			owner_str: String,
 			token_account_filter: TokenAccountsFilter,
 			config: Option<AccountInfoConfig>,
-		) -> Result<Response<Vec<RpcKeyedAccount>>, Error>;
+		) -> Result<Response<Vec<KeyedAccount>>, Error>;
 
 		fn get_minimum_balance_for_rent_exemption(
 			data_len: u64, // usize

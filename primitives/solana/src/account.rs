@@ -49,7 +49,7 @@ pub enum UiAccountData {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
 #[derive(Debug, Clone)]
-pub struct RpcKeyedAccount {
+pub struct KeyedAccount {
 	pub pubkey: String,
 	pub account: UiAccount,
 }
