@@ -29,7 +29,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AccountInfoConfig {
 	pub encoding: Option<UiAccountEncoding>,
 	pub data_slice: Option<UiDataSliceConfig>,
@@ -39,7 +39,7 @@ pub struct AccountInfoConfig {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiAccountEncoding {
 	Binary, // Legacy. Retained for RPC backwards compatibility
 	Base58,
@@ -50,7 +50,7 @@ pub enum UiAccountEncoding {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UiDataSliceConfig {
 	pub offset: u64, // usize
 	pub length: u64, // usize
@@ -58,7 +58,7 @@ pub struct UiDataSliceConfig {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgramAccountsConfig {
 	pub filters: Option<Vec<FilterType>>,
 	pub account_config: AccountInfoConfig,
@@ -68,7 +68,7 @@ pub struct ProgramAccountsConfig {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FilterType {
 	DataSize(u64),
 	Memcmp(Memcmp),
@@ -77,7 +77,7 @@ pub enum FilterType {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Memcmp {
 	/// Data offset to begin match
 	offset: u64, // usize
@@ -87,7 +87,7 @@ pub struct Memcmp {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MemcmpEncodedBytes {
 	Base58(String),
 	Base64(String),
@@ -96,7 +96,7 @@ pub enum MemcmpEncodedBytes {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenAccountsFilter {
 	Mint(String),
 	ProgramId(String),
@@ -104,7 +104,7 @@ pub enum TokenAccountsFilter {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContextConfig {
 	pub commitment: Option<CommitmentConfig>,
 	pub min_context_slot: Option<Slot>,
@@ -112,7 +112,7 @@ pub struct ContextConfig {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SendTransactionConfig {
 	pub skip_preflight: bool,
 	pub preflight_commitment: Option<CommitmentLevel>,
@@ -123,7 +123,7 @@ pub struct SendTransactionConfig {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiTransactionEncoding {
 	Binary, // Legacy. Retained for RPC backwards compatibility
 	Base64,
@@ -134,7 +134,7 @@ pub enum UiTransactionEncoding {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SimulateTransactionConfig {
 	pub sig_verify: bool,
 	pub replace_recent_blockhash: bool,
@@ -147,7 +147,7 @@ pub struct SimulateTransactionConfig {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SimulateTransactionAccountsConfig {
 	pub encoding: Option<UiAccountEncoding>,
 	pub addresses: Vec<String>,
@@ -155,7 +155,7 @@ pub struct SimulateTransactionAccountsConfig {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EpochConfig {
 	pub epoch: Option<Epoch>,
 	pub commitment: Option<CommitmentConfig>,

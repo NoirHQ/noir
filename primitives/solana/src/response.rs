@@ -30,7 +30,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Response<T> {
 	pub context: ResponseContext,
 	pub value: T,
@@ -38,7 +38,7 @@ pub struct Response<T> {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResponseContext {
 	pub slot: Slot,
 	pub api_version: String,
@@ -46,7 +46,7 @@ pub struct ResponseContext {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Blockhash {
 	pub blockhash: String,
 	pub last_valid_block_height: u64,
@@ -54,7 +54,7 @@ pub struct Blockhash {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SimulateTransactionResult {
 	pub err: Option<TransactionError>,
 	pub logs: Option<Vec<String>>,
@@ -67,7 +67,7 @@ pub struct SimulateTransactionResult {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UiTransactionReturnData {
 	pub program_id: String,
 	pub data: (String, UiReturnDataEncoding),
@@ -75,14 +75,14 @@ pub struct UiTransactionReturnData {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiReturnDataEncoding {
 	Base64,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UiInnerInstructions {
 	/// Transaction instruction index
 	pub index: u8,
@@ -92,7 +92,7 @@ pub struct UiInnerInstructions {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiInstruction {
 	Compiled(UiCompiledInstruction),
 	// Parsed(UiParsedInstruction),
@@ -100,7 +100,7 @@ pub enum UiInstruction {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UiCompiledInstruction {
 	pub program_id_index: u8,
 	pub accounts: Vec<u8>,
@@ -110,7 +110,7 @@ pub struct UiCompiledInstruction {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InflationReward {
 	pub epoch: Epoch,
 	pub effective_slot: Slot,
@@ -121,8 +121,8 @@ pub struct InflationReward {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OptionalContext<T> {
-    Context(Response<T>),
-    NoContext(T),
+	Context(Response<T>),
+	NoContext(T),
 }
