@@ -41,6 +41,7 @@ pub struct Response<T> {
 #[derive(Debug, Clone)]
 pub struct ResponseContext {
 	pub slot: Slot,
+	pub api_version: String,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -116,4 +117,12 @@ pub struct InflationReward {
 	pub amount: u64,            // lamports
 	pub post_balance: u64,      // lamports
 	pub commission: Option<u8>, // Vote account commission when the reward was credited
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
+pub enum OptionalContext<T> {
+    Context(Response<T>),
+    NoContext(T),
 }
