@@ -26,6 +26,10 @@ std = [
 	"serde/std",
 	"sp-core/std",
 ]
+scale = [
+	"parity-scale-codec", 
+	"scale-info"
+]
 serde = [
 	"dep:serde",
 	"bs58/alloc",

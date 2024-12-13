@@ -17,14 +17,17 @@
 
 use crate::config::UiAccountEncoding;
 use alloc::string::String;
+#[cfg(feature = "scale")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "scale")]
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// A duplicate representation of an Account for pretty JSON serialization
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct UiAccount {
 	pub lamports: u64,
 	pub data: UiAccountData,
@@ -35,7 +38,8 @@ pub struct UiAccount {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub enum UiAccountData {
 	LegacyBinary(String), // Legacy. Retained for RPC backwards compatibility
 	// Json(ParsedAccount),
@@ -43,7 +47,8 @@ pub enum UiAccountData {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct RpcKeyedAccount {
 	pub pubkey: String,
 	pub account: UiAccount,

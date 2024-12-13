@@ -15,19 +15,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#[cfg(feature = "scale")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "scale")]
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct CommitmentConfig {
 	pub commitment: CommitmentLevel,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 /// An attribute of a slot. It describes how finalized a block is at some point in time. For
 /// example, a slot is said to be at the max level immediately after the cluster recognizes the
 /// block at that slot as finalized. When querying the ledger state, use lower levels of commitment
