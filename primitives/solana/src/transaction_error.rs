@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TransactionError {
 	/// An account is already being processed in another transaction in a way
 	/// that does not support parallelism

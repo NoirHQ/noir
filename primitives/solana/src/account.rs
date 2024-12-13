@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 /// A duplicate representation of an Account for pretty JSON serialization
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UiAccount {
 	pub lamports: u64,
 	pub data: UiAccountData,
@@ -39,7 +39,7 @@ pub struct UiAccount {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiAccountData {
 	LegacyBinary(String), // Legacy. Retained for RPC backwards compatibility
 	// Json(ParsedAccount),
@@ -48,7 +48,7 @@ pub enum UiAccountData {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyedAccount {
 	pub pubkey: String,
 	pub account: UiAccount,
