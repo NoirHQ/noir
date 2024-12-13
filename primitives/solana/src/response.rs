@@ -41,7 +41,7 @@ pub struct Response<T> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResponseContext {
 	pub slot: Slot,
-	pub api_version: String,
+	pub api_version: Option<String>,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
