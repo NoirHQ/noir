@@ -21,33 +21,39 @@ use crate::{
 	transaction_error::TransactionError,
 };
 use alloc::string::String;
+#[cfg(feature = "scale")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "scale")]
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct Response<T> {
 	pub context: ResponseContext,
 	pub value: T,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct ResponseContext {
 	pub slot: Slot,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct Blockhash {
 	pub blockhash: String,
 	pub last_valid_block_height: u64,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct SimulateTransactionResult {
 	pub err: Option<TransactionError>,
 	pub logs: Option<Vec<String>>,
@@ -59,20 +65,23 @@ pub struct SimulateTransactionResult {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct UiTransactionReturnData {
 	pub program_id: String,
 	pub data: (String, UiReturnDataEncoding),
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub enum UiReturnDataEncoding {
 	Base64,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct UiInnerInstructions {
 	/// Transaction instruction index
 	pub index: u8,
@@ -81,14 +90,16 @@ pub struct UiInnerInstructions {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub enum UiInstruction {
 	Compiled(UiCompiledInstruction),
 	// Parsed(UiParsedInstruction),
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct UiCompiledInstruction {
 	pub program_id_index: u8,
 	pub accounts: Vec<u8>,
@@ -97,7 +108,8 @@ pub struct UiCompiledInstruction {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct InflationReward {
 	pub epoch: Epoch,
 	pub effective_slot: Slot,

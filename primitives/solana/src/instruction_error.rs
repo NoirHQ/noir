@@ -1,11 +1,14 @@
 use alloc::string::String;
+#[cfg(feature = "scale")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "scale")]
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub enum InstructionError {
 	/// Deprecated! Use CustomError instead!
 	/// The program instruction returned an error

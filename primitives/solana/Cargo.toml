@@ -10,8 +10,8 @@ publish = false
 [dependencies]
 bs58 = { version = "0.5.1", default-features = false, optional = true }
 buidl = { version = "0.1.1", default-features = false, features = ["derive"] }
-parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
-scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"], optional = true }
+scale-info = { version = "2.11", default-features = false, features = ["derive"], optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 
@@ -24,6 +24,10 @@ std = [
 	"scale-info/std",
 	"serde/std",
 	"sp-core/std",
+]
+scale = [
+	"parity-scale-codec", 
+	"scale-info"
 ]
 serde = [
 	"dep:serde",

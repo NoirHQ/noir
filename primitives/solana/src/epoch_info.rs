@@ -16,13 +16,16 @@
 // limitations under the License.
 
 use crate::clock::{Epoch, Slot};
+#[cfg(feature = "scale")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "scale")]
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
+#[derive(Debug, Clone)]
 pub struct EpochInfo {
 	/// The current epoch
 	pub epoch: Epoch,
