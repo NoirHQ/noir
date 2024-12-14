@@ -1187,6 +1187,35 @@ impl<'a, T: Config> BorrowedAccount<'a, T> {
 	}
 }
 
+/// Everything that needs to be recorded from a TransactionContext after execution
+#[cfg(not(target_os = "solana"))]
+pub struct ExecutionRecord<T: Config> {
+	pub accounts: Vec<TransactionAccount<T>>,
+	pub return_data: TransactionReturnData,
+	pub touched_account_count: u64,
+	pub accounts_resize_delta: i64,
+}
+
+/// Used by the bank in the runtime to write back the processed accounts and recorded instructions
+#[cfg(not(target_os = "solana"))]
+impl<T: Config> From<TransactionContext<T>> for ExecutionRecord<T> {
+	fn from(context: TransactionContext<T>) -> Self {
+		let accounts = Rc::try_unwrap(context.accounts)
+			.expect("transaction_context.accounts has unexpected outstanding refs");
+		let touched_account_count = accounts.touched_count() as u64;
+		let accounts = accounts.into_accounts();
+		Self {
+			accounts: Vec::from(Pin::into_inner(context.account_keys))
+				.into_iter()
+				.zip(accounts)
+				.collect(),
+			return_data: context.return_data,
+			touched_account_count,
+			accounts_resize_delta: RefCell::into_inner(context.accounts_resize_delta),
+		}
+	}
+}
+
 #[cfg(not(target_os = "solana"))]
 fn is_zeroed(buf: &[u8]) -> bool {
 	const ZEROS_LEN: usize = 1024;

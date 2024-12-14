@@ -19,15 +19,15 @@
 use crate::{
 	runtime::{
 		account::{AccountSharedData, ReadableAccount},
+		loaded_programs::{
+			LoadProgramMetrics, ProgramCacheEntry, ProgramCacheEntryOwner, ProgramCacheEntryType,
+			ProgramRuntimeEnvironment, ProgramRuntimeEnvironments, DELAY_VISIBILITY_SLOT_OFFSET,
+		},
 		transaction_processing_callback::TransactionProcessingCallback,
 	},
 	Config,
 };
 use nostd::sync::Arc;
-use solana_program_runtime::loaded_programs::{
-	LoadProgramMetrics, ProgramCacheEntry, ProgramCacheEntryOwner, ProgramCacheEntryType,
-	ProgramRuntimeEnvironment, ProgramRuntimeEnvironments, DELAY_VISIBILITY_SLOT_OFFSET,
-};
 use solana_sdk::{
 	account_utils::StateMut,
 	bpf_loader, bpf_loader_deprecated,
@@ -47,15 +47,15 @@ pub(crate) enum ProgramAccountLoadResult<T: Config> {
 	ProgramOfLoaderV4(AccountSharedData<T>, Slot),
 }
 
-pub(crate) fn load_program_from_bytes(
+pub(crate) fn load_program_from_bytes<T: Config>(
 	load_program_metrics: &mut LoadProgramMetrics,
 	programdata: &[u8],
 	loader_key: &Pubkey,
 	account_size: usize,
 	deployment_slot: Slot,
-	program_runtime_environment: ProgramRuntimeEnvironment,
+	program_runtime_environment: ProgramRuntimeEnvironment<T>,
 	reloading: bool,
-) -> core::result::Result<ProgramCacheEntry, Box<dyn core::error::Error>> {
+) -> core::result::Result<ProgramCacheEntry<T>, Box<dyn core::error::Error>> {
 	if reloading {
 		// Safety: this is safe because the program is being reloaded in the cache.
 		unsafe {
@@ -134,11 +134,11 @@ pub(crate) fn load_program_accounts<T: Config, CB: TransactionProcessingCallback
 /// invalid.
 pub fn load_program_with_pubkey<T: Config, CB: TransactionProcessingCallback<T>>(
 	callbacks: &CB,
-	environments: &ProgramRuntimeEnvironments,
+	environments: &ProgramRuntimeEnvironments<T>,
 	pubkey: &Pubkey,
 	slot: Slot,
 	reload: bool,
-) -> Option<Arc<ProgramCacheEntry>> {
+) -> Option<Arc<ProgramCacheEntry<T>>> {
 	let mut load_program_metrics =
 		LoadProgramMetrics { program_id: pubkey.to_string(), ..LoadProgramMetrics::default() };
 

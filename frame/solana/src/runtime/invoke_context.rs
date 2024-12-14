@@ -34,7 +34,13 @@ use nostd::{
 	sync::{atomic::Ordering, Arc},
 };
 use solana_compute_budget::compute_budget::ComputeBudget;
-use solana_program_runtime::{log_collector::LogCollector, stable_log, sysvar_cache::SysvarCache};
+use solana_program_runtime::{
+	dummy::Measure,
+	log_collector::LogCollector,
+	stable_log,
+	sysvar_cache::SysvarCache,
+	timings::{ExecuteDetailsTimings, ExecuteTimings},
+};
 use solana_rbpf::{
 	ebpf::MM_HEAP_START,
 	error::{EbpfError, ProgramResult},
@@ -203,9 +209,9 @@ pub struct InvokeContext<'a, T: crate::Config> {
 	/// the designated compute budget during program execution.
 	compute_meter: RefCell<u64>,
 	log_collector: Option<Rc<RefCell<LogCollector>>>,
-	// Latest measurement not yet accumulated in [ExecuteDetailsTimings::execute_us]
-	//pub execute_time: Option<Measure>,
-	//pub timings: ExecuteDetailsTimings,
+	/// Latest measurement not yet accumulated in [ExecuteDetailsTimings::execute_us]
+	pub execute_time: Option<Measure>,
+	pub timings: ExecuteDetailsTimings,
 	pub syscall_context: Vec<Option<SyscallContext>>,
 	traces: Vec<Vec<[u64; 12]>>,
 }
@@ -226,8 +232,8 @@ impl<'a, T: crate::Config> InvokeContext<'a, T> {
 			log_collector,
 			compute_budget,
 			compute_meter: RefCell::new(compute_budget.compute_unit_limit),
-			//execute_time: None,
-			//timings: ExecuteDetailsTimings::default(),
+			execute_time: None,
+			timings: ExecuteDetailsTimings::default(),
 			syscall_context: Vec::new(),
 			traces: Vec::new(),
 		}
@@ -309,7 +315,7 @@ impl<'a, T: crate::Config> InvokeContext<'a, T> {
 			&instruction_accounts,
 			&program_indices,
 			&mut compute_units_consumed,
-			//&mut ExecuteTimings::default(),
+			&mut ExecuteTimings::default(),
 		)?;
 		Ok(())
 	}
@@ -430,7 +436,7 @@ impl<'a, T: crate::Config> InvokeContext<'a, T> {
 		instruction_accounts: &[InstructionAccount],
 		program_indices: &[IndexOfAccount],
 		compute_units_consumed: &mut u64,
-		//timings: &mut ExecuteTimings,
+		timings: &mut ExecuteTimings,
 	) -> Result<(), InstructionError> {
 		*compute_units_consumed = 0;
 		self.transaction_context.get_next_instruction_context()?.configure(
@@ -439,7 +445,7 @@ impl<'a, T: crate::Config> InvokeContext<'a, T> {
 			instruction_data,
 		);
 		self.push()?;
-		self.process_executable_chain(compute_units_consumed /* , timings */)
+		self.process_executable_chain(compute_units_consumed, timings)
 			// MUST pop if and only if `push` succeeded, independent of `result`.
 			// Thus, the `.and()` instead of an `.and_then()`.
 			.and(self.pop())
@@ -449,7 +455,7 @@ impl<'a, T: crate::Config> InvokeContext<'a, T> {
 	fn process_executable_chain(
 		&mut self,
 		compute_units_consumed: &mut u64,
-		//timings: &mut ExecuteTimings,
+		timings: &mut ExecuteTimings,
 	) -> Result<(), InstructionError> {
 		let instruction_context = self.transaction_context.get_current_instruction_context()?;
 		//let process_executable_chain_time = Measure::start("process_executable_chain_time");
@@ -765,7 +771,7 @@ pub fn mock_process_instruction<
 		&instruction_accounts,
 		&program_indices,
 		&mut 0,
-		//&mut ExecuteTimings::default(),
+		&mut ExecuteTimings::default(),
 	);
 	assert_eq!(result, expected_result);
 	post_adjustments(&mut invoke_context);
@@ -1068,7 +1074,7 @@ mod tests {
 				&inner_instruction_accounts,
 				&program_indices,
 				&mut compute_units_consumed,
-				//&mut ExecuteTimings::default(),
+				&mut ExecuteTimings::default(),
 			);
 
 			// Because the instruction had compute cost > 0, then regardless of the execution
@@ -1161,7 +1167,7 @@ mod tests {
 				&instruction_accounts,
 				&[2],
 				&mut 0,
-				//&mut ExecuteTimings::default(),
+				&mut ExecuteTimings::default(),
 			);
 
 			assert!(result.is_ok());
@@ -1183,7 +1189,7 @@ mod tests {
 				&instruction_accounts,
 				&[2],
 				&mut 0,
-				//&mut ExecuteTimings::default(),
+				&mut ExecuteTimings::default(),
 			);
 
 			assert!(result.is_ok());
@@ -1205,7 +1211,7 @@ mod tests {
 				&instruction_accounts,
 				&[2],
 				&mut 0,
-				//&mut ExecuteTimings::default(),
+				&mut ExecuteTimings::default(),
 			);
 
 			assert!(result.is_ok());

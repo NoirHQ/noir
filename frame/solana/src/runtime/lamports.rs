@@ -17,7 +17,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{BalanceOf, Config};
-use frame_support::sp_runtime::traits::{CheckedAdd, CheckedMul, CheckedSub, Get};
+use frame_support::sp_runtime::traits::{CheckedAdd, CheckedMul, CheckedSub, Get, Saturating};
 use nostd::cmp::Ordering;
 use np_runtime::traits::LossyInto;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -138,6 +138,12 @@ impl<T: Config> Lamports<T> {
 		let rhs = <BalanceOf<T>>::from(rhs);
 		let rhs = rhs.checked_mul(&T::DecimalMultiplier::get())?;
 		self.0.checked_sub(&rhs).map(Self::checked_new)?
+	}
+
+	pub fn saturating_add(&self, rhs: u64) -> Self {
+		let rhs = <BalanceOf<T>>::from(rhs);
+		let rhs = rhs.saturating_mul(T::DecimalMultiplier::get());
+		Self(self.0.saturating_add(rhs))
 	}
 
 	pub fn checked_add_lamports(&self, rhs: Self) -> Option<Self> {

@@ -19,6 +19,8 @@
 use crate::{runtime::Lamports, Config};
 use bincode::{self, EncodeError, Error, ErrorKind};
 use nostd::{cell::RefCell, mem::MaybeUninit, ptr, rc::Rc, sync::Arc};
+#[cfg(feature = "std")]
+use solana_sdk::account::{InheritableAccountFields, DUMMY_INHERITABLE_ACCOUNT_FIELDS};
 pub use solana_sdk::account::{ReadableAccount, WritableAccount};
 use solana_sdk::{
 	account_utils::StateMut, clock::Epoch, instruction::InstructionError, lamports::LamportsError,
@@ -87,12 +89,6 @@ impl<T: Config> From<solana_sdk::account::AccountSharedData> for AccountSharedDa
 	fn from(other: solana_sdk::account::AccountSharedData) -> Self {
 		solana_sdk::account::Account::from(other).into()
 	}
-}
-
-pub fn create_account_shared_data_for_test<S: Sysvar, T: Config>(
-	sysvar: &S,
-) -> AccountSharedData<T> {
-	solana_sdk::account::create_account_shared_data_for_test(sysvar).into()
 }
 
 impl<T: Config> AccountSharedData<T> {
@@ -369,17 +365,22 @@ where
 	}
 }
 
+#[cfg(feature = "std")]
+pub fn create_account_shared_data_for_test<S: Sysvar, T: Config>(
+	sysvar: &S,
+) -> AccountSharedData<T> {
+	solana_sdk::account::create_account_shared_data_for_test(sysvar).into()
+}
+
 #[cfg(test)]
 pub mod tests {
-	use crate::mock::Test;
+	use crate::mock::AccountSharedData;
 	use solana_sdk::{
 		account::{accounts_equal, Account, ReadableAccount, WritableAccount},
 		account_utils::StateMut,
 		instruction::InstructionError,
 		pubkey::Pubkey,
 	};
-
-	type AccountSharedData = super::AccountSharedData<Test>;
 
 	fn make_two_accounts(key: &Pubkey) -> (Account, AccountSharedData) {
 		let mut account1 = Account::new(1, 2, key);

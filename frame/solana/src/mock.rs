@@ -23,6 +23,8 @@ use frame_support::{
 	sp_runtime::{traits::ConstU128, BuildStorage},
 };
 
+pub(crate) type AccountSharedData = crate::runtime::account::AccountSharedData<Test>;
+
 #[frame_support::runtime]
 mod runtime {
 	#[runtime::runtime]

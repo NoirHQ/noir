@@ -19,18 +19,29 @@
 #![allow(unexpected_cfgs)]
 
 pub mod account;
+pub mod account_loader;
+pub mod account_overrides;
+pub mod account_rent_state;
 pub mod bank;
 pub mod invoke_context;
 pub mod lamports;
 pub mod loaded_programs;
+pub mod message_processor;
 pub mod meta;
+pub mod native_loader;
 pub mod nonce_account;
+pub mod nonce_info;
 pub mod program_loader;
 pub mod rbpf;
+pub mod rent_collector;
+pub mod rollback_accounts;
 pub mod sysvar_cache;
+pub mod transaction_account_state_info;
 pub mod transaction_context;
+pub mod transaction_error_metrics;
 pub mod transaction_processing_callback;
 pub mod transaction_processor;
+pub mod transaction_results;
 
 pub use invoke_context::declare_process_instruction;
 pub use lamports::Lamports;
