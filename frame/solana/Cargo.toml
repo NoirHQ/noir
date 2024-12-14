@@ -13,12 +13,14 @@ bincode = { workspace = true }
 derive-where = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+itertools = { workspace = true }
 log = { workspace = true }
 nostd = { workspace = true }
 np-runtime = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+serde_derive = { workspace = true }
 solana-compute-budget = { workspace = true }
 solana-program-runtime = { workspace = true }
 solana-sdk = { workspace = true, features = ["full", "scale"] }
@@ -26,7 +28,9 @@ solana_rbpf = { workspace = true }
 
 [dev-dependencies]
 assert_matches = { workspace = true }
+libsecp256k1 = { workspace = true }
 pallet-balances = { workspace = true, default-features = true }
+rand = { workspace = true, default-features = true }
 sp-io = { workspace = true, default-features = true }
 
 [features]
@@ -35,10 +39,10 @@ std = [
 	"bincode/std",
 	"frame-support/std",
 	"frame-system/std",
+	"itertools/use_std",
 	"log/std",
 	"nostd/std",
 	"np-runtime/std",
-	"pallet-balances/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",

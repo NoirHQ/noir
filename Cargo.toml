@@ -65,6 +65,7 @@ ethereum = { version = "0.15.0", default-features = false }
 hex-literal = "0.4"
 itertools = { version = "0.12.1", default-features = false }
 k256 = { version = "0.13", default-features = false }
+libsecp256k1 = { version = "0.6.0", default-features = false, features = ["std", "static-context"] }
 log = { version = "0.4", default-features = false }
 nostd = "0.1.1"
 num-derive = "0.4"
@@ -76,8 +77,9 @@ rand = { version = "0.8.5", default-features = false }
 ripemd = { version = "0.1", default-features = false }
 rustc_version = "0.4"
 scale-info = { version = "2.11", default-features = false }
-serde = { version = "1.0", default-features = false }
+serde = { version = "1.0.203", default-features = false }
 serde-json-wasm = { version = "1.0", default-features = false }
+serde_derive = { version = "1.0.203", default-features = false }
 smallvec = "1.13"
 solana-frozen-abi = "2.0.18"
 solana-frozen-abi-macro = "2.0.18"
