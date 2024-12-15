@@ -17,17 +17,12 @@
 
 use crate::config::UiAccountEncoding;
 use alloc::string::String;
-#[cfg(feature = "scale")]
-use parity_scale_codec::{Decode, Encode};
-#[cfg(feature = "scale")]
-use scale_info::TypeInfo;
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 /// A duplicate representation of an Account for pretty JSON serialization
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct UiAccount {
 	pub lamports: u64,
 	pub data: UiAccountData,
@@ -37,17 +32,23 @@ pub struct UiAccount {
 	pub space: Option<u64>,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", untagged)]
 pub enum UiAccountData {
 	LegacyBinary(String), // Legacy. Retained for RPC backwards compatibility
-	// Json(ParsedAccount),
+	Json(ParsedAccount),
 	Binary(String, UiAccountEncoding),
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ParsedAccount {
+	pub program: String,
+	pub parsed: Value,
+	pub space: u64,
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyedAccount {
 	pub pubkey: String,

@@ -16,15 +16,10 @@
 // limitations under the License.
 
 use crate::instruction_error::InstructionError;
-#[cfg(feature = "scale")]
-use parity_scale_codec::{Decode, Encode};
-#[cfg(feature = "scale")]
-use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TransactionError {
 	/// An account is already being processed in another transaction in a way
