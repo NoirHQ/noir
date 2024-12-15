@@ -18,112 +18,93 @@
 use crate::{
 	clock::{Epoch, Slot},
 	commitment_config::{CommitmentConfig, CommitmentLevel},
+	filter::RpcFilterType,
 };
 use alloc::{string::String, vec::Vec};
-#[cfg(feature = "scale")]
-use parity_scale_codec::{Decode, Encode};
-#[cfg(feature = "scale")]
-use scale_info::TypeInfo;
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AccountInfoConfig {
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcAccountInfoConfig {
 	pub encoding: Option<UiAccountEncoding>,
 	pub data_slice: Option<UiDataSliceConfig>,
+	#[serde(flatten)]
 	pub commitment: Option<CommitmentConfig>,
 	pub min_context_slot: Option<Slot>,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
 pub enum UiAccountEncoding {
 	Binary, // Legacy. Retained for RPC backwards compatibility
 	Base58,
 	Base64,
 	JsonParsed,
+	#[serde(rename = "base64+zstd")]
 	Base64Zstd,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UiDataSliceConfig {
-	pub offset: u64, // usize
-	pub length: u64, // usize
+	pub offset: usize,
+	pub length: usize,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProgramAccountsConfig {
-	pub filters: Option<Vec<FilterType>>,
-	pub account_config: AccountInfoConfig,
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcProgramAccountsConfig {
+	pub filters: Option<Vec<RpcFilterType>>,
+	#[serde(flatten)]
+	pub account_config: RpcAccountInfoConfig,
 	pub with_context: Option<bool>,
 	pub sort_results: Option<bool>,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FilterType {
-	DataSize(u64),
-	Memcmp(Memcmp),
-	TokenAccountState,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Memcmp {
-	/// Data offset to begin match
-	offset: u64, // usize
-	/// Bytes, encoded with specified encoding
-	bytes: MemcmpEncodedBytes,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MemcmpEncodedBytes {
-	Base58(String),
-	Base64(String),
-	Bytes(Vec<u8>),
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TokenAccountsFilter {
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RpcTokenAccountsFilter {
 	Mint(String),
 	ProgramId(String),
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ContextConfig {
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcContextConfig {
+	#[serde(flatten)]
 	pub commitment: Option<CommitmentConfig>,
 	pub min_context_slot: Option<Slot>,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SendTransactionConfig {
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcSendTransactionConfig {
+	#[serde(default)]
 	pub skip_preflight: bool,
 	pub preflight_commitment: Option<CommitmentLevel>,
 	pub encoding: Option<UiTransactionEncoding>,
-	pub max_retries: Option<u64>, // Option<usize>
+	pub max_retries: Option<usize>,
 	pub min_context_slot: Option<Slot>,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcSimulateTransactionConfig {
+	#[serde(default)]
+	pub sig_verify: bool,
+	#[serde(default)]
+	pub replace_recent_blockhash: bool,
+	#[serde(flatten)]
+	pub commitment: Option<CommitmentConfig>,
+	pub encoding: Option<UiTransactionEncoding>,
+	pub accounts: Option<RpcSimulateTransactionAccountsConfig>,
+	pub min_context_slot: Option<Slot>,
+	#[serde(default)]
+	pub inner_instructions: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub enum UiTransactionEncoding {
 	Binary, // Legacy. Retained for RPC backwards compatibility
 	Base64,
@@ -132,32 +113,18 @@ pub enum UiTransactionEncoding {
 	JsonParsed,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SimulateTransactionConfig {
-	pub sig_verify: bool,
-	pub replace_recent_blockhash: bool,
-	pub commitment: Option<CommitmentConfig>,
-	pub encoding: Option<UiTransactionEncoding>,
-	pub accounts: Option<SimulateTransactionAccountsConfig>,
-	pub min_context_slot: Option<Slot>,
-	pub inner_instructions: bool,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SimulateTransactionAccountsConfig {
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcSimulateTransactionAccountsConfig {
 	pub encoding: Option<UiAccountEncoding>,
 	pub addresses: Vec<String>,
 }
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "scale", derive(Encode, Decode, TypeInfo))]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EpochConfig {
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcEpochConfig {
 	pub epoch: Option<Epoch>,
+	#[serde(flatten)]
 	pub commitment: Option<CommitmentConfig>,
 	pub min_context_slot: Option<Slot>,
 }

@@ -26,6 +26,7 @@ pub mod clock;
 pub mod commitment_config;
 pub mod config;
 pub mod epoch_info;
+pub mod filter;
 pub mod instruction_error;
 pub mod response;
 pub mod transaction_error;
