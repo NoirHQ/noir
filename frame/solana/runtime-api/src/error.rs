@@ -19,4 +19,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
-pub enum Error {}
+pub enum Error {
+	ParseError,
+	UnsupportedMethod,
+}
