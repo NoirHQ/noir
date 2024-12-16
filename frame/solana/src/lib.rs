@@ -348,7 +348,7 @@ pub mod pallet {
 		pub fn get_account_info(
 			pubkey: Pubkey,
 			data_slice: Option<UiDataSliceConfig>,
-		) -> Result<Option<Account>, String> {
+		) -> Option<Account> {
 			let meta = AccountMeta::<T>::get(T::AccountIdConversion::convert(pubkey));
 
 			if let Some(meta) = meta {
@@ -358,16 +358,26 @@ pub mod pallet {
 					.unwrap_or(Vec::new());
 				let slice = slice_data(&data, data_slice);
 
-				Ok(Some(Account {
+				Some(Account {
 					lamports,
 					data: slice.to_vec(),
 					owner: meta.owner,
 					executable: meta.executable,
 					rent_epoch: meta.rent_epoch,
-				}))
+				})
 			} else {
-				Ok(None)
+				None
 			}
+		}
+
+		pub fn get_multiple_accounts(
+			pubkeys: Vec<Pubkey>,
+			data_slice: Option<UiDataSliceConfig>,
+		) -> Vec<Option<Account>> {
+			pubkeys
+				.into_iter()
+				.map(|pubkey| Self::get_account_info(pubkey, data_slice))
+				.collect::<_>()
 		}
 	}
 
