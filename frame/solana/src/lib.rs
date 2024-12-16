@@ -79,19 +79,31 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O> for Ensure
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::runtime::transaction_processing_callback::TransactionProcessingCallback;
+	use crate::runtime::{
+		account::AccountSharedData,
+		bank::Bank,
+		transaction_processing_callback::TransactionProcessingCallback,
+		transaction_processor::{
+			ExecutionRecordingConfig, TransactionProcessingConfig,
+			TransactionProcessingEnvironment, TransactionProcessor,
+		},
+	};
 	use core::fmt::Debug;
 	use frame_support::{dispatch::DispatchInfo, pallet_prelude::*, traits::fungible};
 	use frame_system::{pallet_prelude::*, CheckWeight};
+	use nostd::sync::Arc;
 	use np_runtime::traits::LossyInto;
 	use parity_scale_codec::Codec;
 	use solana_sdk::{
+		feature_set::FeatureSet,
+		fee_calculator::FeeCalculator,
+		hash::Hash,
 		message::SimpleAddressLoader,
 		reserved_account_keys::ReservedAccountKeys,
 		transaction::{MessageHash, SanitizedTransaction},
 	};
 	use sp_runtime::{
-		traits::{AtLeast32BitUnsigned, DispatchInfoOf, Dispatchable, One, Saturating},
+		traits::{AtLeast32BitUnsigned, Convert, DispatchInfoOf, Dispatchable, One, Saturating},
 		transaction_validity::{
 			InvalidTransaction, TransactionValidity, TransactionValidityError,
 			ValidTransactionBuilder,
@@ -100,7 +112,13 @@ pub mod pallet {
 	};
 
 	#[pallet::config(with_default)]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+		#[pallet::no_default]
+		type AccountIdConversion: Convert<Pubkey, Self::AccountId>;
+
+		#[pallet::no_default]
+		type HashConversion: Convert<Self::Hash, Hash>;
+
 		#[pallet::no_default]
 		type Balance: Parameter
 			+ Member
@@ -158,10 +176,24 @@ pub mod pallet {
 	#[pallet::origin]
 	pub type Origin = RawOrigin;
 
+	#[derive(Decode, Encode, MaxEncodedLen, TypeInfo)]
+	#[scale_info(skip_type_params(T))]
+	pub struct HashInfo<T: Config> {
+		fee_calculator: FeeCalculator,
+		hash_index: BlockNumberFor<T>,
+		timestamp: T::Moment,
+	}
+
+	impl<T: Config> HashInfo<T> {
+		pub fn lamports_per_signature(&self) -> u64 {
+			self.fee_calculator.lamports_per_signature
+		}
+	}
+
 	/// FIFO queue of `recent_blockhashes` item to verify nonces.
 	#[pallet::storage]
 	#[pallet::getter(fn blockhash_queue)]
-	pub type BlockhashQueue<T: Config> = StorageMap<_, Twox64Concat, T::Hash, BlockNumberFor<T>>;
+	pub type BlockhashQueue<T: Config> = StorageMap<_, Twox64Concat, T::Hash, HashInfo<T>>;
 
 	// AccountRentState?
 
@@ -179,7 +211,15 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(now: BlockNumberFor<T>) -> Weight {
 			let parent_hash = <frame_system::Pallet<T>>::parent_hash();
-			<BlockhashQueue<T>>::insert(parent_hash, now - One::one());
+			<BlockhashQueue<T>>::insert(
+				parent_hash,
+				HashInfo {
+					// FIXME: Update fee calculator.
+					fee_calculator: FeeCalculator::default(),
+					hash_index: now.saturating_sub(One::one()),
+					timestamp: <pallet_timestamp::Pallet<T>>::get(),
+				},
+			);
 			Weight::zero()
 		}
 
@@ -208,17 +248,77 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		pub fn get_hash_info_if_valid(
+			hash: &T::Hash,
+			max_age: BlockNumberFor<T>,
+		) -> Option<HashInfo<T>> {
+			let last_hash_index =
+				<frame_system::Pallet<T>>::block_number().saturating_sub(One::one());
+			<BlockhashQueue<T>>::get(hash)
+				.filter(|info| last_hash_index - info.hash_index <= max_age)
+		}
+
 		fn apply_validated_transaction(
-			_pubkey: Pubkey,
-			_transaction: Transaction,
+			fee_payer: Pubkey,
+			transaction: Transaction,
 		) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo> {
+			let sanitized_tx = SanitizedTransaction::try_create(
+				transaction,
+				MessageHash::Compute,
+				None,
+				SimpleAddressLoader::Disabled,
+				&ReservedAccountKeys::empty_key_set(),
+			)
+			.expect("valid transaction");
+
+			let bank = <Bank<T>>::new();
+
+			let check_result =
+				bank.check_transaction(&sanitized_tx, T::BlockhashQueueMaxAge::get());
+
+			let blockhash = T::HashConversion::convert(<frame_system::Pallet<T>>::parent_hash());
+			// FIXME: Update lamports_per_signature.
+			let lamports_per_signature = Default::default();
+			let processing_environment = TransactionProcessingEnvironment {
+				blockhash,
+				epoch_total_stake: None,
+				epoch_vote_accounts: None,
+				feature_set: Arc::new(FeatureSet::default()),
+				fee_structure: None,
+				lamports_per_signature,
+				rent_collector: None,
+			};
+			// FIXME: Update fields.
+			let processing_config = TransactionProcessingConfig {
+				account_overrides: None,
+				check_program_modification_slot: false,
+				compute_budget: None,
+				log_messages_bytes_limit: None,
+				limit_to_load_programs: false,
+				recording_config: ExecutionRecordingConfig {
+					enable_cpi_recording: false,
+					enable_log_recording: true,
+					enable_return_data_recording: true,
+				},
+				transaction_account_lock_limit: None,
+			};
+
+			let transaction_processor = TransactionProcessor::default();
+			let sanitized_output = transaction_processor.load_and_execute_sanitized_transaction(
+				&bank,
+				sanitized_tx,
+				check_result,
+				&processing_environment,
+				&processing_config,
+			);
+
 			Ok(().into())
 		}
 
 		// TODO: unimplemented.
 		fn validate_transaction_in_pool(
-			origin: Pubkey,
-			transaction: &Transaction,
+			_fee_payer: Pubkey,
+			_transaction: &Transaction,
 		) -> TransactionValidity {
 			let mut builder = ValidTransactionBuilder::default();
 
@@ -227,11 +327,17 @@ pub mod pallet {
 
 		// TODO: unimplemented.
 		fn validate_transaction_in_block(
-			origin: Pubkey,
-			transaction: &Transaction,
+			_fee_payer: Pubkey,
+			_transaction: &Transaction,
 		) -> Result<(), TransactionValidityError> {
 			Ok(())
 		}
+	}
+
+	// TODO: Generalize and move to higher level.
+	pub struct SignedInfo {
+		pub fee_payer: Pubkey,
+		pub sanitized_tx: SanitizedTransaction,
 	}
 
 	impl<T> Call<T>
@@ -244,9 +350,9 @@ pub mod pallet {
 			matches!(self, Call::transact { .. })
 		}
 
-		pub fn check_self_contained(&self) -> Option<Result<Pubkey, TransactionValidityError>> {
+		pub fn check_self_contained(&self) -> Option<Result<SignedInfo, TransactionValidityError>> {
 			if let Call::transact { transaction } = self {
-				let sanitized = match SanitizedTransaction::try_create(
+				let sanitized_tx = match SanitizedTransaction::try_create(
 					transaction.clone(),
 					MessageHash::Compute,
 					None,
@@ -257,8 +363,11 @@ pub mod pallet {
 					// TODO: Update error code.
 					Err(_) => return Some(Err(InvalidTransaction::Custom(0).into())),
 				};
-				match sanitized.verify() {
-					Ok(_) => Some(Ok(sanitized.message().fee_payer().clone())),
+				match sanitized_tx.verify() {
+					Ok(_) => Some(Ok(SignedInfo {
+						fee_payer: sanitized_tx.message().fee_payer().clone(),
+						sanitized_tx,
+					})),
 					Err(_) => Some(Err(InvalidTransaction::BadProof.into())),
 				}
 			} else {
@@ -268,7 +377,7 @@ pub mod pallet {
 
 		pub fn pre_dispatch_self_contained(
 			&self,
-			origin: &Pubkey,
+			origin: &SignedInfo,
 			dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 			len: usize,
 		) -> Option<Result<(), TransactionValidityError>> {
@@ -277,7 +386,7 @@ pub mod pallet {
 					return Some(Err(e));
 				}
 
-				Some(Pallet::<T>::validate_transaction_in_block(*origin, transaction))
+				Some(Pallet::<T>::validate_transaction_in_block(origin.fee_payer, transaction))
 			} else {
 				None
 			}
@@ -285,7 +394,7 @@ pub mod pallet {
 
 		pub fn validate_self_contained(
 			&self,
-			origin: &Pubkey,
+			origin: &SignedInfo,
 			dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 			len: usize,
 		) -> Option<TransactionValidity> {
@@ -294,7 +403,7 @@ pub mod pallet {
 					return Some(Err(e));
 				}
 
-				Some(Pallet::<T>::validate_transaction_in_pool(*origin, transaction))
+				Some(Pallet::<T>::validate_transaction_in_pool(origin.fee_payer, transaction))
 			} else {
 				None
 			}

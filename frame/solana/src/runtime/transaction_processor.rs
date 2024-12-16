@@ -43,6 +43,7 @@ use nostd::{
 	borrow::Borrow,
 	cell::RefCell,
 	collections::{hash_map::Entry, HashMap, HashSet},
+	marker::PhantomData,
 	prelude::*,
 	rc::Rc,
 	sync::Arc,
@@ -147,13 +148,45 @@ pub struct TransactionProcessingEnvironment<'a> {
 pub struct TransactionProcessor<T> {
 	slot: Slot,
 	epoch: Epoch,
-	sysvar_cache: SysvarCache,
+	pub sysvar_cache: SysvarCache,
 	pub builtin_program_ids: HashSet<Pubkey>,
-	_marker: core::marker::PhantomData<T>,
+	_marker: PhantomData<T>,
+}
+
+impl<T: Config> Default for TransactionProcessor<T> {
+	fn default() -> Self {
+		Self {
+			slot: Slot::default(),
+			epoch: Epoch::default(),
+			sysvar_cache: SysvarCache::default(),
+			builtin_program_ids: HashSet::new(),
+			_marker: PhantomData,
+		}
+	}
 }
 
 impl<T: Config> TransactionProcessor<T> {
-	fn load_and_execute_sanatized_transaction<CB: TransactionProcessingCallback<T>>(
+	pub fn new(slot: Slot, epoch: Epoch, builtin_program_ids: HashSet<Pubkey>) -> Self {
+		Self {
+			slot,
+			epoch,
+			sysvar_cache: SysvarCache::default(),
+			builtin_program_ids,
+			..Default::default()
+		}
+	}
+
+	pub fn new_from(&self, slot: Slot, epoch: Epoch) -> Self {
+		Self {
+			slot,
+			epoch,
+			sysvar_cache: SysvarCache::default(),
+			builtin_program_ids: self.builtin_program_ids.clone(),
+			..Default::default()
+		}
+	}
+
+	pub fn load_and_execute_sanitized_transaction<CB: TransactionProcessingCallback<T>>(
 		&self,
 		callbacks: &CB,
 		sanitized_tx: SanitizedTransaction,

@@ -16,6 +16,7 @@ itertools = { workspace = true }
 log = { workspace = true }
 nostd = { workspace = true }
 np-runtime = { workspace = true }
+pallet-timestamp = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -42,6 +43,7 @@ std = [
 	"log/std",
 	"nostd/std",
 	"np-runtime/std",
+	"pallet-timestamp/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",
@@ -53,8 +55,10 @@ std = [
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
+	"pallet-timestamp/try-runtime",
 ]
