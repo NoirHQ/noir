@@ -32,18 +32,15 @@ use solana_sdk::{account::Account, native_loader, pubkey::Pubkey};
 
 pub struct Bank<T>(core::marker::PhantomData<T>);
 
-impl<T: Config> TransactionProcessingCallback<T> for Bank<T>
-where
-	T::AccountId: From<[u8; 32]>,
-{
+impl<T: Config> TransactionProcessingCallback<T> for Bank<T> {
 	fn account_matches_owners(&self, account: &Pubkey, owners: &[Pubkey]) -> Option<usize> {
-		let account = T::AccountId::from(account.clone().to_bytes());
+		let account = T::TransitiveId::from(account.clone()).into();
 		let account = <AccountMeta<T>>::get(account)?;
 		owners.iter().position(|entry| account.owner == *entry)
 	}
 
 	fn get_account_shared_data(&self, pubkey: &Pubkey) -> Option<AccountSharedData<T>> {
-		let pubkey = T::AccountId::from(pubkey.clone().to_bytes());
+		let pubkey = T::TransitiveId::from(pubkey.clone()).into();
 		let account = <AccountMeta<T>>::get(&pubkey)?;
 		let lamports = Lamports::new(T::Currency::reducible_balance(&pubkey, Preserve, Polite));
 		let data = <AccountData<T>>::get(&pubkey);
@@ -60,7 +57,7 @@ where
 	}
 
 	fn add_builtin_account(&self, name: &str, program_id: &Pubkey) {
-		let program_id = T::AccountId::from(program_id.clone().to_bytes());
+		let program_id = T::TransitiveId::from(program_id.clone()).into();
 		let existing_genuine_program = <AccountMeta<T>>::get(program_id).and_then(|account| {
 			// it's very unlikely to be squatted at program_id as non-system account because of
 			// burden to find victim's pubkey/hash. So, when account.owner is indeed

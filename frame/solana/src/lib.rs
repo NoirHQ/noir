@@ -81,17 +81,27 @@ pub mod pallet {
 	use super::*;
 	use crate::runtime::transaction_processing_callback::TransactionProcessingCallback;
 	use core::fmt::Debug;
-	use frame_support::{dispatch::DispatchInfo, pallet_prelude::*, traits::fungible};
-	use frame_system::{pallet_prelude::*, CheckWeight};
+	use frame_support::{
+		dispatch::DispatchInfo,
+		pallet_prelude::*,
+		traits::{
+			fungible::{self, Inspect},
+			tokens::{Fortitude::Polite, Preservation::Preserve},
+		},
+	};
+	use frame_system::{pallet_prelude::*, AccountInfo, CheckWeight};
 	use np_runtime::traits::LossyInto;
 	use parity_scale_codec::Codec;
+	use runtime::Lamports;
 	use solana_sdk::{
 		message::SimpleAddressLoader,
 		reserved_account_keys::ReservedAccountKeys,
 		transaction::{MessageHash, SanitizedTransaction},
 	};
 	use sp_runtime::{
-		traits::{AtLeast32BitUnsigned, DispatchInfoOf, Dispatchable, One, Saturating},
+		traits::{
+			AtLeast32BitUnsigned, DispatchInfoOf, Dispatchable, MaybeDisplay, One, Saturating,
+		},
 		transaction_validity::{
 			InvalidTransaction, TransactionValidity, TransactionValidityError,
 			ValidTransactionBuilder,
@@ -101,6 +111,9 @@ pub mod pallet {
 
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
+		#[pallet::no_default]
+		type TransitiveId: From<Pubkey> + Into<Self::AccountId>;
+
 		#[pallet::no_default]
 		type Balance: Parameter
 			+ Member

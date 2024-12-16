@@ -22,6 +22,7 @@ use frame_support::{
 	derive_impl,
 	sp_runtime::{traits::ConstU128, BuildStorage},
 };
+use solana_sdk::pubkey::Pubkey;
 
 pub(crate) type AccountSharedData = crate::runtime::account::AccountSharedData<Test>;
 
@@ -65,8 +66,24 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 }
 
+pub struct TransitiveId(u64);
+
+impl From<Pubkey> for TransitiveId {
+	fn from(pubkey: Pubkey) -> Self {
+		let truncated: [u8; 8] = pubkey.to_bytes()[0..8].try_into().unwrap();
+		TransitiveId(u64::from_be_bytes(truncated))
+	}
+}
+
+impl Into<u64> for TransitiveId {
+	fn into(self) -> u64 {
+		self.0
+	}
+}
+
 #[derive_impl(pallet_solana::config_preludes::TestDefaultConfig)]
 impl pallet_solana::Config for Test {
+	type TransitiveId = TransitiveId;
 	type Balance = <Self as pallet_balances::Config>::Balance;
 	type Currency = Balances;
 	type DecimalMultiplier = ConstU128<1_000_000_000>;
