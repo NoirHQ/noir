@@ -33,6 +33,7 @@ members = [
 	"vendor/composable/cosmwasm/runtime-api",
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
+	"vendor/solana/account-decoder",
 	"vendor/solana/compute-budget",
 	"vendor/solana/program-runtime",
 ]
@@ -108,6 +109,7 @@ pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/as
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 pallet-solana = { path = "frame/solana", default-features = false }
+solana-account-decoder = { path = "vendor/solana/account-decoder", default-features = false }
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
 

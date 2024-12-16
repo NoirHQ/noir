@@ -92,8 +92,10 @@ pub mod pallet {
 	use frame_system::{pallet_prelude::*, AccountInfo, CheckWeight};
 	use np_runtime::traits::LossyInto;
 	use parity_scale_codec::Codec;
-	use runtime::Lamports;
+	use runtime::{lamports, Lamports};
+	use solana_account_decoder::{slice_data, UiDataSliceConfig};
 	use solana_sdk::{
+		account::Account,
 		message::SimpleAddressLoader,
 		reserved_account_keys::ReservedAccountKeys,
 		transaction::{MessageHash, SanitizedTransaction},
@@ -246,12 +248,38 @@ pub mod pallet {
 			Ok(())
 		}
 
-		pub fn get_balance(account: Pubkey) -> Lamports<T> {
+		pub fn get_balance(pubkey: Pubkey) -> u64 {
 			Lamports::<T>::new(T::Currency::reducible_balance(
-				&T::TransitiveId::from(account).into(),
+				&T::TransitiveId::from(pubkey).into(),
 				Preserve,
 				Polite,
 			))
+			.get()
+		}
+
+		pub fn get_account_info(
+			pubkey: Pubkey,
+			data_slice: Option<UiDataSliceConfig>,
+		) -> Result<Option<Account>, String> {
+			let meta = AccountMeta::<T>::get(T::TransitiveId::from(pubkey).into());
+
+			if let Some(meta) = meta {
+				let lamports = Pallet::<T>::get_balance(pubkey.clone());
+				let data: Vec<u8> = AccountData::<T>::get(T::TransitiveId::from(pubkey).into())
+					.map(|v| v.into_inner())
+					.unwrap_or(Vec::new());
+				let slice = slice_data(&data, data_slice);
+
+				Ok(Some(Account {
+					lamports,
+					data: slice.to_vec(),
+					owner: meta.owner,
+					executable: meta.executable,
+					rent_epoch: meta.rent_epoch,
+				}))
+			} else {
+				Ok(None)
+			}
 		}
 	}
 

@@ -20,6 +20,7 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_derive = { workspace = true }
+solana-account-decoder = { workspace = true }
 solana-compute-budget = { workspace = true }
 solana-program-runtime = { workspace = true }
 solana-sdk = { workspace = true, features = ["full", "scale"] }
@@ -45,6 +46,7 @@ std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",
+	"solana-account-decoder/std",
 	"solana-compute-budget/std",
 	"solana-program-runtime/std",
 	"solana-sdk/std",
