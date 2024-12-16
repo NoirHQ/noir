@@ -40,6 +40,7 @@ members = [
 	"vendor/composable/cosmwasm/runtime-api",
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
+	"vendor/solana/account-decoder",
 	"vendor/solana/compute-budget",
 	"vendor/solana/curves/curve25519",
 	"vendor/solana/measure",

@@ -336,12 +336,38 @@ pub mod pallet {
 			Ok(())
 		}
 
-		pub fn get_balance(account: Pubkey) -> Lamports<T> {
+		pub fn get_balance(pubkey: Pubkey) -> u64 {
 			Lamports::<T>::new(T::Currency::reducible_balance(
-				&T::TransitiveId::from(account).into(),
+				&T::AccountIdConversion::convert(pubkey),
 				Preserve,
 				Polite,
 			))
+			.get()
+		}
+
+		pub fn get_account_info(
+			pubkey: Pubkey,
+			data_slice: Option<UiDataSliceConfig>,
+		) -> Result<Option<Account>, String> {
+			let meta = AccountMeta::<T>::get(T::AccountIdConversion::convert(pubkey));
+
+			if let Some(meta) = meta {
+				let lamports = Pallet::<T>::get_balance(pubkey.clone());
+				let data: Vec<u8> = AccountData::<T>::get(T::AccountIdConversion::convert(pubkey))
+					.map(|v| v.into_inner())
+					.unwrap_or(Vec::new());
+				let slice = slice_data(&data, data_slice);
+
+				Ok(Some(Account {
+					lamports,
+					data: slice.to_vec(),
+					owner: meta.owner,
+					executable: meta.executable,
+					rent_epoch: meta.rent_epoch,
+				}))
+			} else {
+				Ok(None)
+			}
 		}
 	}
 

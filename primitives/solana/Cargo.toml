@@ -23,9 +23,7 @@ std = [
 	"buidl/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
-	"semver/std",
 	"serde/std",
-	"serde_json/std",
 	"sp-core/std",
 ]
 serde = [
