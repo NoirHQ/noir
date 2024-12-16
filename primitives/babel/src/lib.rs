@@ -23,24 +23,24 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+#[cfg(any(feature = "cosmos", feature = "ethereum", feature = "nostr"))]
 use sp_core::ecdsa;
+#[cfg(feature = "solana")]
+use sp_core::ed25519;
 
-#[cfg(feature = "cosmos")]
-pub use np_cosmos as cosmos;
-#[cfg(feature = "cosmos")]
-pub use np_cosmos::Address as CosmosAddress;
-#[cfg(feature = "ethereum")]
-pub use np_ethereum as ethereum;
-#[cfg(feature = "ethereum")]
-pub use np_ethereum::Address as EthereumAddress;
-#[cfg(feature = "nostr")]
-pub use np_nostr as nostr;
-#[cfg(feature = "nostr")]
-pub use np_nostr::Address as NostrAddress;
 pub use sp_core::crypto::AccountId32;
+#[cfg(feature = "cosmos")]
+pub use {np_cosmos as cosmos, np_cosmos::Address as CosmosAddress};
+#[cfg(feature = "ethereum")]
+pub use {np_ethereum as ethereum, np_ethereum::Address as EthereumAddress};
+#[cfg(feature = "nostr")]
+pub use {np_nostr as nostr, np_nostr::Address as NostrAddress};
+#[cfg(feature = "solana")]
+pub use {np_solana as solana, np_solana::Address as SolanaAddress};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[non_exhaustive]
 pub enum VarAddress {
 	Polkadot(AccountId32),
 	#[cfg(feature = "cosmos")]
@@ -49,6 +49,8 @@ pub enum VarAddress {
 	Ethereum(EthereumAddress),
 	#[cfg(feature = "nostr")]
 	Nostr(NostrAddress),
+	#[cfg(feature = "solana")]
+	Solana(SolanaAddress),
 }
 
 impl VarAddress {
@@ -61,6 +63,9 @@ impl VarAddress {
 			n += 1;
 		}
 		if cfg!(feature = "nostr") {
+			n += 1;
+		}
+		if cfg!(feature = "solana") {
 			n += 1;
 		}
 		n
@@ -79,5 +84,10 @@ impl VarAddress {
 	#[cfg(feature = "nostr")]
 	pub fn nostr(public: ecdsa::Public) -> Self {
 		Self::Nostr(NostrAddress::from(public))
+	}
+
+	#[cfg(feature = "solana")]
+	pub fn solana(public: ed25519::Public) -> Self {
+		Self::Solana(SolanaAddress::from(public))
 	}
 }

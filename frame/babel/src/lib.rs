@@ -269,6 +269,7 @@ pub mod pallet {
 				#[cfg(feature = "nostr")]
 				VarAddress::Nostr(ref address) =>
 					T::AddressMap::find_key(&dest).unwrap_or(address.into_account_truncating()),
+				_ => unreachable!(),
 			};
 
 			match id {
