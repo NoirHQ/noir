@@ -650,7 +650,7 @@ pub struct CosmwasmCallInput<'a, Pointer, I>(
 	pub Tagged<Pointer, &'a [u8]>,
 	pub PhantomData<I>,
 );
-impl<'a, Pointer, I: Input> Input for CosmwasmCallInput<'a, Pointer, I> {
+impl<Pointer, I: Input> Input for CosmwasmCallInput<'_, Pointer, I> {
 	type Output = Pointer;
 }
 
@@ -660,7 +660,7 @@ pub struct CosmwasmCallWithoutInfoInput<'a, Pointer, I>(
 	pub Tagged<Pointer, &'a [u8]>,
 	pub PhantomData<I>,
 );
-impl<'a, Pointer, I: Input> Input for CosmwasmCallWithoutInfoInput<'a, Pointer, I> {
+impl<Pointer, I: Input> Input for CosmwasmCallWithoutInfoInput<'_, Pointer, I> {
 	type Output = Pointer;
 }
 

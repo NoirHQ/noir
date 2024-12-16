@@ -629,7 +629,7 @@ impl<'de> Deserialize<'de> for Int512 {
 
 struct Int512Visitor;
 
-impl<'de> de::Visitor<'de> for Int512Visitor {
+impl de::Visitor<'_> for Int512Visitor {
 	type Value = Int512;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

@@ -655,7 +655,7 @@ impl<'de> Deserialize<'de> for Uint256 {
 
 struct Uint256Visitor;
 
-impl<'de> de::Visitor<'de> for Uint256Visitor {
+impl de::Visitor<'_> for Uint256Visitor {
 	type Value = Uint256;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

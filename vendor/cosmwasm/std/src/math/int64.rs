@@ -531,7 +531,7 @@ impl<'de> Deserialize<'de> for Int64 {
 
 struct Int64Visitor;
 
-impl<'de> de::Visitor<'de> for Int64Visitor {
+impl de::Visitor<'_> for Int64Visitor {
 	type Value = Int64;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

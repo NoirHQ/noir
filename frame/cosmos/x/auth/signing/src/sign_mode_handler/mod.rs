@@ -146,7 +146,7 @@ mod tests {
 	fn get_sign_bytes_test() {
 		let tx_raw = "CpMBCpABChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnAKLWNvc21vczFxZDY5bnV3ajk1Z3RhNGFramd5eHRqOXVqbXo0dzhlZG1xeXNxdxItY29zbW9zMWdtajJleGFnMDN0dGdhZnBya2RjM3Q4ODBncm1hOW53ZWZjZDJ3GhAKBXVhdG9tEgcxMDAwMDAwEnEKTgpGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQIKEJE0H+VmS/oXgtXgR3lokGjJFrBMs2XsMVN1VoTZoRIECgIIARIfChUKBXVhdG9tEgw4ODY4ODAwMDAwMDAQgMDxxZSVFBpA9+DRmMYoIcxYF8jpNfUjMIMB4pgZ9diC8ySbnhc6YU84AA3b/0RsCr+nx9AZ27FwcrKJM/yBh8lz+/A9BFn3bg==";
 
-		let tx_raw = Base64::decode_vec(&tx_raw).unwrap();
+		let tx_raw = Base64::decode_vec(tx_raw).unwrap();
 		let tx = Tx::decode(&mut &*tx_raw).unwrap();
 
 		let public_key = tx
@@ -172,7 +172,7 @@ mod tests {
 
 		let sign_doc_raw =
 		"CpMBCpABChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnAKLWNvc21vczFxZDY5bnV3ajk1Z3RhNGFramd5eHRqOXVqbXo0dzhlZG1xeXNxdxItY29zbW9zMWdtajJleGFnMDN0dGdhZnBya2RjM3Q4ODBncm1hOW53ZWZjZDJ3GhAKBXVhdG9tEgcxMDAwMDAwEnEKTgpGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQIKEJE0H+VmS/oXgtXgR3lokGjJFrBMs2XsMVN1VoTZoRIECgIIARIfChUKBXVhdG9tEgw4ODY4ODAwMDAwMDAQgMDxxZSVFBoRdGhldGEtdGVzdG5ldC0wMDEgrYou";
-		let hash = sha2_256(&Base64::decode_vec(&sign_doc_raw).unwrap());
+		let hash = sha2_256(&Base64::decode_vec(sign_doc_raw).unwrap());
 
 		assert_eq!(expected_hash, hash);
 	}
@@ -203,7 +203,7 @@ mod tests {
 			pub_key: public_key.clone(),
 		};
 		let hash = sha2_256(&SignModeHandler::get_sign_bytes(&mode, &data, &tx).unwrap());
-		let hash = hex::encode(&hash);
+		let hash = hex::encode(hash);
 
 		assert_eq!(hash, "714d4bdfdbd0bd630ebdf93b1f6eba7d3c752e92bbab6c9d3d9c93e1777348bb");
 	}

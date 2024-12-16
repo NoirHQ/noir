@@ -234,7 +234,7 @@ impl<'de> Deserialize<'de> for HexBinary {
 
 struct HexVisitor;
 
-impl<'de> de::Visitor<'de> for HexVisitor {
+impl de::Visitor<'_> for HexVisitor {
 	type Value = HexBinary;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

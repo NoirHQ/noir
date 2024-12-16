@@ -35,7 +35,7 @@ pub struct Deps<'a, C: CustomQuery = Empty> {
 // See "There is a small difference between the two: the derive strategy will also
 // place a Copy bound on type parameters, which isn’t always desired."
 // https://doc.rust-lang.org/std/marker/trait.Copy.html
-impl<'a, C: CustomQuery> Copy for Deps<'a, C> {}
+impl<C: CustomQuery> Copy for Deps<'_, C> {}
 
 impl<S: Storage, A: Api, Q: Querier, C: CustomQuery> OwnedDeps<S, A, Q, C> {
 	pub fn as_ref(&'_ self) -> Deps<'_, C> {

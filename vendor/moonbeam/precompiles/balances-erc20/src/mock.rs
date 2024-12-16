@@ -174,15 +174,10 @@ impl Erc20Metadata for Runtime {
 	}
 }
 
+#[derive(Default)]
 pub(crate) struct ExtBuilder {
 	// endowed accounts with balances
 	balances: Vec<(AccountId, Balance)>,
-}
-
-impl Default for ExtBuilder {
-	fn default() -> ExtBuilder {
-		ExtBuilder { balances: vec![] }
-	}
 }
 
 impl ExtBuilder {

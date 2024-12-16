@@ -211,7 +211,7 @@ struct SimpleWasmiVM<'a> {
 	call_depth: u32,
 }
 
-impl<'a> WasmiContext for SimpleWasmiVM<'a> {
+impl WasmiContext for SimpleWasmiVM<'_> {
 	fn executing_module(&self) -> Option<WasmiModule> {
 		self.executing_module.clone()
 	}
@@ -225,7 +225,7 @@ impl<'a> WasmiContext for SimpleWasmiVM<'a> {
 	}
 }
 
-impl<'a> SimpleWasmiVM<'a> {
+impl SimpleWasmiVM<'_> {
 	fn load_subvm(
 		&mut self,
 		address: <Self as VMBase>::Address,
@@ -283,7 +283,7 @@ impl From<CanonicalAddress> for CanonicalAddr {
 	}
 }
 
-impl<'a> VMBase for SimpleWasmiVM<'a> {
+impl VMBase for SimpleWasmiVM<'_> {
 	type Input<'x> = WasmiInput<OwnedWasmiVM<Self>>;
 	type Output<'x> = WasmiOutput<OwnedWasmiVM<Self>>;
 	type QueryCustom = Empty;
@@ -683,12 +683,7 @@ impl<'a> VMBase for SimpleWasmiVM<'a> {
 		value: Self::StorageValue,
 	) -> Result<(), Self::Error> {
 		let contract_addr = self.env.contract.address.clone().try_into()?;
-		self.extension
-			.storage
-			.entry(contract_addr)
-			.or_insert_with(SimpleWasmiVMStorage::default)
-			.data
-			.insert(key, value);
+		self.extension.storage.entry(contract_addr).or_default().data.insert(key, value);
 		Ok(())
 	}
 
@@ -795,18 +790,18 @@ impl From<BankAccount> for Addr {
 	}
 }
 
-impl<'a> Has<Env> for SimpleWasmiVM<'a> {
+impl Has<Env> for SimpleWasmiVM<'_> {
 	fn get(&self) -> Env {
 		self.env.clone()
 	}
 }
-impl<'a> Has<MessageInfo> for SimpleWasmiVM<'a> {
+impl Has<MessageInfo> for SimpleWasmiVM<'_> {
 	fn get(&self) -> MessageInfo {
 		self.info.clone()
 	}
 }
 
-impl<'a> Transactional for SimpleWasmiVM<'a> {
+impl Transactional for SimpleWasmiVM<'_> {
 	type Error = SimpleVMError;
 	fn transaction_begin(&mut self) -> Result<(), Self::Error> {
 		self.extension.transaction_depth += 1;

@@ -153,9 +153,8 @@ pub fn ecdsa_verify_prehashed(
 			let sig = ecdsa::Signature::from(signature_inner);
 			sp_io::crypto::ecdsa_verify_prehashed(&sig, message_hash, &pub_key)
 		}),
-		65 => ecdsa::Signature::try_from(signature).map_or(false, |sig| {
-			sp_io::crypto::ecdsa_verify_prehashed(&sig, message_hash, &pub_key)
-		}),
+		65 => ecdsa::Signature::try_from(signature)
+			.is_ok_and(|sig| sp_io::crypto::ecdsa_verify_prehashed(&sig, message_hash, &pub_key)),
 		_ => false,
 	}
 }

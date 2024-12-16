@@ -153,7 +153,7 @@ impl<'a> CodeValidation<'a> {
 	/// Currently only a single memory section is supported.
 	pub fn validate_memory_limit(self) -> Result<Self, ValidationError> {
 		let CodeValidation(module) = self;
-		if module.memory_section().map_or(false, |ms| ms.entries().len() != 1) {
+		if module.memory_section().is_some_and(|ms| ms.entries().len() != 1) {
 			Err(ValidationError::MustDeclareOneInternalMemory)
 		} else {
 			Ok(self)
