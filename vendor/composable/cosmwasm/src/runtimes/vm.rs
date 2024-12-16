@@ -214,19 +214,19 @@ pub struct CosmwasmVM<'a, T: Config> {
 	pub contract_runtime: ContractBackend,
 }
 
-impl<'a, T: Config> Has<Env> for CosmwasmVM<'a, T> {
+impl<T: Config> Has<Env> for CosmwasmVM<'_, T> {
 	fn get(&self) -> Env {
 		self.cosmwasm_env.clone()
 	}
 }
 
-impl<'a, T: Config> Has<MessageInfo> for CosmwasmVM<'a, T> {
+impl<T: Config> Has<MessageInfo> for CosmwasmVM<'_, T> {
 	fn get(&self) -> MessageInfo {
 		self.cosmwasm_message_info.clone()
 	}
 }
 
-impl<'a, T: Config> WasmiContext for CosmwasmVM<'a, T> {
+impl<T: Config> WasmiContext for CosmwasmVM<'_, T> {
 	fn executing_module(&self) -> Option<WasmiModule> {
 		self.contract_runtime.executing_module()
 	}
@@ -243,7 +243,7 @@ impl<'a, T: Config> WasmiContext for CosmwasmVM<'a, T> {
 	}
 }
 
-impl<'a, T: Config> CosmwasmVM<'a, T> {
+impl<T: Config> CosmwasmVM<'_, T> {
 	pub fn charge_raw(&mut self, gas: u64) -> Result<(), <Self as VMBase>::Error> {
 		match self.shared.gas.charge(gas) {
 			GasOutcome::Halt => Err(CosmwasmVMError::OutOfGas),
@@ -252,7 +252,7 @@ impl<'a, T: Config> CosmwasmVM<'a, T> {
 	}
 }
 
-impl<'a, T: Config + Send + Sync> VMBase for CosmwasmVM<'a, T> {
+impl<T: Config + Send + Sync> VMBase for CosmwasmVM<'_, T> {
 	type Input<'x> = WasmiInput<OwnedWasmiVM<Self>>;
 	type Output<'x> = WasmiOutput<OwnedWasmiVM<Self>>;
 	type QueryCustom = Empty;
@@ -656,7 +656,7 @@ impl<'a, T: Config + Send + Sync> VMBase for CosmwasmVM<'a, T> {
 	}
 }
 
-impl<'a, T: Config> Transactional for CosmwasmVM<'a, T> {
+impl<T: Config> Transactional for CosmwasmVM<'_, T> {
 	type Error = CosmwasmVMError<T>;
 	fn transaction_begin(&mut self) -> Result<(), Self::Error> {
 		sp_io::storage::start_transaction();

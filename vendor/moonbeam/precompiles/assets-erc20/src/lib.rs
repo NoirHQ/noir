@@ -78,13 +78,13 @@ pub trait AddressToAssetId<AssetId> {
 /// 1024-2047 Precompiles that are not in Ethereum Mainnet but are neither Moonbeam specific
 /// 2048-4095 Moonbeam specific precompiles
 /// Asset precompiles can only fall between
-/// 	0xFFFFFFFF00000000000000000000000000000000 - 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+///     0xFFFFFFFF00000000000000000000000000000000 - 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 /// The precompile for AssetId X, where X is a u128 (i.e.16 bytes), if 0XFFFFFFFF + Bytes(AssetId)
 /// In order to route the address to Erc20AssetsPrecompile<R>, we first check whether the AssetId
 /// exists in pallet-assets
 /// We cannot do this right now, so instead we check whether the total supply is zero. If so, we
 /// do not route to the precompiles
-
+///
 /// This means that every address that starts with 0xFFFFFFFF will go through an additional db read,
 /// but the probability for this to happen is 2^-32 for random addresses
 pub struct Erc20AssetsPrecompileSet<Runtime, Instance: 'static = ()>(
@@ -354,7 +354,7 @@ where
 		{
 			let caller: AccountIdOf<Runtime> =
 				Runtime::AddressMapping::into_account_id(handle.context().caller);
-			let from: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(from.clone());
+			let from: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(from);
 			let to: AccountIdOf<Runtime> = Runtime::AddressMapping::into_account_id(to);
 
 			// If caller is "from", it can spend as much as it wants from its own balance.
@@ -517,6 +517,7 @@ where
 		Ok(Address(freezer))
 	}
 
+	#[allow(clippy::too_many_arguments)]
 	#[precompile::public("permit(address,address,uint256,uint256,uint8,bytes32,bytes32)")]
 	fn eip2612_permit(
 		asset_id: AssetIdOf<Runtime, Instance>,
