@@ -15,7 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::traits::{Checkable, Property};
+use crate::{
+	traits::{Checkable, Property},
+	MultiSigner,
+};
 #[cfg(feature = "serde")]
 use alloc::{format, string::String};
 use buidl::FixedBytes;
@@ -28,7 +31,7 @@ use sp_io::hashing::blake2_256;
 /// An opaque 32-byte cryptographic identifier.
 #[derive(FixedBytes)]
 #[buidl(substrate(Codec, Core))]
-pub struct AccountId32<T: Clone>([u8; 32], Option<T>);
+pub struct AccountId32<T: Clone = MultiSigner>([u8; 32], Option<T>);
 
 impl<T: Clone> AccountId32<T> {
 	pub const fn new(inner: [u8; 32]) -> Self {
