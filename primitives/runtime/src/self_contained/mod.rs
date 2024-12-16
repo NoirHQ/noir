@@ -17,4 +17,16 @@
 
 mod unchecked_extrinsic;
 
-pub use unchecked_extrinsic::*;
+pub use fp_self_contained::*;
+pub use unchecked_extrinsic::UncheckedExtrinsic;
+
+/// Required imports to implement [`SelfContainedCall`] trait.
+pub mod prelude {
+	pub use sp_runtime::{
+		traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf},
+		transaction_validity::{
+			InvalidTransaction, TransactionValidity, TransactionValidityError, UnknownTransaction,
+		},
+		DispatchResultWithInfo,
+	};
+}
