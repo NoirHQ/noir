@@ -245,6 +245,14 @@ pub mod pallet {
 		) -> Result<(), TransactionValidityError> {
 			Ok(())
 		}
+
+		pub fn get_balance(account: Pubkey) -> Lamports<T> {
+			Lamports::<T>::new(T::Currency::reducible_balance(
+				&T::TransitiveId::from(account).into(),
+				Preserve,
+				Polite,
+			))
+		}
 	}
 
 	impl<T> Call<T>
