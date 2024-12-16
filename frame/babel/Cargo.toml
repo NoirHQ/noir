@@ -19,8 +19,6 @@ frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 hex-literal = "0.4"
 np-babel = { workspace = true, default-features = false }
-np-cosmos = { workspace = true, optional = true }
-np-ethereum = { workspace = true, optional = true }
 num_enum = { version = "0.7", default-features = false, optional = true }
 pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false, optional = true }
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
@@ -79,8 +77,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"np-babel/std",
-	"np-cosmos?/std",
-	"np-ethereum?/std",
 	"num_enum?/std",
 	"pallet-assets?/std",
 	"pallet-balances/std",
@@ -114,7 +110,6 @@ cosmos = [
 	"cosmwasm-vm",
 	"cosmwasm-vm-wasmi",
 	"np-babel/cosmos",
-	"np-cosmos",
 	"pallet-assets",
 	"pallet-cosmos",
 	"pallet-cosmos-types",
@@ -140,9 +135,8 @@ ethereum = [
 	"pallet-evm-precompile-simple",
 	"precompile-utils",
 ]
-nostr = [
-	"np-babel/nostr",
-]
+nostr = ["np-babel/nostr"]
+solana = ["np-babel/solana"]
 pallet = [
 	"cosmos",
 	"ethereum",

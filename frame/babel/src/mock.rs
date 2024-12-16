@@ -42,7 +42,7 @@ use frame_support::{
 	PalletId,
 };
 use frame_system::EnsureRoot;
-use np_cosmos::traits::CosmosHub;
+use np_babel::cosmos::traits::CosmosHub;
 use np_runtime::{AccountId32, MultiSigner};
 use pallet_cosmos::{
 	config_preludes::{MaxDenomLimit, NativeAssetId},
