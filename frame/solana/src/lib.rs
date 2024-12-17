@@ -93,7 +93,6 @@ pub mod pallet {
 	use np_runtime::traits::LossyInto;
 	use parity_scale_codec::Codec;
 	use runtime::{lamports, Lamports};
-	use solana_account_decoder::{slice_data, UiDataSliceConfig};
 	use solana_sdk::{
 		account::Account,
 		message::SimpleAddressLoader,
@@ -257,10 +256,7 @@ pub mod pallet {
 			.get()
 		}
 
-		pub fn get_account_info(
-			pubkey: Pubkey,
-			data_slice: Option<UiDataSliceConfig>,
-		) -> Option<Account> {
+		pub fn get_account_info(pubkey: Pubkey) -> Option<Account> {
 			let meta = AccountMeta::<T>::get(T::TransitiveId::from(pubkey).into());
 
 			if let Some(meta) = meta {
@@ -268,11 +264,10 @@ pub mod pallet {
 				let data: Vec<u8> = AccountData::<T>::get(T::TransitiveId::from(pubkey).into())
 					.map(|v| v.into_inner())
 					.unwrap_or(Vec::new());
-				let slice = slice_data(&data, data_slice);
 
 				Some(Account {
 					lamports,
-					data: slice.to_vec(),
+					data,
 					owner: meta.owner,
 					executable: meta.executable,
 					rent_epoch: meta.rent_epoch,
@@ -282,14 +277,8 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_multiple_accounts(
-			pubkeys: Vec<Pubkey>,
-			data_slice: Option<UiDataSliceConfig>,
-		) -> Vec<Option<Account>> {
-			pubkeys
-				.into_iter()
-				.map(|pubkey| Self::get_account_info(pubkey, data_slice))
-				.collect::<_>()
+		pub fn get_multiple_accounts(pubkeys: Vec<Pubkey>) -> Vec<Option<Account>> {
+			pubkeys.into_iter().map(|pubkey| Self::get_account_info(pubkey)).collect::<_>()
 		}
 	}
 

@@ -16,6 +16,7 @@ members = [
 	"frame/cosmos/x/wasm/types",
 	"frame/multimap",
 	"frame/solana",
+	"frame/solana/runtime",
 	"frame/solana/runtime-api",
 	"primitives/babel",
 	"primitives/cosmos",
@@ -113,6 +114,7 @@ solana-account-decoder = { path = "vendor/solana/account-decoder", default-featu
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
 
+solana-runtime = { path = "frame/solana/runtime", default-features = false }
 solana-runtime-api = { path = "frame/solana/runtime-api", default-features = false }
 
 [profile.release]
