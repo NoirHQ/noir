@@ -22,6 +22,7 @@ members = [
 	"frame/cosmos/x/wasm/types",
 	"frame/multimap",
 	"frame/solana",
+	"frame/solana/runtime",
 	"frame/solana/runtime-api",
 	"primitives/babel",
 	"primitives/cosmos",
@@ -187,6 +188,7 @@ solana-program-runtime = { path = "vendor/solana/program-runtime", default-featu
 solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
 spl-token = { path = "vendor/solana/programs/token" }
 
+solana-runtime = { path = "frame/solana/runtime", default-features = false }
 solana-runtime-api = { path = "frame/solana/runtime-api", default-features = false }
 
 [profile.release]

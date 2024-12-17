@@ -17,5 +17,5 @@ default = ["std"]
 std = [
     "sp-api/std", 
     "parity-scale-codec/std",
-    "scale-info/std"
+    "scale-info/std",
 ]
