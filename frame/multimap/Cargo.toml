@@ -1,20 +1,21 @@
 [package]
 name = "pallet-multimap"
-version = "0.4.0"
-authors = ["Haderech Pte. Ltd."]
-edition = "2021"
+description = "FRAME multimap for multi-value maps"
 license = "Apache-2.0"
-repository = "https://github.com/noirhq/noir.git"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 publish = false
 
 [dependencies]
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-parity-scale-codec = { version = "3.6", default-features = false }
-scale-info = { version = "2.11", default-features = false }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
 
 [dev-dependencies]
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+sp-io = { workspace = true, default-features = true }
 
 [features]
 default = ["std"]

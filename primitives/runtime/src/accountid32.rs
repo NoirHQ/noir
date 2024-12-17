@@ -240,7 +240,7 @@ where
 
 #[cfg(test)]
 mod tests {
-	type AccountId32 = super::AccountId32<crate::MultiSigner>;
+	use super::*;
 
 	#[test]
 	fn accountid_32_from_str_works() {
