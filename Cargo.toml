@@ -1,3 +1,9 @@
+[workspace.package]
+authors = ["Haderech Pte. Ltd."]
+version = "0.5.0"
+edition = "2021"
+repository = "https://github.com/noirhq/noir.git"
+
 [workspace]
 resolver = "2"
 members = [
@@ -41,14 +47,49 @@ default-members = [
 ]
 
 [workspace.dependencies]
-composable-support = { path = "vendor/composable/composable-support", default-features = false }
+bech32 = { version = "0.11", default-features = false }
+bs58 = { version = "0.5.1", default-features = false }
+buidl = { version = "0.2", default-features = false, features = ["derive"] }
+const-hex = { version = "1.13", default-features = false }
+cosmos-sdk-proto = { version = "0.24", default-features = false }
+ethereum = { version = "0.15.0", default-features = false }
+hex-literal = "0.4"
+k256 = { version = "0.13", default-features = false }
+num_enum = { version = "0.7", default-features = false }
+parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
+ripemd = { version = "0.1", default-features = false }
+scale-info = { version = "2.11", default-features = false, features = ["derive"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde-json-wasm = { version = "1.0", default-features = false }
+static_assertions = "1.1"
+
+# substrate
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+
+# frontier
+fp-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+fp-self-contained = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+
+# noir
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
-cosmwasm-rpc = { path = "vendor/composable/cosmwasm/rpc" }
-cosmwasm-runtime-api = { path = "vendor/composable/cosmwasm/runtime-api", default-features = false }
-cosmwasm-std = { path = "vendor/cosmwasm/std", default-features = false }
-cosmwasm-vm = { path = "vendor/composable/vm", default-features = false }
-cosmwasm-vm-wasmi = { path = "vendor/composable/vm-wasmi", default-features = false }
 frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }
@@ -67,11 +108,19 @@ pallet-cosmos-x-bank = { path = "frame/cosmos/x/bank", default-features = false 
 pallet-cosmos-x-bank-types = { path = "frame/cosmos/x/bank/types", default-features = false }
 pallet-cosmos-x-wasm = { path = "frame/cosmos/x/wasm", default-features = false }
 pallet-cosmos-x-wasm-types = { path = "frame/cosmos/x/wasm/types", default-features = false }
+pallet-multimap = { path = "frame/multimap", default-features = false }
+pallet-solana = { path = "frame/solana", default-features = false }
+
+# vendor
+composable-support = { path = "vendor/composable/composable-support", default-features = false }
+cosmwasm-rpc = { path = "vendor/composable/cosmwasm/rpc" }
+cosmwasm-runtime-api = { path = "vendor/composable/cosmwasm/runtime-api", default-features = false }
+cosmwasm-std = { path = "vendor/cosmwasm/std", default-features = false }
+cosmwasm-vm = { path = "vendor/composable/vm", default-features = false }
+cosmwasm-vm-wasmi = { path = "vendor/composable/vm-wasmi", default-features = false }
 pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = false }
 pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
-pallet-multimap = { path = "frame/multimap", default-features = false }
-pallet-solana = { path = "frame/solana", default-features = false }
 
 [profile.release]
 panic = "unwind"

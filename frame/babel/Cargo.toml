@@ -1,62 +1,63 @@
 [package]
 name = "frame-babel"
-version = "0.4.0"
-authors = ["Haderech Pte. Ltd."]
-edition = "2021"
+description = "FRAME babel for cross-protocol compatibility"
 license = "GPL-3.0-or-later"
-repository = "https://github.com/noirhq/noir.git"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 publish = false
 
 [dependencies]
-bech32 = { version = "0.11", default-features = false, features = ["alloc"], optional = true }
-cosmos-sdk-proto = { version = "0.24", default-features = false, optional = true }
+bech32 = { workspace = true, optional = true }
+cosmos-sdk-proto = { workspace = true, optional = true }
 cosmwasm-std = { workspace = true, default-features = false, optional = true }
 cosmwasm-vm = { workspace = true, default-features = false, optional = true }
 cosmwasm-vm-wasmi = { workspace = true, default-features = false, optional = true }
-ethereum = { version = "0.15.0", default-features = false, optional = true }
-fp-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, optional = true }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-hex-literal = "0.4"
+ethereum = { workspace = true, optional = true }
+fp-evm = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+hex-literal = { workspace = true }
 np-babel = { workspace = true, default-features = false }
-num_enum = { version = "0.7", default-features = false, optional = true }
-pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false, optional = true }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+num_enum = { workspace = true, optional = true }
+pallet-assets = { workspace = true, optional = true }
+pallet-balances = { workspace = true }
 pallet-cosmos = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-types = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-x-auth-signing = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-x-bank = { workspace = true, default-features = false, optional = true }
 pallet-cosmos-x-wasm = { workspace = true, default-features = false, optional = true }
 pallet-cosmwasm = { workspace = true, default-features = false, optional = true }
-pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, optional = true }
-pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, optional = true }
+pallet-ethereum = { workspace = true, optional = true }
+pallet-evm = { workspace = true, optional = true }
 pallet-evm-precompileset-assets-erc20 = { workspace = true, optional = true }
 pallet-evm-precompile-balances-erc20 = { workspace = true, optional = true }
-pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, optional = true }
-pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, optional = true }
-pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, optional = true }
-pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, optional = true }
+pallet-evm-precompile-blake2 = { workspace = true, optional = true }
+pallet-evm-precompile-bn128 = { workspace = true, optional = true }
+pallet-evm-precompile-modexp = { workspace = true, optional = true }
+pallet-evm-precompile-simple = { workspace = true, optional = true }
 pallet-multimap = { workspace = true, default-features = false }
-parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
-precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, optional = true }
-scale-info = { version = "2.11", default-features = false, features = ["derive"] }
-serde = { version = "1.0.210", default-features = false, features = ["derive"], optional = true }
-serde-json-wasm = { version = "1.0.1", default-features = false, optional = true }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+parity-scale-codec = { workspace = true }
+precompile-utils = { workspace = true, optional = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
+serde-json-wasm = { workspace = true, optional = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
 
 [dev-dependencies]
-const-hex = "1.13"
+const-hex = { workspace = true, default-features = true }
 # substrate
-pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+pallet-assets = { workspace = true, default-features = true }
+pallet-balances = { workspace = true, default-features = true }
+pallet-sudo = { workspace = true, default-features = true }
+pallet-timestamp = { workspace = true, default-features = true }
+sp-keyring = { workspace = true, default-features = true }
 # frontier
-pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409" }
-pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409" }
+pallet-ethereum = { workspace = true, default-features = true }
+pallet-evm = { workspace = true, default-features = true }
 # noir
 np-runtime = { workspace = true, default-features = true }
 pallet-cosmos = { workspace = true, default-features = true }

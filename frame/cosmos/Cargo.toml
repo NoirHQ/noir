@@ -1,24 +1,25 @@
 [package]
 name = "pallet-cosmos"
-version = "0.4.0"
-authors = ["Haderech Pte. Ltd."]
-edition = "2021"
+description = "FRAME cosmos to process Cosmos transactions"
 license = "Apache-2.0"
-repository = "https://github.com/noirhq/noir.git"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 publish = false
 
 [dependencies]
-cosmos-sdk-proto = { version = "0.24", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+cosmos-sdk-proto = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
 pallet-cosmos-x-auth-signing = { workspace = true, default-features = false }
 pallet-cosmos-types = { workspace = true, default-features = false }
 pallet-multimap = { workspace = true, default-features = false }
-parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
+parity-scale-codec = { workspace = true }
 np-cosmos = { workspace = true, default-features = false }
-scale-info = { version = "2.11", default-features = false, features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+scale-info = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
@@ -35,4 +36,13 @@ std = [
 	"sp-core/std",
 	"sp-runtime/std",
 ]
-try-runtime = []
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"sp-runtime/try-runtime",
+]

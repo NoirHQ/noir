@@ -30,16 +30,22 @@ use sp_io::hashing::blake2_256;
 
 /// An opaque 32-byte cryptographic identifier.
 #[derive(FixedBytes)]
-#[buidl(substrate(Codec, Core))]
-pub struct AccountId32<T: Clone = MultiSigner>([u8; 32], Option<T>);
+#[buidl(derive(Substrate), skip_derive(Clone, PassBy, TypeInfo))]
+pub struct AccountId32<T = MultiSigner>([u8; 32], Option<T>);
 
-impl<T: Clone> AccountId32<T> {
+impl<T> AccountId32<T> {
 	pub const fn new(inner: [u8; 32]) -> Self {
 		Self(inner, None)
 	}
 }
 
-impl<T: Clone> TypeInfo for AccountId32<T> {
+impl<T: Clone> Clone for AccountId32<T> {
+	fn clone(&self) -> Self {
+		Self(self.0, self.1.clone())
+	}
+}
+
+impl<T> TypeInfo for AccountId32<T> {
 	type Identity = crypto::AccountId32;
 
 	fn type_info() -> Type {
@@ -48,46 +54,46 @@ impl<T: Clone> TypeInfo for AccountId32<T> {
 }
 
 #[cfg(feature = "serde")]
-impl<T: Clone> Ss58Codec for AccountId32<T> {}
+impl<T> Ss58Codec for AccountId32<T> {}
 
-impl<T: Clone> From<H256> for AccountId32<T> {
+impl<T> From<H256> for AccountId32<T> {
 	fn from(h: H256) -> Self {
 		Self(h.0, None)
 	}
 }
 
-impl<T: Clone> From<AccountId32<T>> for H256 {
+impl<T> From<AccountId32<T>> for H256 {
 	fn from(acc: AccountId32<T>) -> Self {
 		Self(acc.0)
 	}
 }
 
-impl<T: Clone> From<AccountId32<T>> for H160 {
+impl<T> From<AccountId32<T>> for H160 {
 	fn from(acc: AccountId32<T>) -> Self {
 		H256::from(acc).into()
 	}
 }
 
-impl<T: Clone> From<crypto::AccountId32> for AccountId32<T> {
+impl<T> From<crypto::AccountId32> for AccountId32<T> {
 	fn from(acc: crypto::AccountId32) -> Self {
 		Self(Into::<[u8; 32]>::into(acc), None)
 	}
 }
 
-impl<T: Clone> From<AccountId32<T>> for crypto::AccountId32 {
+impl<T> From<AccountId32<T>> for crypto::AccountId32 {
 	fn from(acc: AccountId32<T>) -> Self {
 		Self::from(acc.0)
 	}
 }
 
 #[cfg(feature = "std")]
-impl<T: Clone> std::fmt::Display for AccountId32<T> {
+impl<T> std::fmt::Display for AccountId32<T> {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		write!(f, "{}", self.to_ss58check())
 	}
 }
 
-impl<T: Clone> core::fmt::Debug for AccountId32<T> {
+impl<T> core::fmt::Debug for AccountId32<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		#[cfg(feature = "serde")]
 		{
@@ -103,7 +109,7 @@ impl<T: Clone> core::fmt::Debug for AccountId32<T> {
 }
 
 #[cfg(feature = "serde")]
-impl<T: Clone> serde::Serialize for AccountId32<T> {
+impl<T> serde::Serialize for AccountId32<T> {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: serde::Serializer,
@@ -113,7 +119,7 @@ impl<T: Clone> serde::Serialize for AccountId32<T> {
 }
 
 #[cfg(feature = "serde")]
-impl<'de, T: Clone> serde::Deserialize<'de> for AccountId32<T> {
+impl<'de, T> serde::Deserialize<'de> for AccountId32<T> {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
 		D: serde::Deserializer<'de>,
@@ -124,7 +130,7 @@ impl<'de, T: Clone> serde::Deserialize<'de> for AccountId32<T> {
 }
 
 #[cfg(feature = "std")]
-impl<T: Clone> std::str::FromStr for AccountId32<T> {
+impl<T> std::str::FromStr for AccountId32<T> {
 	type Err = &'static str;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -139,7 +145,7 @@ impl<T: Clone> std::str::FromStr for AccountId32<T> {
 	}
 }
 
-impl<T: Clone> From<ed25519::Public> for AccountId32<T>
+impl<T> From<ed25519::Public> for AccountId32<T>
 where
 	T: From<ed25519::Public>,
 {
@@ -148,7 +154,7 @@ where
 	}
 }
 
-impl<T: Clone> From<sr25519::Public> for AccountId32<T>
+impl<T> From<sr25519::Public> for AccountId32<T>
 where
 	T: From<sr25519::Public>,
 {
@@ -157,7 +163,7 @@ where
 	}
 }
 
-impl<T: Clone> From<ecdsa::Public> for AccountId32<T>
+impl<T> From<ecdsa::Public> for AccountId32<T>
 where
 	T: From<ecdsa::Public>,
 {
@@ -166,7 +172,7 @@ where
 	}
 }
 
-impl<T: Clone, E> TryFrom<AccountId32<T>> for ecdsa::Public
+impl<T, E> TryFrom<AccountId32<T>> for ecdsa::Public
 where
 	T: TryInto<ecdsa::Public, Error = E>,
 	E: Default,
@@ -181,7 +187,7 @@ where
 	}
 }
 
-impl<T: Clone> Property for AccountId32<T> {
+impl<T> Property for AccountId32<T> {
 	type Value = Option<T>;
 
 	fn get(&self) -> &Option<T> {
@@ -193,7 +199,7 @@ impl<T: Clone> Property for AccountId32<T> {
 	}
 }
 
-impl<T: Clone> Checkable<ed25519::Public> for AccountId32<T>
+impl<T> Checkable<ed25519::Public> for AccountId32<T>
 where
 	T: From<ed25519::Public>,
 {
@@ -208,7 +214,7 @@ where
 	}
 }
 
-impl<T: Clone> Checkable<sr25519::Public> for AccountId32<T>
+impl<T> Checkable<sr25519::Public> for AccountId32<T>
 where
 	T: From<sr25519::Public>,
 {
@@ -223,7 +229,7 @@ where
 	}
 }
 
-impl<T: Clone> Checkable<ecdsa::Public> for AccountId32<T>
+impl<T> Checkable<ecdsa::Public> for AccountId32<T>
 where
 	T: From<ecdsa::Public>,
 {
@@ -240,7 +246,9 @@ where
 
 #[cfg(test)]
 mod tests {
-	type AccountId32 = super::AccountId32<crate::MultiSigner>;
+	use super::*;
+
+	type AccountId32 = super::AccountId32<MultiSigner>;
 
 	#[test]
 	fn accountid_32_from_str_works() {
