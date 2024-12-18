@@ -1,0 +1,34 @@
+[package]
+name = "solana-rpc-client-api"
+description = "Solana Client Common Utilities"
+documentation = "https://docs.rs/solana-rpc-client-api"
+version = "2.0.18"
+authors = ["Anza Maintainers <maintainers@anza.xyz>"]
+repository = "https://github.com/anza-xyz/agave"
+homepage = "https://anza.xyz/"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+base64 = { version = "0.22", default-features = false, features = ["alloc"] }
+bs58 = { version = "0.5", default-features = false, features = ["alloc"] }
+nostd = { version = "0.1", default-features = false, features = ["alloc"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+solana-inline-spl = { workspace = true, default-features = false }
+solana-sdk = { workspace = true, default-features = false }
+thiserror = { version = "2", default-features = false }
+
+[dev-dependencies]
+const_format = "0.2.34"
+serde_json = "1.0"
+
+[features]
+default = ["std"]
+std = [
+    "base64/std",
+    "bs58/std",
+    "serde/std",
+    "solana-inline-spl/std",
+    "solana-sdk/std",
+    "thiserror/std",
+]

@@ -366,8 +366,11 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_multiple_accounts(pubkeys: Vec<Pubkey>) -> Vec<Option<Account>> {
-			pubkeys.into_iter().map(|pubkey| Self::get_account_info(pubkey)).collect::<_>()
+		pub fn get_multiple_accounts(pubkeys: Vec<Pubkey>) -> Vec<(Pubkey, Option<Account>)> {
+			pubkeys
+				.into_iter()
+				.map(|pubkey| (pubkey, Self::get_account_info(pubkey)))
+				.collect::<_>()
 		}
 	}
 

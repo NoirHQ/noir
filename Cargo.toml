@@ -44,6 +44,7 @@ members = [
 	"vendor/solana/account-decoder",
 	"vendor/solana/compute-budget",
 	"vendor/solana/curves/curve25519",
+	"vendor/solana/inline-spl",
 	"vendor/solana/measure",
 	"vendor/solana/metrics",
 	"vendor/solana/poseidon",
@@ -54,6 +55,7 @@ members = [
 	"vendor/solana/programs/loader-v4",
 	"vendor/solana/programs/system",
 	"vendor/solana/programs/token",
+	"vendor/solana/rpc-client-api",
 ]
 default-members = [
 	"core-primitives",
@@ -177,14 +179,17 @@ pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/as
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 solana-address-lookup-table-program = { path = "vendor/solana/programs/address-lookup-table", default-features = false }
 solana-bpf-loader-program = { path = "vendor/solana/programs/bpf_loader", default-features = false }
+solana-account-decoder = { path = "vendor/solana/account-decoder", default-features = false }
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
 solana-compute-budget-program = { path = "vendor/solana/programs/compute-budget", default-features = false }
 solana-curve25519 = { path = "vendor/solana/curves/curve25519", default-features = false }
+solana-inline-spl = { path = "vendor/solana/inline-spl", default-features = false }
 solana-loader-v4-program = { path = "vendor/solana/programs/loader-v4", default-features = false }
 solana-measure = { path = "vendor/solana/measure", default-features = false }
 solana-metrics = { path = "vendor/solana/metrics" }
 solana-poseidon = { path = "vendor/solana/poseidon", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
+solana-rpc-client-api = { path = "vendor/solana/rpc-client-api", default-features = false }
 solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
 spl-token = { path = "vendor/solana/programs/token" }
 
