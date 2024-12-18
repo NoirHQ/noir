@@ -8,6 +8,7 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
+nostd = { version = "0.1.1", default-features = false, features = ["alloc"] }
 pallet-solana = { workspace = true, default-features = false }
 serde_json = { version = "1.0", default-features = false }
 solana-account-decoder = { workspace = true, default-features = false }

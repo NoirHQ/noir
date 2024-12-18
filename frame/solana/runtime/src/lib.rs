@@ -17,9 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate alloc;
-
-use alloc::{string::String, vec::Vec};
+use nostd::{string::String, vec::Vec};
 use solana_inline_spl::token::GenericTokenAccount;
 use solana_rpc_client_api::filter::RpcFilterType;
 use solana_runtime_api::error::Error;
