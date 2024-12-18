@@ -36,7 +36,9 @@ members = [
 	"vendor/moonbeam/precompiles/balances-erc20",
 	"vendor/solana/account-decoder",
 	"vendor/solana/compute-budget",
+	"vendor/solana/inline-spl",
 	"vendor/solana/program-runtime",
+	"vendor/solana/rpc-client-api",
 ]
 default-members = [
 	"core-primitives",
@@ -113,6 +115,8 @@ pallet-solana = { path = "frame/solana", default-features = false }
 solana-account-decoder = { path = "vendor/solana/account-decoder", default-features = false }
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
+solana-rpc-client-api = { path = "vendor/solana/rpc-client-api", default-features = false }
+solana-inline-spl = { path = "vendor/solana/inline-spl", default-features = false }
 
 solana-runtime = { path = "frame/solana/runtime", default-features = false }
 solana-runtime-api = { path = "frame/solana/runtime-api", default-features = false }

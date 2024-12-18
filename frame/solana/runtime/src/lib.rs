@@ -20,8 +20,13 @@
 extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
+use solana_inline_spl::token::GenericTokenAccount;
+use solana_rpc_client_api::filter::RpcFilterType;
 use solana_runtime_api::error::Error;
-use solana_sdk::pubkey::Pubkey;
+use solana_sdk::{
+	account::{Account, ReadableAccount},
+	pubkey::Pubkey,
+};
 
 pub fn call<T: pallet_solana::Config>(method: String, params: Vec<u8>) -> Result<Vec<u8>, Error> {
 	match method.as_str() {
@@ -38,7 +43,11 @@ pub fn call<T: pallet_solana::Config>(method: String, params: Vec<u8>) -> Result
 			let pubkeys =
 				serde_json::from_slice::<Vec<Pubkey>>(&params).map_err(|_| Error::ParseError)?;
 
-			let accounts = pallet_solana::Pallet::<T>::get_multiple_accounts(pubkeys);
+			let accounts: Vec<Option<Account>> =
+				pallet_solana::Pallet::<T>::get_multiple_accounts(pubkeys)
+					.into_iter()
+					.map(|(_, account)| account)
+					.collect();
 			let bytes = serde_json::to_vec(&accounts).map_err(|_| Error::ParseError)?;
 
 			Ok(bytes)
@@ -52,6 +61,35 @@ pub fn call<T: pallet_solana::Config>(method: String, params: Vec<u8>) -> Result
 
 			Ok(bytes)
 		},
+		"getProgramAccounts" => {
+			let (program_id, pubkeys, filters) =
+				serde_json::from_slice::<(Pubkey, Vec<Pubkey>, Vec<RpcFilterType>)>(&params)
+					.map_err(|_| Error::ParseError)?;
+			let filter_closure = |account: &Account| {
+				filters.iter().all(|filter_type| filter_allows(filter_type, account))
+			};
+
+			let accounts = pallet_solana::Pallet::<T>::get_multiple_accounts(pubkeys)
+				.into_iter()
+				.filter_map(|(pubkey, account)| match account {
+					Some(account) => Some((pubkey, account)),
+					None => None,
+				})
+				.filter(|(_, account)| account.owner == program_id && filter_closure(account))
+				.collect::<Vec<(Pubkey, Account)>>();
+			let bytes = serde_json::to_vec(&accounts).map_err(|_| Error::ParseError)?;
+
+			Ok(bytes)
+		},
 		_ => return Err(Error::UnsupportedMethod),
+	}
+}
+
+pub fn filter_allows(filter: &RpcFilterType, account: &Account) -> bool {
+	match filter {
+		RpcFilterType::DataSize(size) => account.data().len() as u64 == *size,
+		RpcFilterType::Memcmp(compare) => compare.bytes_match(account.data()),
+		RpcFilterType::TokenAccountState =>
+			solana_inline_spl::token_2022::Account::valid_account_data(account.data()),
 	}
 }

@@ -11,6 +11,8 @@ publish = false
 pallet-solana = { workspace = true, default-features = false }
 serde_json = { version = "1.0", default-features = false }
 solana-account-decoder = { workspace = true, default-features = false }
+solana-inline-spl = { workspace = true, default-features = false }
+solana-rpc-client-api = { workspace = true, default-features = false }
 solana-runtime-api = { workspace = true, default-features = false }
 solana-sdk = { workspace = true, default-features = false }
 
@@ -20,6 +22,8 @@ std = [
     "pallet-solana/std",
     "serde_json/std",
     "solana-account-decoder/std",
+    "solana-inline-spl/std",
+    "solana-rpc-client-api/std",
     "solana-runtime-api/std",
     "solana-sdk/std",
 ]
