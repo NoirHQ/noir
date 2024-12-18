@@ -49,7 +49,7 @@ default-members = [
 [workspace.dependencies]
 bech32 = { version = "0.11", default-features = false }
 bs58 = { version = "0.5.1", default-features = false }
-buidl = { version = "0.1.1", default-features = false, features = ["derive"] }
+buidl = { version = "0.2", default-features = false, features = ["derive"] }
 const-hex = { version = "1.13", default-features = false }
 cosmos-sdk-proto = { version = "0.24", default-features = false }
 ethereum = { version = "0.15.0", default-features = false }

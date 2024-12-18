@@ -34,7 +34,7 @@ use sp_runtime::traits::AccountIdConversion;
 
 /// Ethereum address.
 #[derive(FixedBytes)]
-#[buidl(substrate(Core, Codec, TypeInfo))]
+#[buidl(derive(Substrate), skip_derive(PassBy))]
 pub struct Address([u8; 20]);
 
 impl From<H160> for Address {

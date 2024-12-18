@@ -30,7 +30,7 @@ use sp_core::{ed25519, H256};
 
 /// Solana address.
 #[derive(FixedBytes)]
-#[buidl(substrate(Core, Codec, TypeInfo))]
+#[buidl(derive(Substrate), skip_derive(PassBy))]
 pub struct Address([u8; 32]);
 
 impl From<H256> for Address {
