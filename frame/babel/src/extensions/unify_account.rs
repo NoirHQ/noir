@@ -23,7 +23,7 @@ use frame_support::traits::{
 	OnKilledAccount as OnKilledAccountT,
 };
 use np_babel::VarAddress;
-use pallet_multimap::traits::UniqueMultimap;
+use np_multimap::traits::UniqueMultimap;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, H256};
@@ -203,7 +203,7 @@ mod tests {
 	struct MockConfig;
 
 	impl Config for MockConfig {
-		type AddressMap = pallet_multimap::traits::in_mem::UniqueMultimap<AccountId, VarAddress>;
+		type AddressMap = np_multimap::in_mem::UniqueMultimap<AccountId, VarAddress>;
 		type DrainBalance = ();
 	}
 

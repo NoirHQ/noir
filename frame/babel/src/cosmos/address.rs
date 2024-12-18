@@ -21,9 +21,9 @@ use alloc::{string::String, vec::Vec};
 use bech32::{Bech32, Hrp};
 use core::marker::PhantomData;
 use np_babel::cosmos::{traits::ChainInfo, Address as CosmosAddress};
+use np_multimap::traits::UniqueMultimap;
 use pallet_cosmos_types::address::acc_address_from_bech32;
 use pallet_cosmwasm::types::AccountIdOf;
-use pallet_multimap::traits::UniqueMultimap;
 use sp_core::{H160, H256};
 use sp_runtime::traits::{AccountIdConversion, Convert};
 
