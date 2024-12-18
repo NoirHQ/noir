@@ -243,6 +243,10 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::storage]
+	#[pallet::getter(fn transaction_count)]
+	pub type TransactionCount<T> = StorageValue<_, u64, ValueQuery>;
+
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(now: BlockNumberFor<T>) -> Weight {
@@ -267,6 +271,9 @@ pub mod pallet {
 			let max_age = T::BlockhashQueueMaxAge::get();
 			let to_remove = now.saturating_sub(max_age).saturating_sub(One::one());
 			<BlockhashQueue<T>>::remove(<frame_system::Pallet<T>>::block_hash(to_remove));
+
+			let count = frame_system::Pallet::<T>::extrinsic_count() as u64;
+			TransactionCount::<T>::mutate(|total_count| *total_count += count);
 		}
 	}
 
@@ -371,6 +378,10 @@ pub mod pallet {
 				.into_iter()
 				.map(|pubkey| (pubkey, Self::get_account_info(pubkey)))
 				.collect::<_>()
+		}
+
+		pub fn get_transaction_count() -> u64 {
+			TransactionCount::<T>::get()
 		}
 	}
 

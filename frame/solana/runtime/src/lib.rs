@@ -81,6 +81,12 @@ pub fn call<T: pallet_solana::Config>(method: String, params: Vec<u8>) -> Result
 
 			Ok(bytes)
 		},
+		"getTransactionCount" => {
+			let transaction_count = pallet_solana::Pallet::<T>::get_transaction_count();
+			let bytes = serde_json::to_vec(&transaction_count).map_err(|_| Error::ParseError)?;
+
+			Ok(bytes)
+		},
 		_ => return Err(Error::UnsupportedMethod),
 	}
 }
