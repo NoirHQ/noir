@@ -106,9 +106,61 @@ where
 	}
 }
 
+pub struct UniqueMapAdapter<
+	K: FullCodec + Clone + PartialEq,
+	V: FullCodec + Clone + Ord,
+	Map: StorageMap<K, V, Query = Option<V>>,
+	Index: StorageMap<V, K, Query = Option<K>>,
+	E: From<Error>,
+>(core::marker::PhantomData<(K, V, Map, Index, E)>);
+
+impl<K, V, Map, Index, E> traits::UniqueMap<K, V> for UniqueMapAdapter<K, V, Map, Index, E>
+where
+	K: FullCodec + Clone + PartialEq,
+	V: FullCodec + Clone + Ord,
+	Map: StorageMap<K, V, Query = Option<V>>,
+	Index: StorageMap<V, K, Query = Option<K>>,
+	E: From<Error>,
+{
+	type Error = E;
+
+	fn try_insert<KeyArg: EncodeLike<K>, ValArg: EncodeLike<V>>(
+		key: KeyArg,
+		value: ValArg,
+	) -> Result<bool, Self::Error> {
+		let key = transmute(key);
+		let value = transmute(value);
+		Map::try_mutate(key.clone(), |v| {
+			ensure!(Index::get(&value).filter(|k| *k != key).is_none(), Error::DuplicateValue);
+
+			*v = Some(value.clone());
+			Index::insert(value, key);
+
+			Ok(true)
+		})
+	}
+
+	fn get<KeyArg: EncodeLike<K>>(key: KeyArg) -> Option<V> {
+		Map::get(key)
+	}
+
+	fn find_key<ValArg: EncodeLike<V>>(value: ValArg) -> Option<K> {
+		Index::get(value)
+	}
+
+	fn remove<KeyArg: EncodeLike<K>>(key: KeyArg) {
+		if let Some(value) = Map::take(key) {
+			Index::remove(value);
+		}
+	}
+}
+
 #[cfg(test)]
 mod tests {
-	use crate::{traits::UniqueMultimap, Error};
+	use crate::{
+		traits::{UniqueMap, UniqueMultimap},
+		Error,
+	};
 	use frame_support::{derive_impl, pallet_prelude::*};
 	use sp_io::TestExternalities;
 	use std::collections::BTreeSet;
@@ -122,8 +174,10 @@ mod tests {
 		#[pallet::pallet]
 		pub struct Pallet<T>(_);
 		#[pallet::storage]
-		pub type Map<T: Config> =
+		pub type MultiMap<T: Config> =
 			StorageMap<_, Twox64Concat, u64, BoundedBTreeSet<u32, ConstU32<2>>, ValueQuery>;
+		#[pallet::storage]
+		pub type Map<T: Config> = StorageMap<_, Twox64Concat, u64, u32>;
 		#[pallet::storage]
 		pub type Index<T: Config> = StorageMap<_, Twox64Concat, u32, u64>;
 	}
@@ -153,11 +207,13 @@ mod tests {
 	pub type Multimap = super::UniqueMultimapAdapter<
 		u64,
 		u32,
-		pallet::Map<Test>,
+		pallet::MultiMap<Test>,
 		pallet::Index<Test>,
 		ConstU32<2>,
 		Error,
 	>;
+
+	pub type Map = super::UniqueMapAdapter<u64, u32, pallet::Map<Test>, pallet::Index<Test>, Error>;
 
 	#[test]
 	fn unique_multimap_adapter_works() {
@@ -177,6 +233,20 @@ mod tests {
 			assert!(matches!(Multimap::try_insert(1, 1000), Err(Error::DuplicateValue)));
 
 			assert!(Multimap::remove_all(0));
+		});
+	}
+
+	#[test]
+	fn unique_map_adapter_works() {
+		new_test_ext().execute_with(|| {
+			assert!(matches!(Map::try_insert(0, 1000), Ok(true)));
+			assert_eq!(Map::get(0), Some(1000));
+			assert_eq!(Map::find_key(1000), Some(0));
+			assert_eq!(Map::find_key(1001), None);
+			assert!(matches!(Map::try_insert(1, 1000), Err(Error::DuplicateValue)));
+			Map::remove(0);
+			assert_eq!(Map::get(0), None);
+			assert!(matches!(Map::try_insert(1, 1000), Ok(true)));
 		});
 	}
 }

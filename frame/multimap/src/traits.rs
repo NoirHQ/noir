@@ -105,6 +105,8 @@ impl<T: Config<I>, I: 'static> UniqueMap<T::Key, T::Value> for Pallet<T, I> {
 	}
 
 	fn remove<K: EncodeLike<T::Key>>(key: K) {
-		Map::<T, I>::remove(key);
+		if let Some(value) = Map::<T, I>::take(key).first() {
+			Index::<T, I>::remove(value);
+		}
 	}
 }
