@@ -54,7 +54,10 @@ pub mod pallet {
 		},
 	};
 	use frame_system::{ensure_root, pallet_prelude::*};
-	use np_multimap::traits::{UniqueMap, UniqueMultimap};
+	use np_multimap::{
+		traits::{UniqueMap, UniqueMultimap},
+		Error as MapError, UniqueMapAdapter, UniqueMultimapAdapter,
+	};
 	use pallet_cosmos::{
 		types::{AssetIdOf, DenomOf},
 		AddressMapping as _,
@@ -103,6 +106,34 @@ pub mod pallet {
 		InvalidOrigin,
 		InvalidTransaction,
 	}
+
+	/// Mapping from addresses to accounts.
+	pub type AddressMap<T> = UniqueMultimapAdapter<
+		<T as frame_system::Config>::AccountId,
+		VarAddress,
+		AddressMapStorage<T>,
+		AddressIndex<T>,
+		ConstU32<{ VarAddress::variant_count() }>,
+		MapError,
+	>;
+	#[pallet::storage]
+	pub type AddressMapStorage<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		BoundedBTreeSet<VarAddress, ConstU32<{ VarAddress::variant_count() }>>,
+		ValueQuery,
+	>;
+	#[pallet::storage]
+	pub type AddressIndex<T: Config> = StorageMap<_, Twox64Concat, VarAddress, T::AccountId>;
+
+	/// Mapping from asset IDs to denoms.
+	pub type AssetMap<T> =
+		UniqueMapAdapter<AssetIdOf<T>, DenomOf<T>, AssetMapStorage<T>, AssetIndex<T>, MapError>;
+	#[pallet::storage]
+	pub type AssetMapStorage<T: Config> = StorageMap<_, Twox64Concat, AssetIdOf<T>, DenomOf<T>>;
+	#[pallet::storage]
+	pub type AssetIndex<T: Config> = StorageMap<_, Twox64Concat, DenomOf<T>, AssetIdOf<T>>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>

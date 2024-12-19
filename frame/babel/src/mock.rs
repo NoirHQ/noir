@@ -43,6 +43,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use np_babel::cosmos::traits::CosmosHub;
+use np_multimap::traits::UniqueMap;
 use np_runtime::{AccountId32, MultiSigner};
 use pallet_cosmos::{
 	config_preludes::{MaxDenomLimit, NativeAssetId},
@@ -64,7 +65,6 @@ use pallet_cosmos_x_wasm::msgs::{
 	MsgStoreCodeHandler, MsgUpdateAdminHandler,
 };
 use pallet_cosmwasm::instrument::CostRules;
-use pallet_multimap::traits::UniqueMap;
 use sp_core::{ConstU128, Pair, H256};
 use sp_runtime::{
 	traits::{IdentityLookup, TryConvert},
@@ -115,10 +115,6 @@ mod runtime {
 	#[runtime::pallet_index(41)]
 	pub type Cosmwasm = pallet_cosmwasm;
 
-	#[runtime::pallet_index(50)]
-	pub type AddressMap = pallet_multimap<Instance1>;
-	#[runtime::pallet_index(51)]
-	pub type AssetMap = pallet_multimap<Instance2>;
 	#[runtime::pallet_index(100)]
 	pub type Babel = frame_babel;
 }
@@ -198,7 +194,7 @@ impl TryConvert<String, AssetId> for AssetToDenom {
 		} else {
 			let denom_raw: BoundedVec<u8, MaxDenomLimit> =
 				denom.as_bytes().to_vec().try_into().map_err(|_| denom.clone())?;
-			AssetMap::find_key(denom_raw).ok_or(denom.clone())
+			<Test as frame_babel::Config>::AssetMap::find_key(denom_raw).ok_or(denom.clone())
 		}
 	}
 }
@@ -207,9 +203,7 @@ impl TryConvert<AssetId, String> for AssetToDenom {
 		if asset_id == NativeAssetId::get() {
 			Ok(NativeDenom::get().to_string())
 		} else {
-			let denom =
-				<AssetMap as UniqueMap<AssetId, BoundedVec<u8, MaxDenomLimit>>>::get(asset_id)
-					.ok_or(asset_id)?;
+			let denom = <Test as frame_babel::Config>::AssetMap::get(asset_id).ok_or(asset_id)?;
 			String::from_utf8(denom.into()).map_err(|_| asset_id)
 		}
 	}
@@ -343,13 +337,13 @@ impl pallet_multimap::Config<Instance2> for Test {
 }
 
 impl frame_babel::Config for Test {
-	type AddressMap = AddressMap;
-	type AssetMap = AssetMap;
+	type AddressMap = frame_babel::AddressMap<Self>;
+	type AssetMap = frame_babel::AssetMap<Self>;
 	type Balance = Balance;
 }
 
 impl unify_account::Config for Test {
-	type AddressMap = AddressMap;
+	type AddressMap = frame_babel::AddressMap<Self>;
 	type DrainBalance = Balances;
 }
 
