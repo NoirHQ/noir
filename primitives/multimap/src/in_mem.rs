@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::traits;
 use parity_scale_codec::{EncodeLike, FullCodec};
 use std::{
 	cell::RefCell,
@@ -29,7 +30,7 @@ thread_local! {
 
 pub struct UniqueMultimap<K, V>(PhantomData<(K, V)>);
 
-impl<K: FullCodec, V: FullCodec + Ord> super::UniqueMultimap<K, V> for UniqueMultimap<K, V> {
+impl<K: FullCodec, V: FullCodec + Ord> traits::UniqueMultimap<K, V> for UniqueMultimap<K, V> {
 	type Error = &'static str;
 
 	fn try_insert<KeyArg: EncodeLike<K>, ValArg: EncodeLike<V>>(
@@ -125,10 +126,10 @@ impl<K: FullCodec, V: FullCodec + Ord> super::UniqueMultimap<K, V> for UniqueMul
 
 #[cfg(test)]
 mod tests {
-	use crate::traits::{in_mem::UniqueMultimap, UniqueMultimap as _};
+	use crate::traits::UniqueMultimap;
 	use std::collections::BTreeSet;
 
-	type Multimap = UniqueMultimap<String, u32>;
+	type Multimap = super::UniqueMultimap<String, u32>;
 
 	#[test]
 	fn unique_multimap_insert() {

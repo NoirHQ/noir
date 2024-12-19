@@ -54,6 +54,7 @@ pub mod pallet {
 		},
 	};
 	use frame_system::{ensure_root, pallet_prelude::*};
+	use np_multimap::traits::{UniqueMap, UniqueMultimap};
 	use pallet_cosmos::{
 		types::{AssetIdOf, DenomOf},
 		AddressMapping as _,
@@ -61,7 +62,6 @@ pub mod pallet {
 	use pallet_cosmos_types::address::acc_address_from_bech32;
 	use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 	use pallet_evm::{AddressMapping as _, FrameSystemAccountProvider};
-	use pallet_multimap::traits::{UniqueMap, UniqueMultimap};
 	use sp_core::{ecdsa, H256};
 	#[cfg(feature = "nostr")]
 	use sp_runtime::traits::AccountIdConversion;
