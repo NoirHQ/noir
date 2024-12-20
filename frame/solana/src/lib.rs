@@ -38,7 +38,7 @@ mod tests;
 
 use frame_support::{
 	dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
-	sp_runtime::{self, RuntimeDebug},
+	sp_runtime::{self, RuntimeDebug, SaturatedConversion},
 	traits::EnsureOrigin,
 };
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -95,6 +95,7 @@ pub mod pallet {
 	use np_runtime::traits::LossyInto;
 	use parity_scale_codec::Codec;
 	use solana_sdk::{
+		clock,
 		feature_set::FeatureSet,
 		fee_calculator::FeeCalculator,
 		hash::Hash,
@@ -148,6 +149,11 @@ pub mod pallet {
 		/// Maximum permitted size of account data (10 MiB).
 		#[pallet::constant]
 		type MaxPermittedDataLength: Get<u32>;
+
+		/// Timestamp at genesis block.
+		#[pallet::constant]
+		#[pallet::no_default_bounds]
+		type GenesisTimestamp: Get<Self::Moment>;
 	}
 
 	pub mod config_preludes {
@@ -160,6 +166,9 @@ pub mod pallet {
 		#[derive_impl(frame_system::config_preludes::TestDefaultConfig, no_aggregated_types)]
 		impl frame_system::DefaultConfig for TestDefaultConfig {}
 
+		#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
+		impl pallet_timestamp::DefaultConfig for TestDefaultConfig {}
+
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
 			type DecimalMultiplier = ConstU64<1>;
@@ -167,6 +176,8 @@ pub mod pallet {
 			type BlockhashQueueMaxAge = ConstU64<20>;
 			/// Maximum permitted size of account data (10 MiB).
 			type MaxPermittedDataLength = ConstU32<{ 10 * 1024 * 1024 }>;
+			/// Timestamp at genesis block (Solana).
+			type GenesisTimestamp = ConstU64<1584336540_000>;
 		}
 	}
 
@@ -190,6 +201,10 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::storage]
+	#[pallet::getter(fn slot)]
+	pub type Slot<T: Config> = StorageValue<_, clock::Slot>;
+
 	/// FIFO queue of `recent_blockhashes` item to verify nonces.
 	#[pallet::storage]
 	#[pallet::getter(fn blockhash_queue)]
@@ -210,6 +225,10 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+			let elapsed =
+				<pallet_timestamp::Now<T>>::get().saturating_sub(T::GenesisTimestamp::get());
+			<Slot<T>>::put((elapsed / T::Moment::from(400u32)).saturated_into::<clock::Slot>());
+
 			let parent_hash = <frame_system::Pallet<T>>::parent_hash();
 			<BlockhashQueue<T>>::insert(
 				parent_hash,
