@@ -13,67 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use {
-    nostd::{collections::HashMap, fmt, time::Duration},
-    solana_sdk::pubkey::Pubkey,
-};
-
-#[derive(Debug)]
-pub struct Measure;
-
-impl Measure {
-    pub fn start(_name: &'static str) -> Self {
-        Self {}
-    }
-
-    pub fn stop(&mut self) {}
-
-    pub fn as_ns(&self) -> u64 {
-        0
-    }
-
-    pub fn as_us(&self) -> u64 {
-        0
-    }
-
-    pub fn as_ms(&self) -> u64 {
-        0
-    }
-
-    pub fn as_s(&self) -> f32 {
-        0.0
-    }
-
-    pub fn as_duration(&self) -> Duration {
-        Duration::from_nanos(0)
-    }
-
-    pub fn end_as_ns(self) -> u64 {
-        0
-    }
-
-    pub fn end_as_us(self) -> u64 {
-        0
-    }
-
-    pub fn end_as_ms(self) -> u64 {
-        0
-    }
-
-    pub fn end_as_s(self) -> f32 {
-        0.0
-    }
-
-    pub fn end_as_duration(self) -> Duration {
-        Duration::from_nanos(0)
-    }
-}
-
-impl fmt::Display for Measure {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Measure")
-    }
-}
+use {nostd::collections::HashMap, solana_sdk::pubkey::Pubkey};
 
 pub type VoteAccountsHashMap = HashMap<Pubkey, (u64, VoteAccount)>;
 

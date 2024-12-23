@@ -1,0 +1,12 @@
+[package]
+name = "simple-transfer-program"
+version = "2.0.18"
+edition = "2021"
+
+[dependencies]
+solana-program = { path = "../../../../sdk/program", version = "=2.0.18" }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[workspace]

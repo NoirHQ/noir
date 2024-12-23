@@ -1,0 +1,24 @@
+[package]
+name = "solana-measure"
+description = "Blockchain, Rebuilt for Scale"
+documentation = "https://docs.rs/solana-measure"
+version = "2.0.18"
+authors = ["Anza Maintainers <maintainers@anza.xyz>"]
+repository = "https://github.com/anza-xyz/agave"
+homepage = "https://anza.xyz/"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+log = { workspace = true }
+solana-sdk = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ["std"]
+std = [
+    "log/std",
+    "solana-sdk/std",
+]

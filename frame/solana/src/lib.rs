@@ -23,16 +23,19 @@ extern crate alloc;
 #[macro_use]
 extern crate derive_where;
 
+#[cfg_attr(feature = "std", macro_use)]
+#[cfg(feature = "std")]
+extern crate solana_metrics;
+
 pub use pallet::*;
 
-pub use crate::runtime::invoke_context;
 pub use solana_rbpf;
 pub use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction as Transaction};
 
 #[cfg(test)]
 mod mock;
-mod programs;
 mod runtime;
+mod svm;
 #[cfg(test)]
 mod tests;
 
@@ -79,24 +82,12 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O> for Ensure
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::runtime::{
-		account::AccountSharedData,
-		bank::Bank,
-		transaction_processing_callback::TransactionProcessingCallback,
-		transaction_processor::{
-			ExecutionRecordingConfig, TransactionProcessingConfig,
-			TransactionProcessingEnvironment, TransactionProcessor,
-		},
-	};
-	use core::fmt::Debug;
+	use crate::runtime::bank::Bank;
 	use frame_support::{dispatch::DispatchInfo, pallet_prelude::*, traits::fungible};
 	use frame_system::{pallet_prelude::*, CheckWeight};
-	use nostd::sync::Arc;
 	use np_runtime::traits::LossyInto;
-	use parity_scale_codec::Codec;
 	use solana_sdk::{
 		clock,
-		feature_set::FeatureSet,
 		fee_calculator::FeeCalculator,
 		hash::Hash,
 		message::SimpleAddressLoader,
@@ -104,12 +95,14 @@ pub mod pallet {
 		transaction::{MessageHash, SanitizedTransaction},
 	};
 	use sp_runtime::{
-		traits::{AtLeast32BitUnsigned, Convert, DispatchInfoOf, Dispatchable, One, Saturating},
+		traits::{
+			AtLeast32BitUnsigned, Convert, ConvertBack, DispatchInfoOf, Dispatchable, One,
+			Saturating,
+		},
 		transaction_validity::{
 			InvalidTransaction, TransactionValidity, TransactionValidityError,
 			ValidTransactionBuilder,
 		},
-		FixedPointOperand,
 	};
 
 	#[pallet::config(with_default)]
@@ -118,7 +111,7 @@ pub mod pallet {
 		type AccountIdConversion: Convert<Pubkey, Self::AccountId>;
 
 		#[pallet::no_default]
-		type HashConversion: Convert<Self::Hash, Hash>;
+		type HashConversion: ConvertBack<Hash, Self::Hash>;
 
 		#[pallet::no_default]
 		type Balance: Parameter
@@ -133,7 +126,7 @@ pub mod pallet {
 			+ LossyInto<u64>;
 
 		#[pallet::no_default]
-		type Currency: fungible::Mutate<Self::AccountId, Balance = Self::Balance>;
+		type Currency: fungible::Unbalanced<Self::AccountId, Balance = Self::Balance>;
 
 		#[pallet::constant]
 		#[pallet::no_default_bounds]
@@ -190,9 +183,9 @@ pub mod pallet {
 	#[derive(Decode, Encode, MaxEncodedLen, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
 	pub struct HashInfo<T: Config> {
-		fee_calculator: FeeCalculator,
-		hash_index: BlockNumberFor<T>,
-		timestamp: T::Moment,
+		pub fee_calculator: FeeCalculator,
+		pub hash_index: BlockNumberFor<T>,
+		pub timestamp: T::Moment,
 	}
 
 	impl<T: Config> HashInfo<T> {
@@ -203,7 +196,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn slot)]
-	pub type Slot<T: Config> = StorageValue<_, clock::Slot>;
+	pub type Slot<T: Config> = StorageValue<_, clock::Slot, ValueQuery>;
 
 	/// FIFO queue of `recent_blockhashes` item to verify nonces.
 	#[pallet::storage]
@@ -290,46 +283,9 @@ pub mod pallet {
 			)
 			.expect("valid transaction");
 
-			let bank = <Bank<T>>::new();
+			let bank = <Bank<T>>::new(<Slot<T>>::get());
 
-			let check_result =
-				bank.check_transaction(&sanitized_tx, T::BlockhashQueueMaxAge::get());
-
-			let blockhash = T::HashConversion::convert(<frame_system::Pallet<T>>::parent_hash());
-			// FIXME: Update lamports_per_signature.
-			let lamports_per_signature = Default::default();
-			let processing_environment = TransactionProcessingEnvironment {
-				blockhash,
-				epoch_total_stake: None,
-				epoch_vote_accounts: None,
-				feature_set: Arc::new(FeatureSet::default()),
-				fee_structure: None,
-				lamports_per_signature,
-				rent_collector: None,
-			};
-			// FIXME: Update fields.
-			let processing_config = TransactionProcessingConfig {
-				account_overrides: None,
-				check_program_modification_slot: false,
-				compute_budget: None,
-				log_messages_bytes_limit: None,
-				limit_to_load_programs: false,
-				recording_config: ExecutionRecordingConfig {
-					enable_cpi_recording: false,
-					enable_log_recording: true,
-					enable_return_data_recording: true,
-				},
-				transaction_account_lock_limit: None,
-			};
-
-			let transaction_processor = TransactionProcessor::default();
-			let sanitized_output = transaction_processor.load_and_execute_sanitized_transaction(
-				&bank,
-				sanitized_tx,
-				check_result,
-				&processing_environment,
-				&processing_config,
-			);
+			bank.load_execute_and_commit_sanitized_transaction(sanitized_tx);
 
 			Ok(().into())
 		}

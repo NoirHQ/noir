@@ -1,6 +1,6 @@
 use {
     crate::{
-        dummy::{Measure, VoteAccountsHashMap},
+        dummy::VoteAccountsHashMap,
         ic_msg,
         loaded_programs::{
             ProgramCacheEntry, ProgramCacheEntryType, ProgramCacheForTxBatch,
@@ -14,12 +14,11 @@ use {
     nostd::{
         alloc::Layout,
         cell::RefCell,
-        fmt::{self, Debug},
-        prelude::*,
         rc::Rc,
         sync::{atomic::Ordering, Arc},
     },
     solana_compute_budget::compute_budget::ComputeBudget,
+    solana_measure::measure::Measure,
     solana_rbpf::{
         ebpf::MM_HEAP_START,
         error::{EbpfError, ProgramResult},
@@ -31,15 +30,13 @@ use {
         account::{create_account_shared_data_for_test, AccountSharedData},
         bpf_loader_deprecated,
         clock::Slot,
-        epoch_schedule::EpochSchedule,
         feature_set::FeatureSet,
         hash::Hash,
         instruction::{AccountMeta, InstructionError},
         native_loader,
         pubkey::Pubkey,
-        saturating_add_assign,
         stable_layout::stable_instruction::StableInstruction,
-        sysvar,
+        sysvar::{self, epoch_schedule::EpochSchedule},
         transaction_context::{
             IndexOfAccount, InstructionAccount, TransactionAccount, TransactionContext,
         },
@@ -86,7 +83,9 @@ macro_rules! declare_process_instruction {
     };
 }
 
-impl<'a> ContextObject for InvokeContext<'a> {
+pub use declare_process_instruction;
+
+impl ContextObject for InvokeContext<'_> {
     fn trace(&mut self, state: [u64; 12]) {
         self.syscall_context
             .last_mut()
@@ -111,8 +110,8 @@ impl<'a> ContextObject for InvokeContext<'a> {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AllocErr;
-impl fmt::Display for AllocErr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl core::fmt::Display for AllocErr {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         f.write_str("Error: Memory allocation failed")
     }
 }
@@ -188,11 +187,10 @@ pub struct SerializedAccountMetadata {
     pub vm_owner_addr: u64,
 }
 
-/// Main pipeline from runtime to program execution.
 pub struct InvokeContext<'a> {
     /// Information about the currently executing transaction.
     pub transaction_context: &'a mut TransactionContext,
-    /// The local program cache for the transaction batch.
+    // The local program cache for the transaction batch.
     pub program_cache_for_tx_batch: &'a mut ProgramCacheForTxBatch,
     /// Runtime configurations used to provision the invocation environment.
     pub environment_config: EnvironmentConfig<'a>,
@@ -470,10 +468,10 @@ impl<'a> InvokeContext<'a> {
     fn process_executable_chain(
         &mut self,
         compute_units_consumed: &mut u64,
-        timings: &mut ExecuteTimings,
+        _timings: &mut ExecuteTimings,
     ) -> Result<(), InstructionError> {
         let instruction_context = self.transaction_context.get_current_instruction_context()?;
-        let process_executable_chain_time = Measure::start("process_executable_chain_time");
+        //let process_executable_chain_time = Measure::start("process_executable_chain_time");
 
         let builtin_id = {
             let borrowed_root_account = instruction_context
@@ -555,6 +553,7 @@ impl<'a> InvokeContext<'a> {
             return Err(InstructionError::BuiltinProgramsMustConsumeComputeUnits);
         }
 
+        /*
         saturating_add_assign!(
             timings
                 .execute_accessories
@@ -562,6 +561,7 @@ impl<'a> InvokeContext<'a> {
                 .process_executable_chain_us,
             process_executable_chain_time.end_as_us()
         );
+        */
         result
     }
 
@@ -571,7 +571,7 @@ impl<'a> InvokeContext<'a> {
     }
 
     /// Consume compute units
-    pub fn consume_checked(&self, amount: u64) -> Result<(), Box<dyn core::error::Error>> {
+    pub fn consume_checked(&self, amount: u64) -> Result<(), Box<dyn std::error::Error>> {
         let mut compute_meter = self.compute_meter.borrow_mut();
         let exceeded = *compute_meter < amount;
         *compute_meter = compute_meter.saturating_sub(amount);
@@ -650,7 +650,7 @@ impl<'a> InvokeContext<'a> {
     pub fn get_syscall_context(&self) -> Result<&SyscallContext, InstructionError> {
         self.syscall_context
             .last()
-            .and_then(core::option::Option::as_ref)
+            .and_then(std::option::Option::as_ref)
             .ok_or(InstructionError::CallDepth)
     }
 
@@ -670,69 +670,59 @@ impl<'a> InvokeContext<'a> {
 
 #[macro_export]
 macro_rules! with_mock_invoke_context {
-    (
+	(
         $invoke_context:ident,
         $transaction_context:ident,
         $transaction_accounts:expr $(,)?
     ) => {
-        use {
-            nostd::sync::Arc,
-            solana_compute_budget::compute_budget::ComputeBudget,
-            solana_sdk::{
-                account::ReadableAccount, feature_set::FeatureSet, hash::Hash, sysvar::rent::Rent,
-                transaction_context::TransactionContext,
-            },
-            $crate::{
-                invoke_context::{EnvironmentConfig, InvokeContext},
-                loaded_programs::ProgramCacheForTxBatch,
-                log_collector::LogCollector,
-                sysvar_cache::SysvarCache,
-            },
+		use nostd::sync::Arc;
+		use solana_compute_budget::compute_budget::ComputeBudget;
+		use solana_program_runtime::{log_collector::LogCollector, sysvar_cache::SysvarCache};
+		use solana_sdk::{
+			account::ReadableAccount, feature_set::FeatureSet, hash::Hash, sysvar::rent::Rent,
+        transaction_context::TransactionContext,
         };
-        let compute_budget = ComputeBudget::default();
-        let mut $transaction_context = TransactionContext::new(
-            $transaction_accounts,
-            Rent::default(),
-            compute_budget.max_instruction_stack_depth,
-            compute_budget.max_instruction_trace_length,
-        );
-        let mut sysvar_cache = SysvarCache::default();
-        sysvar_cache.fill_missing_entries(|pubkey, callback| {
-            for index in 0..$transaction_context.get_number_of_accounts() {
-                if $transaction_context
-                    .get_key_of_account_at_index(index)
-                    .unwrap()
-                    == pubkey
-                {
-                    callback(
-                        $transaction_context
-                            .get_account_at_index(index)
-                            .unwrap()
-                            .borrow()
-                            .data(),
-                    );
-                }
-            }
-        });
-        let environment_config = EnvironmentConfig::new(
-            Hash::default(),
-            None,
-            None,
-            Arc::new(FeatureSet::all_enabled()),
-            0,
-            &sysvar_cache,
-        );
-        let mut program_cache_for_tx_batch = ProgramCacheForTxBatch::default();
-        let mut $invoke_context = InvokeContext::new(
-            &mut $transaction_context,
-            &mut program_cache_for_tx_batch,
-            environment_config,
-            Some(LogCollector::new_ref()),
-            compute_budget,
-        );
-    };
+        use $crate::{
+            invoke_context::{EnvironmentConfig, InvokeContext},
+            loaded_programs::ProgramCacheForTxBatch,
+        };
+		let compute_budget = ComputeBudget::default();
+		let mut $transaction_context = TransactionContext::new(
+			$transaction_accounts,
+			Rent::default(),
+			compute_budget.max_instruction_stack_depth,
+			compute_budget.max_instruction_trace_length,
+		);
+		let mut sysvar_cache = SysvarCache::default();
+		sysvar_cache.fill_missing_entries(|pubkey, callback| {
+			for index in 0..$transaction_context.get_number_of_accounts() {
+				if $transaction_context.get_key_of_account_at_index(index).unwrap() == pubkey {
+					callback(
+						$transaction_context.get_account_at_index(index).unwrap().borrow().data(),
+					);
+				}
+			}
+		});
+		let environment_config = EnvironmentConfig::new(
+			Hash::default(),
+			None,
+			None,
+			Arc::new(FeatureSet::all_enabled()),
+			0,
+			&sysvar_cache,
+		);
+		let mut program_cache_for_tx_batch = ProgramCacheForTxBatch::default();
+		let mut $invoke_context = <InvokeContext::new(
+			&mut $transaction_context,
+			&mut program_cache_for_tx_batch,
+			environment_config,
+			Some(LogCollector::new_ref()),
+			compute_budget,
+		);
+	};
 }
 
+#[cfg(test)]
 pub fn mock_process_instruction<F: FnMut(&mut InvokeContext), G: FnMut(&mut InvokeContext)>(
     loader_id: &Pubkey,
     mut program_indices: Vec<IndexOfAccount>,
@@ -777,7 +767,7 @@ pub fn mock_process_instruction<F: FnMut(&mut InvokeContext), G: FnMut(&mut Invo
     {
         transaction_accounts.push((
             sysvar::epoch_schedule::id(),
-            create_account_shared_data_for_test(&EpochSchedule::default()),
+            create_account_shared_data_for_test(&EpochSchedule::default()).into(),
         ));
         true
     } else {
@@ -808,13 +798,15 @@ pub fn mock_process_instruction<F: FnMut(&mut InvokeContext), G: FnMut(&mut Invo
     transaction_accounts
 }
 
+pub use with_mock_invoke_context;
+
 #[cfg(test)]
 mod tests {
     use {
         super::*,
         serde::{Deserialize, Serialize},
         solana_compute_budget::compute_budget_processor,
-        solana_sdk::{account::WritableAccount, instruction::Instruction, rent::Rent},
+        solana_sdk::{instruction::Instruction, rent::Rent},
     };
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -949,7 +941,7 @@ mod tests {
             invoke_stack.push(solana_sdk::pubkey::new_rand());
             transaction_accounts.push((
                 solana_sdk::pubkey::new_rand(),
-                AccountSharedData::new(index as u64, 1, invoke_stack.get(index).unwrap()),
+                <AccountSharedData>::new(index as u64, 1, invoke_stack.get(index).unwrap()),
             ));
             instruction_accounts.push(InstructionAccount {
                 index_in_transaction: index as IndexOfAccount,
@@ -1120,9 +1112,9 @@ mod tests {
                 &mut ExecuteTimings::default(),
             );
 
-            // Because the instruction had compute cost > 0, then regardless of the execution result,
-            // the number of compute units consumed should be a non-default which is something greater
-            // than zero.
+            // Because the instruction had compute cost > 0, then regardless of the execution
+            // result, the number of compute units consumed should be a non-default which is
+            // something greater than zero.
             assert!(compute_units_consumed > 0);
             assert_eq!(
                 compute_units_consumed,
@@ -1197,7 +1189,8 @@ mod tests {
         );
         invoke_context.program_cache_for_tx_batch = &mut program_cache_for_tx_batch;
 
-        // Test: Resize the account to *the same size*, so not consuming any additional size; this must succeed
+        // Test: Resize the account to *the same size*, so not consuming any additional size; this
+        // must succeed
         {
             let resize_delta: i64 = 0;
             let new_len = (user_account_data_len as i64).saturating_add(resize_delta) as u64;

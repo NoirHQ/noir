@@ -21,13 +21,16 @@ use crate as pallet_solana;
 use frame_support::{
 	derive_impl,
 	sp_runtime::{
-		traits::{ConstU128, Convert},
+		traits::{ConstU128, Convert, ConvertBack, IdentityLookup},
 		BuildStorage,
 	},
 };
-use solana_sdk::{hash::Hash, pubkey::Pubkey};
-
-pub(crate) type AccountSharedData = crate::runtime::account::AccountSharedData<Test>;
+use solana_sdk::{
+	hash::Hash,
+	pubkey::Pubkey,
+	signature::{Keypair, Signer},
+};
+use sp_core::{crypto::AccountId32, ed25519::Pair, Pair as _};
 
 #[frame_support::runtime]
 mod runtime {
@@ -62,6 +65,8 @@ type Balance = u128;
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
+	type AccountId = AccountId32;
+	type Lookup = IdentityLookup<Self::AccountId>;
 	type Block = frame_system::mocking::MockBlock<Self>;
 	type AccountData = pallet_balances::AccountData<Balance>;
 }
@@ -82,14 +87,18 @@ impl pallet_balances::Config for Test {
 pub struct AccountIdConversion;
 impl Convert<Pubkey, AccountId> for AccountIdConversion {
 	fn convert(pubkey: Pubkey) -> AccountId {
-		let truncated: [u8; 8] = pubkey.to_bytes()[0..8].try_into().unwrap();
-		u64::from_be_bytes(truncated)
+		AccountId::new(pubkey.to_bytes())
 	}
 }
 
 pub struct HashConversion;
-impl Convert<Blockhash, Hash> for HashConversion {
-	fn convert(hash: Blockhash) -> Hash {
+impl Convert<Hash, Blockhash> for HashConversion {
+	fn convert(hash: Hash) -> Blockhash {
+		Blockhash::from(hash.to_bytes())
+	}
+}
+impl ConvertBack<Hash, Blockhash> for HashConversion {
+	fn convert_back(hash: Blockhash) -> Hash {
 		Hash::new_from_array(hash.0)
 	}
 }
@@ -105,6 +114,37 @@ impl pallet_solana::Config for Test {
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
-
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(Keypair::alice().account_id(), 10_000_000_000_000_000_000u128)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 	t.into()
+}
+
+pub trait KeypairExt: Sized {
+	fn create(name: &str) -> Self;
+
+	fn account_id(&self) -> AccountId;
+
+	fn alice() -> Self {
+		Self::create("Alice")
+	}
+	fn bob() -> Self {
+		Self::create("Bob")
+	}
+}
+
+impl KeypairExt for Keypair {
+	fn create(name: &str) -> Self {
+		let pair = Pair::from_string(&format!("//{}", name), None).unwrap();
+		let mut bytes = [0u8; 64];
+		bytes[0..32].copy_from_slice(&pair.seed()[..]);
+		bytes[32..64].copy_from_slice(&pair.public().0[..]);
+		Keypair::from_bytes(&bytes).unwrap()
+	}
+
+	fn account_id(&self) -> AccountId {
+		AccountId::new(self.pubkey().to_bytes())
+	}
 }

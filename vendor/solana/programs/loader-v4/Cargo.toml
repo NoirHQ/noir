@@ -1,0 +1,41 @@
+[package]
+name = "solana-loader-v4-program"
+description = "Solana Loader v4"
+version = "2.0.18"
+authors = ["Anza Maintainers <maintainers@anza.xyz>"]
+repository = "https://github.com/anza-xyz/agave"
+homepage = "https://anza.xyz/"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+log = { workspace = true }
+nostd = { workspace = true }
+solana-compute-budget = { workspace = true }
+solana-measure = { workspace = true }
+solana-program-runtime = { workspace = true }
+solana-sdk = { workspace = true }
+solana_rbpf = { workspace = true }
+
+[dev-dependencies]
+bincode = { workspace = true, default-features = true }
+
+[lib]
+crate-type = ["lib"]
+name = "solana_loader_v4_program"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ["std"]
+std = [
+    "log/std",
+    "nostd/std",
+    "solana-compute-budget/std",
+    "solana-measure/std",
+    "solana-program-runtime/std",
+    "solana-sdk/std",
+    "solana_rbpf/std",
+]
+#shuttle-test = ["solana-type-overrides/shuttle-test", "solana-program-runtime/shuttle-test"]

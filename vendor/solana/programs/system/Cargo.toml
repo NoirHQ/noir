@@ -1,0 +1,42 @@
+[package]
+name = "solana-system-program"
+description = "Solana System program"
+documentation = "https://docs.rs/solana-system-program"
+version = "2.0.18"
+authors = ["Anza Maintainers <maintainers@anza.xyz>"]
+repository = "https://github.com/anza-xyz/agave"
+homepage = "https://anza.xyz/"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+bincode = { workspace = true }
+log = { workspace = true }
+nostd = { workspace = true }
+serde = { workspace = true }
+serde_derive = { workspace = true }
+solana-program-runtime = { workspace = true }
+solana-sdk = { workspace = true }
+
+[dev-dependencies]
+assert_matches = { workspace = true }
+solana-compute-budget = { workspace = true }
+solana-logger = { workspace = true }
+
+[lib]
+crate-type = ["lib"]
+name = "solana_system_program"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ["std"]
+std = [
+    "bincode/std",
+    "log/std",
+    "nostd/std",
+    "serde/std",
+    "solana-program-runtime/std",
+    "solana-sdk/std",
+]

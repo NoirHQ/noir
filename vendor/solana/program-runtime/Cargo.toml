@@ -25,7 +25,7 @@ serde = { workspace = true }
 solana-compute-budget = { workspace = true }
 solana-frozen-abi = { workspace = true, optional = true }
 solana-frozen-abi-macro = { workspace = true, optional = true }
-#solana-measure = { workspace = true }
+solana-measure = { workspace = true }
 solana-metrics = { workspace = true }
 solana-sdk = { workspace = true }
 #solana-type-overrides = { workspace = true }
@@ -61,6 +61,7 @@ std = [
     "rand/std",
     "serde/std",
     "solana-compute-budget/std",
+    "solana-measure/std",
     "solana-sdk/std",
     "solana_rbpf/std",
     "thiserror/std",

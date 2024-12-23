@@ -40,7 +40,14 @@ members = [
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
 	"vendor/solana/compute-budget",
+	"vendor/solana/curves/curve25519",
+	"vendor/solana/measure",
+	"vendor/solana/metrics",
+	"vendor/solana/poseidon",
 	"vendor/solana/program-runtime",
+	"vendor/solana/programs/bpf_loader",
+	"vendor/solana/programs/loader-v4",
+	"vendor/solana/programs/system",
 ]
 default-members = [
 	"core-primitives",
@@ -50,14 +57,19 @@ default-members = [
 ]
 
 [workspace.dependencies]
+ark-bn254 = { version = "0.4.0", default-features = false, features = ["curve"] }
 assert_matches = "1.5.0"
 base64 = { version = "0.22", default-features = false }
 bech32 = { version = "0.11", default-features = false }
 bincode = { package = "solana-bincode", git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
 bs58 = { version = "0.5.1", default-features = false }
 buidl = { version = "0.2", default-features = false, features = ["derive"] }
+bytemuck = "1.16.1"
+bytemuck_derive = "1.7.0"
+byteorder = { version = "1.5.0", default-features = false }
 const-hex = { version = "1.13", default-features = false }
 cosmos-sdk-proto = { version = "0.24", default-features = false }
+curve25519-dalek = { version = "4.1.3", features = ["digest", "rand_core"] }
 derive-where = "1.2"
 eager = "0.1.0"
 enum-iterator = "1.5.0"
@@ -65,9 +77,11 @@ ethereum = { version = "0.15.0", default-features = false }
 hex-literal = "0.4"
 itertools = { version = "0.12.1", default-features = false }
 k256 = { version = "0.13", default-features = false }
-libsecp256k1 = { version = "0.6.0", default-features = false, features = ["std", "static-context"] }
+libsecp256k1 = { version = "0.6.0", default-features = false }
+light-poseidon = "0.2.0"
 log = { version = "0.4", default-features = false }
-nostd = "0.1.1"
+memoffset = "0.9"
+nostd = "0.1.2"
 num-derive = "0.4"
 num-traits = { version = "0.2", default-features = false }
 num_enum = { version = "0.7", default-features = false }
@@ -77,13 +91,15 @@ rand = { version = "0.8.5", default-features = false }
 ripemd = { version = "0.1", default-features = false }
 rustc_version = "0.4"
 scale-info = { version = "2.11", default-features = false }
+scopeguard = { version = "1.2.0", default-features = false }
 serde = { version = "1.0.203", default-features = false }
 serde-json-wasm = { version = "1.0", default-features = false }
 serde_derive = { version = "1.0.203", default-features = false }
 smallvec = "1.13"
-solana-frozen-abi = "2.0.18"
-solana-frozen-abi-macro = "2.0.18"
-solana-metrics = "2.0.18"
+solana-frozen-abi = "=2.0.18"
+solana-frozen-abi-macro = "=2.0.18"
+solana-logger = "=2.0.18"
+solana-program = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
 solana-sdk = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
 solana_rbpf = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
 static_assertions = "1.1"
@@ -149,8 +165,15 @@ cosmwasm-vm-wasmi = { path = "vendor/composable/vm-wasmi", default-features = fa
 pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = false }
 pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
+solana-bpf-loader-program = { path = "vendor/solana/programs/bpf_loader", default-features = false }
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
+solana-curve25519 = { path = "vendor/solana/curves/curve25519", default-features = false }
+solana-loader-v4-program = { path = "vendor/solana/programs/loader-v4", default-features = false }
+solana-measure = { path = "vendor/solana/measure", default-features = false }
+solana-metrics = { path = "vendor/solana/metrics" }
+solana-poseidon = { path = "vendor/solana/poseidon", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
+solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
 
 [profile.release]
 panic = "unwind"

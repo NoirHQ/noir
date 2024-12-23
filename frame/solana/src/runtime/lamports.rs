@@ -22,7 +22,7 @@ use nostd::cmp::Ordering;
 use np_runtime::traits::LossyInto;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use solana_sdk::{account::ReadableAccount, instruction::InstructionError};
+use solana_sdk::instruction::InstructionError;
 
 #[derive(Clone, PartialEq, Eq, Decode, Encode, MaxEncodedLen, TypeInfo)]
 #[derive_where(Copy, Debug)]
@@ -144,6 +144,12 @@ impl<T: Config> Lamports<T> {
 		let rhs = <BalanceOf<T>>::from(rhs);
 		let rhs = rhs.saturating_mul(T::DecimalMultiplier::get());
 		Self(self.0.saturating_add(rhs))
+	}
+
+	pub fn saturating_sub(&self, rhs: u64) -> Self {
+		let rhs = <BalanceOf<T>>::from(rhs);
+		let rhs = rhs.saturating_mul(T::DecimalMultiplier::get());
+		Self(self.0.saturating_sub(rhs))
 	}
 
 	pub fn checked_add_lamports(&self, rhs: Self) -> Option<Self> {
