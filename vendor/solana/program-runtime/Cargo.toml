@@ -62,6 +62,7 @@ std = [
     "serde/std",
     "solana-compute-budget/std",
     "solana-sdk/std",
+    "solana_rbpf/std",
     "thiserror/std",
 ]
 frozen-abi = [
