@@ -18,12 +18,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use nostd::{string::String, vec::Vec};
+use solana_compute_budget::compute_budget_processor::process_compute_budget_instructions;
 use solana_inline_spl::token::GenericTokenAccount;
 use solana_rpc_client_api::filter::RpcFilterType;
 use solana_runtime_api::error::Error;
 use solana_sdk::{
 	account::{Account, ReadableAccount},
+	feature_set::{
+		include_loaded_accounts_data_size_in_fee_calculation, remove_rounding_in_fee_calculation,
+		FeatureSet,
+	},
+	fee::FeeStructure,
+	message::{SanitizedMessage, SanitizedVersionedMessage, SimpleAddressLoader, VersionedMessage},
 	pubkey::Pubkey,
+	reserved_account_keys::ReservedAccountKeys,
 };
 
 pub fn call<T: pallet_solana::Config>(method: String, params: Vec<u8>) -> Result<Vec<u8>, Error> {
@@ -69,10 +77,7 @@ pub fn call<T: pallet_solana::Config>(method: String, params: Vec<u8>) -> Result
 
 			let accounts = pallet_solana::Pallet::<T>::get_multiple_accounts(pubkeys)
 				.into_iter()
-				.filter_map(|(pubkey, account)| match account {
-					Some(account) => Some((pubkey, account)),
-					None => None,
-				})
+				.filter_map(|(pubkey, account)| account.map(|account| (pubkey, account)))
 				.filter(|(_, account)| account.owner == program_id && filter_closure(account))
 				.collect::<Vec<(Pubkey, Account)>>();
 			let bytes = serde_json::to_vec(&accounts).map_err(|_| Error::ParseError)?;
@@ -85,7 +90,39 @@ pub fn call<T: pallet_solana::Config>(method: String, params: Vec<u8>) -> Result
 
 			Ok(bytes)
 		},
-		_ => return Err(Error::UnsupportedMethod),
+		"getFeeForMessage" => {
+			let message = serde_json::from_slice::<VersionedMessage>(&params)
+				.map_err(|_| Error::ParseError)?;
+			let sanitized_versioned_message =
+				SanitizedVersionedMessage::try_from(message).map_err(|_| Error::ParseError)?;
+			// TODO: Get address_loader and reserved_account_keys
+			let sanitized_message = SanitizedMessage::try_new(
+				sanitized_versioned_message,
+				SimpleAddressLoader::Disabled,
+				&ReservedAccountKeys::new_all_activated().active,
+			)
+			.map_err(|_| Error::ParseError)?;
+
+			// TODO: Get fee_structure, lamports_per_signature and feature_set
+			let fee_structure = FeeStructure::default();
+			let lamports_per_signature = Default::default();
+			let feature_set = FeatureSet::default();
+
+			let fee = fee_structure.calculate_fee(
+				&sanitized_message,
+				lamports_per_signature,
+				&process_compute_budget_instructions(sanitized_message.program_instructions_iter())
+					.unwrap_or_default()
+					.into(),
+				feature_set.is_active(&include_loaded_accounts_data_size_in_fee_calculation::id()),
+				feature_set.is_active(&remove_rounding_in_fee_calculation::id()),
+			);
+
+			let bytes = serde_json::to_vec(&fee).map_err(|_| Error::ParseError)?;
+			Ok(bytes)
+		},
+		"simulateTransaction" => Ok(Vec::new()),
+		_ => Err(Error::UnsupportedMethod),
 	}
 }
 
