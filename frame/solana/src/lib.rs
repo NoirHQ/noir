@@ -91,6 +91,12 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchInfo, pallet_prelude::*, traits::fungible};
 	use frame_system::{pallet_prelude::*, CheckWeight};
 	use np_runtime::traits::LossyInto;
+	use parity_scale_codec::Codec;
+	use runtime::{
+		bank::TransactionSimulationResult, lamports,
+		transaction_processor::LoadAndExecuteSanitizedTransactionOutput,
+		transaction_results::TransactionExecutionResult, Lamports,
+	};
 	use solana_sdk::{
 		account::Account,
 		clock,
@@ -99,6 +105,7 @@ pub mod pallet {
 		message::SimpleAddressLoader,
 		reserved_account_keys::ReservedAccountKeys,
 		transaction::{MessageHash, SanitizedTransaction},
+		transaction_context::TransactionAccount,
 	};
 	use sp_runtime::{
 		traits::{
@@ -382,6 +389,89 @@ pub mod pallet {
 
 		pub fn get_transaction_count() -> u64 {
 			TransactionCount::<T>::get()
+		}
+
+		pub fn simulate_transaction(
+			sanitized_tx: SanitizedTransaction,
+			enable_cpi_recording: bool,
+		) -> TransactionSimulationResult {
+			let account_keys = sanitized_tx.message().account_keys();
+			let number_of_accounts = account_keys.len();
+
+			let bank = <Bank<T>>::new();
+
+			let check_result =
+				bank.check_transaction(&sanitized_tx, T::BlockhashQueueMaxAge::get());
+
+			let blockhash = T::HashConversion::convert(<frame_system::Pallet<T>>::parent_hash());
+			// FIXME: Update lamports_per_signature.
+			let lamports_per_signature = Default::default();
+			let processing_environment = TransactionProcessingEnvironment {
+				blockhash,
+				epoch_total_stake: None,
+				epoch_vote_accounts: None,
+				feature_set: Arc::new(FeatureSet::default()),
+				fee_structure: None,
+				lamports_per_signature,
+				rent_collector: None,
+			};
+			// FIXME: Update fields.
+			let processing_config = TransactionProcessingConfig {
+				account_overrides: None,
+				check_program_modification_slot: false,
+				compute_budget: None,
+				log_messages_bytes_limit: None,
+				limit_to_load_programs: false,
+				recording_config: ExecutionRecordingConfig {
+					enable_cpi_recording,
+					enable_log_recording: true,
+					enable_return_data_recording: true,
+				},
+				transaction_account_lock_limit: None,
+			};
+
+			let transaction_processor = TransactionProcessor::default();
+			let LoadAndExecuteSanitizedTransactionOutput {
+				loaded_transaction,
+				execution_result,
+				..
+			} = transaction_processor.load_and_execute_sanitized_transaction(
+				&bank,
+				sanitized_tx,
+				check_result,
+				&processing_environment,
+				&processing_config,
+			);
+
+			let post_simulation_accounts = loaded_transaction
+				.ok()
+				.map(|transaction| {
+					transaction
+						.accounts
+						.into_iter()
+						.take(number_of_accounts)
+						.map(|(pubkey, account)| (pubkey, Account::from(account).into()))
+						.collect::<Vec<TransactionAccount>>()
+				})
+				.unwrap_or_default();
+
+			let flattened_result = execution_result.flattened_result();
+			let (logs, return_data, inner_instructions) = match execution_result {
+				TransactionExecutionResult::Executed { details, .. } =>
+					(details.log_messages, details.return_data, details.inner_instructions),
+				TransactionExecutionResult::NotExecuted(_) => (None, None, None),
+			};
+			let logs = logs.unwrap_or_default();
+
+			// TODO: Calculate units_consumed
+			TransactionSimulationResult {
+				result: flattened_result,
+				logs,
+				post_simulation_accounts,
+				units_consumed: 0,
+				return_data,
+				inner_instructions,
+			}
 		}
 	}
 

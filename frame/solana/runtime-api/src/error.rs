@@ -22,4 +22,7 @@ use scale_info::TypeInfo;
 pub enum Error {
 	ParseError,
 	UnsupportedMethod,
+	InvalidParams,
+	TransactionSignatureVerificationFailure,
+	TransactionPrecompileVerificationFailure,
 }
