@@ -17,14 +17,16 @@
 
 use crate::SolanaRuntimeCall;
 use nostd::marker::PhantomData;
-use pallet_solana::runtime::bank::TransactionSimulationResult;
+use pallet_solana::{runtime::bank::TransactionSimulationResult, Pubkey};
 use solana_runtime_api::error::Error;
 use solana_sdk::{
 	feature_set::FeatureSet,
-	message::SimpleAddressLoader,
+	message::{SanitizedMessage, SimpleAddressLoader},
 	reserved_account_keys::ReservedAccountKeys,
 	transaction::{MessageHash, SanitizedTransaction, VersionedTransaction},
 };
+
+pub type AccountRawKeys = (Vec<Pubkey>, Option<(Vec<Pubkey>, Vec<Pubkey>)>);
 
 fn verify_transaction(
 	transaction: &SanitizedTransaction,
@@ -43,14 +45,17 @@ fn verify_transaction(
 }
 
 pub struct SimulateTransaction<T>(PhantomData<T>);
-impl<T> SolanaRuntimeCall<(VersionedTransaction, bool, bool), TransactionSimulationResult>
-	for SimulateTransaction<T>
+impl<T>
+	SolanaRuntimeCall<
+		(VersionedTransaction, bool, bool),
+		(TransactionSimulationResult, AccountRawKeys),
+	> for SimulateTransaction<T>
 where
 	T: pallet_solana::Config,
 {
 	fn call(
 		(transaction, sig_verify, enable_cpi_recording): (VersionedTransaction, bool, bool),
-	) -> Result<TransactionSimulationResult, Error> {
+	) -> Result<(TransactionSimulationResult, AccountRawKeys), Error> {
 		let transaction = SanitizedTransaction::try_create(
 			transaction,
 			MessageHash::Compute,
@@ -66,6 +71,26 @@ where
 			verify_transaction(&transaction, &feature_set)?;
 		}
 
-		Ok(pallet_solana::Pallet::<T>::simulate_transaction(transaction, enable_cpi_recording))
+		let account_keys = get_account_keys(&transaction.message());
+		let simulation_result =
+			pallet_solana::Pallet::<T>::simulate_transaction(transaction, enable_cpi_recording);
+
+		Ok((simulation_result, account_keys))
+	}
+}
+
+pub fn get_account_keys(
+	message: &SanitizedMessage,
+) -> (Vec<Pubkey>, Option<(Vec<Pubkey>, Vec<Pubkey>)>) {
+	match message {
+		SanitizedMessage::Legacy(legacy_message) =>
+			(legacy_message.message.account_keys.clone(), None),
+		SanitizedMessage::V0(loaded_message) => (
+			loaded_message.message.account_keys.clone(),
+			Some((
+				loaded_message.loaded_addresses.writable.clone(),
+				loaded_message.loaded_addresses.readonly.clone(),
+			)),
+		),
 	}
 }
