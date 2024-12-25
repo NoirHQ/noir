@@ -18,12 +18,14 @@
 
 #![allow(non_upper_case_globals)]
 
-use noir_core_primitives::{Balance, Moment};
+use crate::{Balance, Moment};
 
 /// A unit of base currency.
 pub const DOLLARS: Balance = 1_000_000_000_000_000_000;
 /// One hundredth of a dollar.
 pub const CENTS: Balance = DOLLARS / 100;
+/// One thousandth of a cent.
+pub const MILLICENTS: Balance = CENTS / 1_000;
 
 /// Kibibytes.
 pub const KiB: u32 = 1024;

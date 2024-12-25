@@ -8,11 +8,15 @@ edition = { workspace = true }
 repository = { workspace = true }
 publish = false
 
+[lints]
+workspace = true
+
 [dependencies]
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 noir-core-primitives = { workspace = true }
 pallet-transaction-payment = { workspace = true }
+smallvec = { workspace = true }
 static_assertions = { workspace = true }
 
 [features]
