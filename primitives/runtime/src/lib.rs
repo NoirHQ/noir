@@ -20,6 +20,12 @@
 extern crate alloc;
 extern crate parity_scale_codec as codec;
 
+#[doc(hidden)]
+pub mod __private {
+	pub use sp_core;
+	pub use sp_runtime;
+}
+
 mod accountid32;
 pub mod generic;
 mod multi;
