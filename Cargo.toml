@@ -4,10 +4,6 @@ version = "0.5.0"
 edition = "2021"
 repository = "https://github.com/noirhq/noir.git"
 
-[workspace.lints.clippy]
-erasing-op = { level = "allow", priority = 2 }
-identity-op = { level = "allow", priority = 2 }
-
 [workspace]
 resolver = "2"
 members = [

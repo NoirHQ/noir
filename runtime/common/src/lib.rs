@@ -20,10 +20,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use noir_core_primitives::*;
-pub mod units;
+mod unit;
 
-use crate::units::{MiB, CENTS, MILLICENTS};
+pub use noir_core_primitives::*;
+pub use unit::Unit;
+
 use frame_support::{
 	dispatch::DispatchClass,
 	parameter_types,
@@ -33,7 +34,7 @@ use frame_support::{
 		Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	},
 };
-use frame_system::limits;
+use frame_system::limits::{BlockLength as TBlockLength, BlockWeights as TBlockWeights};
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use smallvec::smallvec;
 use static_assertions::const_assert;
@@ -61,9 +62,9 @@ parameter_types! {
 	/// Maximum amount of the multiplier.
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
 	/// 5 MiB block size limit.
-	pub BlockLength: limits::BlockLength =
-		limits::BlockLength::max_with_normal_ratio(5 * MiB, NORMAL_DISPATCH_RATIO);
-	pub BlockWeights: limits::BlockWeights = limits::BlockWeights::builder()
+	pub BlockLength: TBlockLength =
+		TBlockLength::max_with_normal_ratio(Unit(5).mebibytes(), NORMAL_DISPATCH_RATIO);
+	pub BlockWeights: TBlockWeights = TBlockWeights::builder()
 		.base_block(BlockExecutionWeight::get())
 		.for_class(DispatchClass::all(), |weights| {
 			weights.base_extrinsic = ExtrinsicBaseWeight::get();
@@ -81,8 +82,8 @@ parameter_types! {
 		})
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
-
-	pub TransactionByteFee: Balance = 10 * MILLICENTS;
+	/// Transaction fees per byte.
+	pub TransactionByteFee: Balance = Unit(10).millicents();
 }
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -100,7 +101,7 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
 	type Balance = Balance;
 	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-		let p = 1 * CENTS;
+		let p = Unit(1).cent();
 		let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,
