@@ -20,16 +20,23 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod units;
+mod unit;
 
-use crate::units::MiB;
+pub use noir_core_primitives::*;
+pub use unit::Unit;
+
 use frame_support::{
+	dispatch::DispatchClass,
 	parameter_types,
 	sp_runtime::{traits::Bounded, FixedPointNumber, Perbill, Perquintill},
-	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
+	weights::{
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
+		Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+	},
 };
-use frame_system::limits;
+use frame_system::limits::{BlockLength as TBlockLength, BlockWeights as TBlockWeights};
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
+use smallvec::smallvec;
 use static_assertions::const_assert;
 
 /// Assumes that 1% of the block weight is used for initialization.
@@ -55,8 +62,54 @@ parameter_types! {
 	/// Maximum amount of the multiplier.
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
 	/// 5 MiB block size limit.
-	pub BlockLength: limits::BlockLength =
-		limits::BlockLength::max_with_normal_ratio(5 * MiB, NORMAL_DISPATCH_RATIO);
+	pub BlockLength: TBlockLength =
+		TBlockLength::max_with_normal_ratio(Unit(5).mebibytes(), NORMAL_DISPATCH_RATIO);
+	pub BlockWeights: TBlockWeights = TBlockWeights::builder()
+		.base_block(BlockExecutionWeight::get())
+		.for_class(DispatchClass::all(), |weights| {
+			weights.base_extrinsic = ExtrinsicBaseWeight::get();
+		})
+		.for_class(DispatchClass::Normal, |weights| {
+			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+		})
+		.for_class(DispatchClass::Operational, |weights| {
+			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+			// Operational transactions have some extra reserved space, so that they
+			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+			weights.reserved = Some(
+				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+			);
+		})
+		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+		.build_or_panic();
+	/// Transaction fees per byte.
+	pub TransactionByteFee: Balance = Unit(10).millicents();
+}
+
+/// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
+/// node's balance type.
+///
+/// This should typically create a mapping between the following ranges:
+///   - [0, `MAXIMUM_BLOCK_WEIGHT`]
+///   - [Balance::min, Balance::max]
+///
+/// Yet, it can be used for any other sort of change to weight-fee. Some examples being:
+///   - Setting it to `0` will essentially disable the weight fee.
+///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
+pub struct WeightToFee;
+
+impl WeightToFeePolynomial for WeightToFee {
+	type Balance = Balance;
+	fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+		let p = Unit(1).cent();
+		let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
+		smallvec![WeightToFeeCoefficient {
+			degree: 1,
+			negative: false,
+			coeff_frac: Perbill::from_rational(p % q, q),
+			coeff_integer: p / q,
+		}]
+	}
 }
 
 /// Parameterized slow adjusting fee updated.

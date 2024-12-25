@@ -10,13 +10,9 @@ publish = false
 
 [dependencies]
 np-runtime = { workspace = true }
-sp-core = { workspace = true }
-sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"np-runtime/std",
-	"sp-core/std",
-	"sp-runtime/std",
 ]

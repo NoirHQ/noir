@@ -20,11 +20,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use np_runtime::{
+	__private::{
+		sp_core::H256,
+		sp_runtime::{self, generic, OpaqueExtrinsic},
+	},
 	traits::{IdentifyAccount, VerifyMut},
 	MultiSignature,
 };
-use sp_core::H256;
-use sp_runtime::{generic, OpaqueExtrinsic};
 
 pub use sp_runtime::traits::BlakeTwo256;
 

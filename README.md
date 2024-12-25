@@ -1,10 +1,11 @@
 # Noir
 
-[![GitHub License](https://img.shields.io/badge/license-GPL3%2FApache2-blue)](#LICENSE) [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/noirhq/noir/ci.yml?event=push)](https://github.com/noirhq/noir)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/noirhq/noir/ci.yml?event=push)](https://github.com/noirhq/noir)
+[![GitHub License](https://img.shields.io/badge/license-GPL3%2FApache2-blue)](#LICENSE)
 
 > Network of Interplanetary Replicated state machines
 
-Blockchain SDK designed for building an interoperable protocol to connect heterogeneous distributed systems
+A metaprotocol for connecting heterogeneous distributed systems.
 
 ## License
 
