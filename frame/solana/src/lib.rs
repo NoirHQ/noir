@@ -160,11 +160,14 @@ pub mod pallet {
 		#[pallet::constant]
 		#[pallet::no_default_bounds]
 		type GenesisTimestamp: Get<Self::Moment>;
+
+		#[pallet::constant]
+		type ScanResultsLimitBytes: Get<Option<u32>>;
 	}
 
 	pub mod config_preludes {
 		use super::*;
-		use frame_support::{derive_impl, traits::ConstU64};
+		use frame_support::{derive_impl, parameter_types, traits::ConstU64};
 
 		/// A configuration for testing.
 		pub struct TestDefaultConfig;
@@ -174,6 +177,10 @@ pub mod pallet {
 
 		#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 		impl pallet_timestamp::DefaultConfig for TestDefaultConfig {}
+
+		parameter_types! {
+			pub const ScanResultsLimitBytes: Option<ConstU32> = None; 
+		}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
@@ -185,6 +192,8 @@ pub mod pallet {
 			/// Timestamp at genesis block (Solana).
 			#[allow(clippy::inconsistent_digit_grouping)]
 			type GenesisTimestamp = ConstU64<1584336540_000>;
+			/// Maximum scan result size in bytes.
+			type ScanResultsLimitBytes = ScanResultsLimitBytes;
 		}
 	}
 
