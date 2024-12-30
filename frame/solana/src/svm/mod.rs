@@ -15,6 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![allow(clippy::too_many_arguments)]
+
 pub mod account_loader;
 pub mod account_overrides;
 pub mod account_rent_state;

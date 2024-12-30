@@ -42,7 +42,7 @@ impl<T: Config> Default for Lamports<T> {
 
 impl<T: Config> PartialOrd for Lamports<T> {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-		self.0.partial_cmp(&other.0)
+		Some(self.cmp(other))
 	}
 }
 
@@ -113,7 +113,7 @@ impl<T: Config> Lamports<T> {
 
 	pub fn checked_new(value: BalanceOf<T>) -> Option<Self> {
 		let max = <BalanceOf<T>>::from(u64::MAX).checked_mul(&T::DecimalMultiplier::get())?;
-		(value <= max).then(|| Self(value))
+		(value <= max).then_some(Self(value))
 	}
 
 	pub fn get(&self) -> u64 {

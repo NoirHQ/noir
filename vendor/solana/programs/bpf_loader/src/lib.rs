@@ -13,8 +13,8 @@ use {
         sync::{atomic::Ordering, Arc},
     },
     solana_compute_budget::compute_budget::MAX_INSTRUCTION_STACK_DEPTH,
+    solana_measure::measure::Measure,
     solana_program_runtime::{
-        dummy::Measure,
         ic_logger_msg, ic_msg,
         invoke_context::{BpfAllocator, InvokeContext, SerializedAccountMetadata, SyscallContext},
         loaded_programs::{

@@ -238,7 +238,7 @@ pub mod pallet {
 		fn on_finalize(now: BlockNumberFor<T>) {
 			let max_age = T::BlockhashQueueMaxAge::get();
 			let to_remove = now.saturating_sub(max_age).saturating_sub(One::one());
-			<BlockhashQueue<T>>::remove(&<frame_system::Pallet<T>>::block_hash(to_remove));
+			<BlockhashQueue<T>>::remove(<frame_system::Pallet<T>>::block_hash(to_remove));
 		}
 	}
 
@@ -340,7 +340,7 @@ pub mod pallet {
 				};
 				match sanitized_tx.verify() {
 					Ok(_) => Some(Ok(SignedInfo {
-						fee_payer: sanitized_tx.message().fee_payer().clone(),
+						fee_payer: *sanitized_tx.message().fee_payer(),
 						sanitized_tx,
 					})),
 					Err(_) => Some(Err(InvalidTransaction::BadProof.into())),

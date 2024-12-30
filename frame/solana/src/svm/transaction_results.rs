@@ -23,7 +23,7 @@ use solana_program_runtime::loaded_programs::ProgramCacheEntry;
 	since = "1.18.0",
 	note = "Please use `solana_sdk::inner_instruction` types instead"
 )]
-pub use solana_sdk::inner_instruction::{InnerInstruction, InnerInstructionsList};
+pub use solana_sdk::inner_instruction::InnerInstructionsList;
 use solana_sdk::{
 	fee::FeeDetails,
 	pubkey::Pubkey,

@@ -39,9 +39,11 @@ use nostd::{
 	rc::Rc,
 	sync::Arc,
 };
+use solana_bpf_loader_program::syscalls::create_program_runtime_environment_v1;
 use solana_compute_budget::{
 	compute_budget::ComputeBudget, compute_budget_processor::process_compute_budget_instructions,
 };
+use solana_loader_v4_program::create_program_runtime_environment_v2;
 use solana_program_runtime::{
 	dummy::VoteAccountsHashMap,
 	invoke_context::{EnvironmentConfig, InvokeContext},
@@ -142,6 +144,7 @@ pub struct TransactionProcessingEnvironment<'a> {
 	pub rent_collector: Option<&'a RentCollector>,
 }
 
+#[derive(Default)]
 pub struct TransactionProcessor {
 	/// Bank slot (i.e. block)
 	slot: Slot,
@@ -155,18 +158,6 @@ pub struct TransactionProcessor {
 	pub program_cache: BTreeMap<Pubkey, Arc<ProgramCacheEntry>>,
 	/// Builtin program ids
 	pub builtin_program_ids: BTreeSet<Pubkey>,
-}
-
-impl Default for TransactionProcessor {
-	fn default() -> Self {
-		Self {
-			slot: Slot::default(),
-			epoch: Epoch::default(),
-			sysvar_cache: SysvarCache::default(),
-			program_cache: BTreeMap::new(),
-			builtin_program_ids: BTreeSet::new(),
-		}
-	}
 }
 
 impl TransactionProcessor {
@@ -214,7 +205,7 @@ impl TransactionProcessor {
 		);
 
 		let mut program_accounts_map =
-			Self::filter_executable_program_accounts(callbacks, &sanitized_tx, PROGRAM_OWNERS);
+			Self::filter_executable_program_accounts(callbacks, sanitized_tx, PROGRAM_OWNERS);
 		let native_loader = native_loader::id();
 		for builtin_program in self.builtin_program_ids.iter() {
 			program_accounts_map.insert(*builtin_program, (&native_loader, 0));
@@ -230,7 +221,7 @@ impl TransactionProcessor {
 
 		let mut loaded_transaction = load_accounts(
 			callbacks,
-			&sanitized_tx,
+			sanitized_tx,
 			validation_result,
 			&mut error_metrics,
 			config.account_overrides,
@@ -244,7 +235,7 @@ impl TransactionProcessor {
 			Err(ref e) => TransactionExecutionResult::NotExecuted(e.clone()),
 			Ok(ref mut loaded_transaction) => {
 				let result = self.execute_loaded_transaction(
-					&sanitized_tx,
+					sanitized_tx,
 					loaded_transaction,
 					&mut execute_timings,
 					&mut error_metrics,
@@ -259,7 +250,7 @@ impl TransactionProcessor {
 					// Update batch specific cache of the loaded programs with the modifications
 					// made by the transaction, if it executed successfully.
 					if details.status.is_ok() {
-						program_cache_for_tx_batch.borrow_mut().merge(&programs_modified_by_tx);
+						program_cache_for_tx_batch.borrow_mut().merge(programs_modified_by_tx);
 					}
 				}
 
@@ -315,13 +306,9 @@ impl TransactionProcessor {
 		rent_collector: &RentCollector,
 		error_counters: &mut TransactionErrorMetrics,
 	) -> TransactionValidationResult {
-		let compute_budget_limits = process_compute_budget_instructions(
-			message.program_instructions_iter(),
-		)
-		.map_err(|err| {
-			error_counters.invalid_compute_budget += 1;
-			err
-		})?;
+		let compute_budget_limits =
+			process_compute_budget_instructions(message.program_instructions_iter())
+				.inspect_err(|_| error_counters.invalid_compute_budget += 1)?;
 
 		let fee_payer_address = message.fee_payer();
 
@@ -412,29 +399,49 @@ impl TransactionProcessor {
 		&self,
 		callback: &CB,
 		program_accounts_map: &BTreeMap<Pubkey, (&Pubkey, u64)>,
-		check_program_modification_slot: bool,
-		limit_to_load_programs: bool,
+		_check_program_modification_slot: bool,
+		_limit_to_load_programs: bool,
 	) -> ProgramCacheForTxBatch {
 		let mut loaded_programs_for_tx_batch = ProgramCacheForTxBatch::default();
+
+		// FIXME: program_runtime_environments.
+		loaded_programs_for_tx_batch.environments = ProgramRuntimeEnvironments {
+			program_runtime_v1: Arc::new(
+				create_program_runtime_environment_v1(
+					&Default::default(),
+					&Default::default(),
+					false, /* deployment */
+					false, /* debugging_features */
+				)
+				.unwrap(),
+			),
+			program_runtime_v2: Arc::new(create_program_runtime_environment_v2(
+				&Default::default(),
+				false, /* debugging_features */
+			)),
+		};
 
 		// FIXME: load builtins.
 		for cached_program in self.program_cache.iter() {
 			loaded_programs_for_tx_batch.replenish(*cached_program.0, cached_program.1.clone());
 		}
 
-		program_accounts_map.iter().map(|(key, _)| {
-			let program = load_program_with_pubkey(
-				callback,
-				// FIXME: program runtime environment
-				&ProgramRuntimeEnvironments::default(),
-				&key,
-				self.slot,
-				false,
-			)
-			.expect("called load_program_with_pubkey() with nonexistent account");
+		program_accounts_map
+			.iter()
+			.filter(|(key, _)| !self.program_cache.contains_key(key))
+			.for_each(|(key, _)| {
+				let program = load_program_with_pubkey(
+					callback,
+					// FIXME: program_runtime_environments.
+					&loaded_programs_for_tx_batch.environments,
+					key,
+					self.slot,
+					false,
+				)
+				.expect("called load_program_with_pubkey() with nonexistent account");
 
-			loaded_programs_for_tx_batch.replenish(*key, program);
-		});
+				loaded_programs_for_tx_batch.replenish(*key, program);
+			});
 
 		loaded_programs_for_tx_batch
 	}
@@ -670,5 +677,16 @@ impl TransactionProcessor {
 		callbacks.add_builtin_account(name, &program_id);
 		self.builtin_program_ids.insert(program_id);
 		self.program_cache.insert(program_id, Arc::new(builtin));
+	}
+
+	pub fn fill_missing_sysvar_cache_entries<CB: TransactionProcessingCallback>(
+		&mut self,
+		callbacks: &CB,
+	) {
+		self.sysvar_cache.fill_missing_entries(|pubkey, set_sysvar| {
+			if let Some(account) = callbacks.get_account_shared_data(pubkey) {
+				set_sysvar(account.data());
+			}
+		});
 	}
 }

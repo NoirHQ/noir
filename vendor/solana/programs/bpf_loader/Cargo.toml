@@ -18,7 +18,7 @@ nostd = { workspace = true, features = ["io"] }
 scopeguard = { workspace = true }
 solana-compute-budget = { workspace = true }
 solana-curve25519 = { workspace = true }
-#solana-measure = { workspace = true }
+solana-measure = { workspace = true }
 solana-poseidon = { workspace = true }
 solana-program-runtime = { workspace = true }
 solana-sdk = { workspace = true }
@@ -51,7 +51,7 @@ std = [
     "scopeguard/use_std",
     "solana-compute-budget/std",
     "solana-curve25519/std",
-    #"solana-measure/std",
+    "solana-measure/std",
     "solana-poseidon/std",
     "solana-program-runtime/std",
     "solana-sdk/std",

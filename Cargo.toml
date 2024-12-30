@@ -45,7 +45,9 @@ members = [
 	"vendor/solana/metrics",
 	"vendor/solana/poseidon",
 	"vendor/solana/program-runtime",
+	"vendor/solana/programs/address-lookup-table",
 	"vendor/solana/programs/bpf_loader",
+	"vendor/solana/programs/compute-budget",
 	"vendor/solana/programs/loader-v4",
 	"vendor/solana/programs/system",
 ]
@@ -165,8 +167,10 @@ cosmwasm-vm-wasmi = { path = "vendor/composable/vm-wasmi", default-features = fa
 pallet-cosmwasm = { path = "vendor/composable/cosmwasm", default-features = false }
 pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/assets-erc20", default-features = false }
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
+solana-address-lookup-table-program = { path = "vendor/solana/programs/address-lookup-table", default-features = false }
 solana-bpf-loader-program = { path = "vendor/solana/programs/bpf_loader", default-features = false }
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
+solana-compute-budget-program = { path = "vendor/solana/programs/compute-budget", default-features = false }
 solana-curve25519 = { path = "vendor/solana/curves/curve25519", default-features = false }
 solana-loader-v4-program = { path = "vendor/solana/programs/loader-v4", default-features = false }
 solana-measure = { path = "vendor/solana/measure", default-features = false }

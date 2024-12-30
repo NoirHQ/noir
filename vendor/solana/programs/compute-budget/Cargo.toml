@@ -1,0 +1,28 @@
+[package]
+name = "solana-compute-budget-program"
+description = "Solana Compute Budget program"
+documentation = "https://docs.rs/solana-compute-budget-program"
+version = "2.0.18"
+authors = ["Anza Maintainers <maintainers@anza.xyz>"]
+repository = "https://github.com/anza-xyz/agave"
+homepage = "https://anza.xyz/"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+solana-program-runtime = { workspace = true }
+solana-sdk = { workspace = true }
+
+[lib]
+crate-type = ["lib"]
+name = "solana_compute_budget_program"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ["std"]
+std = [
+    "solana-program-runtime/std",
+    "solana-sdk/std",
+]

@@ -115,7 +115,10 @@ impl pallet_solana::Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(Keypair::alice().account_id(), 10_000_000_000_000_000_000u128)],
+		balances: vec![
+			(Keypair::alice().account_id(), 10_000_000_000_000_000_000u128),
+			(Keypair::bob().account_id(), 10_000_000_000_000_000_000u128),
+		],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
@@ -123,25 +126,39 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 pub trait KeypairExt: Sized {
-	fn create(name: &str) -> Self;
+	fn create() -> Self;
+
+	fn get(name: &str) -> Self;
 
 	fn account_id(&self) -> AccountId;
 
 	fn alice() -> Self {
-		Self::create("Alice")
+		Self::get("Alice")
 	}
 	fn bob() -> Self {
-		Self::create("Bob")
+		Self::get("Bob")
+	}
+	fn charlie() -> Self {
+		Self::get("Charlie")
 	}
 }
 
+fn pair_to_bytes(pair: Pair) -> [u8; 64] {
+	let mut bytes = [0u8; 64];
+	bytes[0..32].copy_from_slice(&pair.seed()[..]);
+	bytes[32..64].copy_from_slice(&pair.public().0[..]);
+	bytes
+}
+
 impl KeypairExt for Keypair {
-	fn create(name: &str) -> Self {
+	fn create() -> Self {
+		let pair = Pair::generate().0;
+		Keypair::from_bytes(&pair_to_bytes(pair)).unwrap()
+	}
+
+	fn get(name: &str) -> Self {
 		let pair = Pair::from_string(&format!("//{}", name), None).unwrap();
-		let mut bytes = [0u8; 64];
-		bytes[0..32].copy_from_slice(&pair.seed()[..]);
-		bytes[32..64].copy_from_slice(&pair.public().0[..]);
-		Keypair::from_bytes(&bytes).unwrap()
+		Keypair::from_bytes(&pair_to_bytes(pair)).unwrap()
 	}
 
 	fn account_id(&self) -> AccountId {

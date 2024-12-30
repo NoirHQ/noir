@@ -26,15 +26,15 @@ use crate::{
 		rollback_accounts::RollbackAccounts,
 		transaction_processing_callback::TransactionProcessingCallback,
 		transaction_processor::{
-			ExecutionRecordingConfig, LoadAndExecuteSanitizedTransactionOutput,
-			TransactionProcessingConfig, TransactionProcessingEnvironment, TransactionProcessor,
+			ExecutionRecordingConfig, TransactionProcessingConfig,
+			TransactionProcessingEnvironment, TransactionProcessor,
 		},
 		transaction_results::TransactionExecutionResult,
 	},
 	AccountData, AccountMeta, Config, Pallet,
 };
 use frame_support::{
-	sp_runtime::traits::{Convert, ConvertBack},
+	sp_runtime::traits::{Convert, ConvertBack, SaturatedConversion},
 	traits::{
 		fungible::{Inspect, Unbalanced},
 		tokens::{Fortitude::Polite, Precision::Exact, Preservation::Preserve},
@@ -44,11 +44,15 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::BlockNumberFor;
 use nostd::{marker::PhantomData, sync::Arc};
+use np_runtime::traits::LateInit;
 use solana_program_runtime::loaded_programs::ProgramCacheEntry;
 use solana_sdk::{
-	account::{Account, AccountSharedData, InheritableAccountFields, ReadableAccount},
+	account::{
+		create_account_shared_data_with_fields as create_account, from_account, Account,
+		AccountSharedData, InheritableAccountFields, ReadableAccount,
+	},
 	account_utils::StateMut,
-	clock::{Epoch, Slot, INITIAL_RENT_EPOCH},
+	clock::{Epoch, Slot, UnixTimestamp, INITIAL_RENT_EPOCH},
 	epoch_schedule::EpochSchedule,
 	feature_set::FeatureSet,
 	hash::Hash,
@@ -61,25 +65,131 @@ use solana_sdk::{
 	},
 	nonce_account,
 	pubkey::Pubkey,
+	rent_collector::RentCollector,
+	sysvar,
 	transaction::{Result, SanitizedTransaction, TransactionError},
 };
 
 #[derive_where(Default)]
 pub struct Bank<T> {
+	/// length of a slot in ns
+	pub ns_per_slot: u128,
+	/// genesis time, used for computed clock
+	genesis_creation_time: UnixTimestamp,
+	/// Bank slot (i.e. block)
 	slot: Slot,
+	/// Bank epoch
 	epoch: Epoch,
-	//collertor_id: Pubkey,
+	//collector_id: Pubkey,
+	/// latest rent collector, knows the epoch
+	rent_collector: RentCollector,
+	pub(crate) epoch_schedule: EpochSchedule,
+	transaction_processor: LateInit<TransactionProcessor>,
 	_marker: PhantomData<T>,
 }
 
 impl<T: Config> Bank<T> {
 	pub fn new(/* collector_id: Pubkey, */ slot: Slot) -> Self {
-		Self {
+		let epoch_schedule = EpochSchedule::without_warmup();
+		let epoch = epoch_schedule.get_epoch(slot);
+		let genesis_creation_time =
+			T::GenesisTimestamp::get().saturated_into::<u64>() as UnixTimestamp;
+		let mut bank = Self {
+			ns_per_slot: 400_000_000,
+			genesis_creation_time,
 			slot,
-			epoch: EpochSchedule::without_warmup().get_epoch(slot),
+			epoch,
 			//collector_id,
+			rent_collector: Default::default(),
+			epoch_schedule,
+			transaction_processor: Default::default(),
 			_marker: PhantomData,
-		}
+		};
+
+		let mut transaction_processor = TransactionProcessor::new(slot, epoch, Default::default());
+		// BUILTINS
+		transaction_processor.add_builtin(
+			&bank,
+			solana_system_program::id(),
+			"system_program",
+			ProgramCacheEntry::new_builtin(
+				0,
+				"system_program".len(),
+				solana_system_program::system_processor::Entrypoint::vm,
+			),
+		);
+		transaction_processor.add_builtin(
+			&bank,
+			solana_sdk::bpf_loader_deprecated::id(),
+			"solana_bpf_loader_deprecated_program",
+			ProgramCacheEntry::new_builtin(
+				0,
+				"solana_bpf_loader_deprecated_program".len(),
+				solana_bpf_loader_program::Entrypoint::vm,
+			),
+		);
+		transaction_processor.add_builtin(
+			&bank,
+			solana_sdk::bpf_loader::id(),
+			"solana_bpf_loader_program",
+			ProgramCacheEntry::new_builtin(
+				0,
+				"solana_bpf_loader_program".len(),
+				solana_bpf_loader_program::Entrypoint::vm,
+			),
+		);
+		transaction_processor.add_builtin(
+			&bank,
+			solana_sdk::bpf_loader_upgradeable::id(),
+			"solana_bpf_loader_upgradeable_program",
+			ProgramCacheEntry::new_builtin(
+				0,
+				"solana_bpf_loader_upgradeable_program".len(),
+				solana_bpf_loader_program::Entrypoint::vm,
+			),
+		);
+		transaction_processor.add_builtin(
+			&bank,
+			solana_sdk::compute_budget::id(),
+			"compute_budget_program",
+			ProgramCacheEntry::new_builtin(
+				0,
+				"compute_budget_program".len(),
+				solana_compute_budget_program::Entrypoint::vm,
+			),
+		);
+		transaction_processor.add_builtin(
+			&bank,
+			solana_sdk::address_lookup_table::program::id(),
+			"address_lookup_table_program",
+			ProgramCacheEntry::new_builtin(
+				0,
+				"address_lookup_table_program".len(),
+				solana_address_lookup_table_program::processor::Entrypoint::vm,
+			),
+		);
+		// TODO: verify_precompiles.
+		// PRECOMPILES
+		// self.add_precompile(&solana_sdk::secp256k1_program::id());
+		// self.add_precompile(&solana_sdk::ed25519_program::id());
+
+		bank.update_clock(None);
+		bank.update_rent();
+		bank.update_epoch_schedule();
+		//bank.update_recent_blockhashes();
+		//bank.update_last_restart_slot();
+		transaction_processor.fill_missing_sysvar_cache_entries(&bank);
+
+		bank.transaction_processor.init(transaction_processor);
+		bank
+	}
+
+	pub fn epoch(&self) -> Epoch {
+		self.epoch
+	}
+
+	pub fn epoch_schedule(&self) -> &EpochSchedule {
+		&self.epoch_schedule
 	}
 
 	pub fn load_execute_and_commit_sanitized_transaction(
@@ -92,7 +202,7 @@ impl<T: Config> Bank<T> {
 		// FIXME: Update lamports_per_signature.
 		let lamports_per_signature = Default::default();
 		let processing_environment = TransactionProcessingEnvironment {
-			blockhash: blockhash.clone(),
+			blockhash,
 			epoch_total_stake: None,
 			epoch_vote_accounts: None,
 			feature_set: Arc::new(FeatureSet::default()),
@@ -115,26 +225,14 @@ impl<T: Config> Bank<T> {
 			transaction_account_lock_limit: None,
 		};
 
-		let mut transaction_processor =
-			TransactionProcessor::new(self.slot, self.epoch, Default::default());
-		transaction_processor.add_builtin(
-			self,
-			solana_system_program::id(),
-			"system_program",
-			ProgramCacheEntry::new_builtin(
-				0,
-				"system_program".len(),
-				solana_system_program::system_processor::Entrypoint::vm,
-			),
-		);
-
-		let mut sanitized_output = transaction_processor.load_and_execute_sanitized_transaction(
-			self,
-			&sanitized_tx,
-			check_result,
-			&processing_environment,
-			&processing_config,
-		);
+		let mut sanitized_output =
+			self.transaction_processor.load_and_execute_sanitized_transaction(
+				self,
+				&sanitized_tx,
+				check_result,
+				&processing_environment,
+				&processing_config,
+			);
 
 		self.commit_transaction(
 			&sanitized_tx,
@@ -225,25 +323,27 @@ impl<T: Config> Bank<T> {
 		// TODO: check imbalance.
 
 		for (address, account) in accounts.iter() {
-			let pubkey = T::AccountIdConversion::convert(*address.clone());
+			let pubkey = T::AccountIdConversion::convert(**address);
 			let lamports =
 				<Lamports<T>>::new(T::Currency::reducible_balance(&pubkey, Preserve, Polite));
-			if account.lamports() > lamports.get() {
-				let amount = <Lamports<T>>::from(account.lamports() - lamports.get());
-				// TODO: error handling.
-				T::Currency::increase_balance(&pubkey, amount.into_inner(), Exact);
-			} else if account.lamports() < lamports.get() {
-				let amount = <Lamports<T>>::from(lamports.get() - account.lamports());
-				// TODO: error handling.
-				T::Currency::decrease_balance(
-					&pubkey,
-					amount.into_inner(),
-					Exact,
-					Preserve,
-					Polite,
-				);
-			} else {
-				// do nothing.
+			match account.lamports().cmp(&lamports.get()) {
+				core::cmp::Ordering::Greater => {
+					let amount = <Lamports<T>>::from(account.lamports() - lamports.get());
+					// TODO: error handling.
+					T::Currency::increase_balance(&pubkey, amount.into_inner(), Exact);
+				},
+				core::cmp::Ordering::Less => {
+					let amount = <Lamports<T>>::from(lamports.get() - account.lamports());
+					// TODO: error handling.
+					T::Currency::decrease_balance(
+						&pubkey,
+						amount.into_inner(),
+						Exact,
+						Preserve,
+						Polite,
+					);
+				},
+				_ => {},
 			}
 
 			self.store_account(&pubkey, account);
@@ -292,7 +392,7 @@ impl<T: Config> Bank<T> {
 		//error_counters: &mut TransactionErrorMetrics,
 	) -> TransactionCheckResult {
 		let parent_hash = <frame_system::Pallet<T>>::parent_hash();
-		let last_blockhash = T::HashConversion::convert_back(parent_hash.clone());
+		let last_blockhash = T::HashConversion::convert_back(parent_hash);
 		let next_durable_nonce = DurableNonce::from_blockhash(&last_blockhash);
 
 		let recent_blockhash = T::HashConversion::convert(*tx.message().recent_blockhash());
@@ -330,8 +430,83 @@ impl<T: Config> Bank<T> {
 		)
 	}
 
+	/// computed unix_timestamp at this slot height
+	pub fn unix_timestamp_from_genesis(&self) -> i64 {
+		self.genesis_creation_time.saturating_add(
+			(self.slot as u128)
+				.saturating_mul(self.ns_per_slot)
+				.saturating_div(1_000_000_000) as i64,
+		)
+	}
+
+	fn update_sysvar_account<F>(&self, pubkey: &Pubkey, updater: F)
+	where
+		F: Fn(&Option<AccountSharedData>) -> AccountSharedData,
+	{
+		let old_account = self.get_account_shared_data(pubkey);
+		let new_account = updater(&old_account);
+
+		// When new sysvar comes into existence (with RENT_UNADJUSTED_INITIAL_BALANCE lamports),
+		// this code ensures that the sysvar's balance is adjusted to be rent-exempt.
+		//
+		// More generally, this code always re-calculates for possible sysvar data size change,
+		// although there is no such sysvars currently.
+		//self.adjust_sysvar_balance_for_rent(&mut new_account);
+		//self.store_account_and_update_capitalization(pubkey, &new_account);
+		let pubkey = T::AccountIdConversion::convert(*pubkey);
+		self.store_account(&pubkey, &new_account);
+	}
+
+	pub fn clock(&self) -> sysvar::clock::Clock {
+		from_account(&self.get_account_shared_data(&sysvar::clock::id()).unwrap_or_default())
+			.unwrap_or_default()
+	}
+
+	fn update_clock(&self, parent_epoch: Option<Epoch>) {
+		let mut unix_timestamp = self.clock().unix_timestamp;
+		let mut epoch_start_timestamp =
+		// On epoch boundaries, update epoch_start_timestamp
+		if parent_epoch.is_some() && parent_epoch.unwrap() != self.epoch() {
+			unix_timestamp
+		} else {
+			self.clock().epoch_start_timestamp
+		};
+		if self.slot == 0 {
+			unix_timestamp = self.unix_timestamp_from_genesis();
+			epoch_start_timestamp = self.unix_timestamp_from_genesis();
+		}
+		let clock = sysvar::clock::Clock {
+			slot: self.slot,
+			epoch_start_timestamp,
+			epoch: self.epoch_schedule().get_epoch(self.slot),
+			leader_schedule_epoch: self.epoch_schedule().get_leader_schedule_epoch(self.slot),
+			unix_timestamp,
+		};
+		self.update_sysvar_account(&sysvar::clock::id(), |account| {
+			create_account(&clock, self.inherit_specially_retained_account_fields(account))
+		});
+	}
+
+	fn update_rent(&self) {
+		self.update_sysvar_account(&sysvar::rent::id(), |account| {
+			create_account(
+				&self.rent_collector.rent,
+				self.inherit_specially_retained_account_fields(account),
+			)
+		});
+	}
+
+	fn update_epoch_schedule(&self) {
+		self.update_sysvar_account(&sysvar::epoch_schedule::id(), |account| {
+			create_account(
+				self.epoch_schedule(),
+				self.inherit_specially_retained_account_fields(account),
+			)
+		});
+	}
+
 	fn store_account(&self, pubkey: &T::AccountId, account: &AccountSharedData) {
-		<AccountMeta<T>>::mutate(&pubkey, |meta| {
+		<AccountMeta<T>>::mutate(pubkey, |meta| {
 			*meta = Some(crate::runtime::meta::AccountMeta {
 				rent_epoch: account.rent_epoch(),
 				owner: *account.owner(),
@@ -339,24 +514,50 @@ impl<T: Config> Bank<T> {
 			});
 		});
 		if account.data().is_empty() {
-			<AccountData<T>>::remove(&pubkey);
+			<AccountData<T>>::remove(pubkey);
 		} else {
 			let data = BoundedVec::try_from(account.data().to_vec()).expect("");
 			// TODO: error handling.
-			<AccountData<T>>::insert(&pubkey, data);
+			<AccountData<T>>::insert(pubkey, data);
 		}
 	}
+
+	/*
+	fn add_precompile(&self, program_id: &Pubkey) {
+		// add_precompiled_account
+		let program_id = &T::AccountIdConversion::convert(program_id.clone());
+		if let Some(account) = <AccountMeta<T>>::get(program_id) {
+			if account.executable {
+				return;
+			} else {
+				// TODO: burn_and_purge_account(program_id, account);
+			}
+		}
+
+		// Add a bogus executable account, which will be loaded and ignored.
+		let (lamports, rent_epoch) = self.inherit_specially_retained_account_fields(&None);
+
+		let account = AccountSharedData::from(Account {
+			lamports,
+			owner,
+			data: vec![],
+			executable: true,
+			rent_epoch,
+		});
+		self.store_account(program_id, &account);
+	}
+	*/
 }
 
 impl<T: Config> TransactionProcessingCallback for Bank<T> {
 	fn account_matches_owners(&self, account: &Pubkey, owners: &[Pubkey]) -> Option<usize> {
-		let account = T::AccountIdConversion::convert(account.clone());
+		let account = T::AccountIdConversion::convert(*account);
 		let account = <AccountMeta<T>>::get(account)?;
 		owners.iter().position(|entry| account.owner == *entry)
 	}
 
 	fn get_account_shared_data(&self, pubkey: &Pubkey) -> Option<AccountSharedData> {
-		let pubkey = T::AccountIdConversion::convert(pubkey.clone());
+		let pubkey = T::AccountIdConversion::convert(*pubkey);
 		let account = <AccountMeta<T>>::get(&pubkey)?;
 		let lamports =
 			<Lamports<T>>::new(T::Currency::reducible_balance(&pubkey, Preserve, Polite));
@@ -374,7 +575,7 @@ impl<T: Config> TransactionProcessingCallback for Bank<T> {
 	}
 
 	fn add_builtin_account(&self, name: &str, program_id: &Pubkey) {
-		let program_id = &T::AccountIdConversion::convert(program_id.clone());
+		let program_id = &T::AccountIdConversion::convert(*program_id);
 		let existing_genuine_program = <AccountMeta<T>>::get(program_id).and_then(|account| {
 			// it's very unlikely to be squatted at program_id as non-system account because of
 			// burden to find victim's pubkey/hash. So, when account.owner is indeed
@@ -393,13 +594,10 @@ impl<T: Config> TransactionProcessingCallback for Bank<T> {
 			return;
 		}
 
-		// TODO: Does this make sense?
-		let existing_genuine_program: Option<AccountSharedData> = None;
-
 		// Add a bogus executable builtin account, which will be loaded and ignored.
 		let account = native_loader::create_loadable_account_with_fields(
 			name,
-			self.inherit_specially_retained_account_fields(&existing_genuine_program),
+			self.inherit_specially_retained_account_fields(&None),
 		);
 		self.store_account(program_id, &account);
 	}

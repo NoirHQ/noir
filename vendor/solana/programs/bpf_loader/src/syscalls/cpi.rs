@@ -2,7 +2,8 @@ use {
     super::*,
     crate::serialization::account_data_region_memory_state,
     scopeguard::defer,
-    solana_program_runtime::{dummy::Measure, invoke_context::SerializedAccountMetadata},
+    solana_measure::measure::Measure,
+    solana_program_runtime::invoke_context::SerializedAccountMetadata,
     solana_rbpf::{
         ebpf,
         memory_region::{MemoryRegion, MemoryState},

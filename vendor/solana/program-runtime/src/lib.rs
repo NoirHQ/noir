@@ -1,4 +1,5 @@
 #![allow(unexpected_cfgs)]
+#![allow(clippy::too_many_arguments)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(RUSTC_WITH_SPECIALIZATION, feature(min_specialization))]
 #![deny(clippy::arithmetic_side_effects)]
