@@ -16,6 +16,7 @@
 // limitations under the License.
 
 use crate::SolanaRuntimeCall;
+use frame_support::traits::Get;
 use nostd::marker::PhantomData;
 use pallet_solana::Pubkey;
 use solana_inline_spl::token::GenericTokenAccount;
@@ -39,9 +40,9 @@ where
 	T: pallet_solana::Config,
 {
 	fn call(pubkeys: Vec<Pubkey>) -> Result<Vec<Option<Account>>, Error> {
-		Ok(pallet_solana::Pallet::<T>::get_multiple_accounts(pubkeys)
+		Ok(pubkeys
 			.into_iter()
-			.map(|(_, account)| account)
+			.map(|pubkey| pallet_solana::Pallet::<T>::get_account_info(pubkey))
 			.collect())
 	}
 }
@@ -59,11 +60,49 @@ where
 			filters.iter().all(|filter_type| filter_allows(filter_type, account))
 		};
 
-		Ok(pallet_solana::Pallet::<T>::get_multiple_accounts(pubkeys)
-			.into_iter()
-			.filter_map(|(pubkey, account)| account.map(|account| (pubkey, account)))
-			.filter(|(_, account)| account.owner == program_id && filter_closure(account))
-			.collect())
+		let byte_limit_for_scan =
+			T::ScanResultsLimitBytes::get().map(|byte_limit| byte_limit as usize);
+		let mut sum: usize = 0;
+		let mut accounts = Vec::new();
+
+		for pubkey in pubkeys.iter() {
+			if let Some(account) = pallet_solana::Pallet::<T>::get_account_info(*pubkey) {
+				if account.owner == program_id && filter_closure(&account) {
+					if Self::accumulate_and_check_scan_result_size(
+						&mut sum,
+						&account,
+						byte_limit_for_scan,
+					) {
+						break;
+					}
+					accounts.push((*pubkey, account));
+				}
+			}
+		}
+
+		Ok(accounts)
+	}
+}
+
+impl<T> ProgramAccounts<T> {
+	/// Accumulate size of (pubkey + account) into sum.
+	/// Return true if sum > 'byte_limit_for_scan'
+	fn accumulate_and_check_scan_result_size(
+		sum: &mut usize,
+		account: &Account,
+		byte_limit_for_scan: Option<usize>,
+	) -> bool {
+		if let Some(byte_limit) = byte_limit_for_scan {
+			let added = Self::calc_scan_result_size(account);
+			*sum = sum.saturating_add(added);
+			*sum > byte_limit
+		} else {
+			false
+		}
+	}
+
+	fn calc_scan_result_size(account: &Account) -> usize {
+		account.data().len() + std::mem::size_of::<Account>() + std::mem::size_of::<Pubkey>()
 	}
 }
 

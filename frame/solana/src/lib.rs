@@ -179,7 +179,7 @@ pub mod pallet {
 		impl pallet_timestamp::DefaultConfig for TestDefaultConfig {}
 
 		parameter_types! {
-			pub const ScanResultsLimitBytes: Option<ConstU32> = None; 
+			pub const ScanResultsLimitBytes: Option<u32> = None;
 		}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
@@ -387,13 +387,6 @@ pub mod pallet {
 			} else {
 				None
 			}
-		}
-
-		pub fn get_multiple_accounts(pubkeys: Vec<Pubkey>) -> Vec<(Pubkey, Option<Account>)> {
-			pubkeys
-				.into_iter()
-				.map(|pubkey| (pubkey, Self::get_account_info(pubkey)))
-				.collect::<_>()
 		}
 
 		pub fn get_transaction_count() -> u64 {
