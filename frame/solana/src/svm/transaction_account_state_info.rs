@@ -16,6 +16,7 @@
 // limitations under the License.
 
 use crate::svm::account_rent_state::RentState;
+use nostd::prelude::*;
 use solana_sdk::{
 	account::ReadableAccount,
 	message::SanitizedMessage,

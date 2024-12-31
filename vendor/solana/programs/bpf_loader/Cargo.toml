@@ -25,6 +25,9 @@ solana-sdk = { workspace = true }
 solana_rbpf = { workspace = true }
 thiserror = { workspace = true }
 
+# workaround
+lazy_static = { version = "1.5", default-features = false, features = ["spin"] }
+
 [dev-dependencies]
 assert_matches = { workspace = true }
 memoffset = { workspace = true }

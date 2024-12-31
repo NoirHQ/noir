@@ -14,6 +14,7 @@ use {
     nostd::{
         alloc::Layout,
         cell::RefCell,
+        prelude::*,
         rc::Rc,
         sync::{atomic::Ordering, Arc},
     },
@@ -571,7 +572,7 @@ impl<'a> InvokeContext<'a> {
     }
 
     /// Consume compute units
-    pub fn consume_checked(&self, amount: u64) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn consume_checked(&self, amount: u64) -> Result<(), Box<dyn core::error::Error>> {
         let mut compute_meter = self.compute_meter.borrow_mut();
         let exceeded = *compute_meter < amount;
         *compute_meter = compute_meter.saturating_sub(amount);
@@ -650,7 +651,7 @@ impl<'a> InvokeContext<'a> {
     pub fn get_syscall_context(&self) -> Result<&SyscallContext, InstructionError> {
         self.syscall_context
             .last()
-            .and_then(std::option::Option::as_ref)
+            .and_then(Option::as_ref)
             .ok_or(InstructionError::CallDepth)
     }
 

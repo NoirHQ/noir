@@ -4,7 +4,7 @@ use {
         withdraw_nonce_account,
     },
     log::*,
-    nostd::collections::HashSet,
+    nostd::{boxed::Box, collections::HashSet},
     solana_program_runtime::{
         declare_process_instruction, ic_msg, invoke_context::InvokeContext,
         sysvar_cache::get_sysvar_with_account_check,

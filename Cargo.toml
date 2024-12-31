@@ -79,6 +79,7 @@ derive-where = "1.2"
 eager = "0.1.0"
 enum-iterator = "1.5.0"
 ethereum = { version = "0.15.0", default-features = false }
+getrandom = { version = "0.2", default-features = false }
 hex-literal = "0.4"
 itertools = { version = "0.12.1", default-features = false }
 k256 = { version = "0.13", default-features = false }

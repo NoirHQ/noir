@@ -1,5 +1,8 @@
-use bytemuck_derive::{Pod, Zeroable};
 pub use target_arch::*;
+use {
+    alloc::vec::Vec,
+    bytemuck_derive::{Pod, Zeroable},
+};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Pod, Zeroable)]
 #[repr(transparent)]

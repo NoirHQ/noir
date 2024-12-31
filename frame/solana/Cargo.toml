@@ -39,6 +39,9 @@ solana-sdk = { workspace = true, features = ["full", "scale"] }
 solana-system-program = { workspace = true }
 solana_rbpf = { workspace = true }
 
+# workaround
+getrandom = { workspace = true, features = ["custom"] }
+
 [dev-dependencies]
 assert_matches = { workspace = true }
 libsecp256k1 = { workspace = true, default-features = true }
@@ -62,6 +65,7 @@ std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",
+	"solana-address-lookup-table-program/std",
 	"solana-bpf-loader-program/std",
 	"solana-compute-budget/std",
 	"solana-compute-budget-program/std",

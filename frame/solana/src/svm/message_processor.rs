@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use nostd::prelude::*;
 use solana_measure::measure::Measure;
 use solana_program_runtime::{
 	invoke_context::InvokeContext,

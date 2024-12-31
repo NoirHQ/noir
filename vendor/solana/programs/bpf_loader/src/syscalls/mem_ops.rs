@@ -1,7 +1,7 @@
 use {
     super::*,
+    core::slice,
     solana_rbpf::{error::EbpfError, memory_region::MemoryRegion},
-    std::slice,
 };
 
 fn mem_op_consume(invoke_context: &mut InvokeContext, n: u64) -> Result<(), Error> {
@@ -170,7 +170,7 @@ fn memmove(
         )?
         .as_ptr();
 
-        unsafe { std::ptr::copy(src_ptr, dst_ptr, n as usize) };
+        unsafe { core::ptr::copy(src_ptr, dst_ptr, n as usize) };
         Ok(0)
     }
 }
@@ -191,7 +191,7 @@ fn memmove_non_contiguous(
         memory_mapping,
         reverse,
         |src_host_addr, dst_host_addr, chunk_len| {
-            unsafe { std::ptr::copy(src_host_addr, dst_host_addr as *mut u8, chunk_len) };
+            unsafe { core::ptr::copy(src_host_addr, dst_host_addr as *mut u8, chunk_len) };
             Ok(0)
         },
     )
@@ -254,16 +254,16 @@ enum MemcmpError {
     Diff(i32),
 }
 
-impl std::fmt::Display for MemcmpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for MemcmpError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             MemcmpError::Diff(diff) => write!(f, "memcmp diff: {diff}"),
         }
     }
 }
 
-impl std::error::Error for MemcmpError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for MemcmpError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             MemcmpError::Diff(_) => None,
         }
