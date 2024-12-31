@@ -7,3 +7,87 @@ version = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
 publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+bincode = { workspace = true }
+derive-where = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+itertools = { workspace = true }
+log = { workspace = true }
+nostd = { workspace = true }
+np-runtime = { workspace = true }
+pallet-timestamp = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_derive = { workspace = true }
+solana-address-lookup-table-program = { workspace = true }
+solana-bpf-loader-program = { workspace = true }
+solana-compute-budget = { workspace = true }
+solana-compute-budget-program = { workspace = true }
+solana-frozen-abi = { workspace = true, optional = true }
+solana-frozen-abi-macro = { workspace = true, optional = true }
+solana-loader-v4-program = { workspace = true }
+solana-measure = { workspace = true }
+solana-metrics = { workspace = true, optional = true }
+solana-program-runtime = { workspace = true }
+solana-sdk = { workspace = true, features = ["full", "scale"] }
+solana-system-program = { workspace = true }
+solana_rbpf = { workspace = true }
+
+[dev-dependencies]
+assert_matches = { workspace = true }
+libsecp256k1 = { workspace = true, default-features = true }
+pallet-balances = { workspace = true, default-features = true }
+rand = { workspace = true, default-features = true }
+solana-sdk = { workspace = true, features = ["dev-context-only-utils"] }
+sp-core = { workspace = true, default-features = true }
+sp-io = { workspace = true, default-features = true }
+
+[features]
+default = ["std"]
+std = [
+	"bincode/std",
+	"frame-support/std",
+	"frame-system/std",
+	"itertools/use_std",
+	"log/std",
+	"nostd/std",
+	"np-runtime/std",
+	"pallet-timestamp/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"serde/std",
+	"solana-bpf-loader-program/std",
+	"solana-compute-budget/std",
+	"solana-compute-budget-program/std",
+	"solana-loader-v4-program/std",
+	"solana-measure/std",
+	"solana-metrics",
+	"solana-program-runtime/std",
+	"solana-sdk/std",
+	"solana-system-program/std",
+	"solana_rbpf/std",
+]
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-timestamp/try-runtime",
+]
+frozen-abi = [
+	"solana-frozen-abi",
+	"solana-frozen-abi-macro",
+	"solana-compute-budget/frozen-abi",
+	"solana-program-runtime/frozen-abi",
+	"solana-sdk/frozen-abi",
+]
+dev-context-only-utils = []

@@ -1,0 +1,33 @@
+[package]
+name = "solana-metrics"
+description = "Solana Metrics"
+documentation = "https://docs.rs/solana-metrics"
+version = "2.0.18"
+authors = ["Anza Maintainers <maintainers@anza.xyz>"]
+repository = "https://github.com/anza-xyz/agave"
+homepage = "https://anza.xyz/"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+crossbeam-channel = "0.5.13"
+gethostname = "0.2.3"
+lazy_static = "1.4.0"
+log = { workspace = true, default-features = true }
+reqwest = { version = "0.11.27", default-features = false, features = ["blocking", "brotli", "deflate", "gzip", "rustls-tls", "json"] }
+solana-sdk = { workspace = true, default-features = true }
+thiserror = { workspace = true, default-features = true }
+
+[dev-dependencies]
+env_logger = "0.9.3"
+rand = { workspace = true, default-features = true }
+serial_test = "2.0.0"
+
+[lib]
+name = "solana_metrics"
+
+[[bench]]
+name = "metrics"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
