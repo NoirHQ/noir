@@ -1,6 +1,6 @@
 use super::*;
 
-fn get_sysvar<T: std::fmt::Debug + Sysvar + SysvarId + Clone>(
+fn get_sysvar<T: core::fmt::Debug + Sysvar + SysvarId + Clone>(
     sysvar: Result<Arc<T>, InstructionError>,
     var_addr: u64,
     check_aligned: bool,
@@ -193,7 +193,7 @@ declare_builtin_function!(
             invoke_context,
             sysvar_base_cost
                 .saturating_add(sysvar_id_cost)
-                .saturating_add(std::cmp::max(sysvar_buf_cost, mem_op_base_cost)),
+                .saturating_add(core::cmp::max(sysvar_buf_cost, mem_op_base_cost)),
         )?;
 
         // Abort: "Not all bytes in VM memory range `[sysvar_id, sysvar_id + 32)` are readable."

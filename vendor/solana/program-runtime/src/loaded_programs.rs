@@ -5,6 +5,7 @@ use {
     },
     nostd::{
         collections::BTreeMap,
+        prelude::*,
         sync::{
             atomic::{AtomicU64, Ordering},
             Arc,
@@ -202,6 +203,7 @@ impl LoadProgramMetrics {
         saturating_add_assign!(timings.create_executor_load_elf_us, self.load_elf_us);
         saturating_add_assign!(timings.create_executor_verify_code_us, self.verify_code_us);
         saturating_add_assign!(timings.create_executor_jit_compile_us, self.jit_compile_us);
+        #[cfg(feature = "std")]
         datapoint_trace!(
             "create_executor_trace",
             ("program_id", self.program_id, String),

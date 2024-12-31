@@ -5,10 +5,15 @@
 pub mod serialization;
 pub mod syscalls;
 
+#[cfg(not(feature = "std"))]
+mod single_thread_local;
+#[cfg(not(feature = "std"))]
+use single_thread_local::SingleThreadLocal;
 use {
     nostd::{
         cell::RefCell,
         mem,
+        prelude::*,
         rc::Rc,
         sync::{atomic::Ordering, Arc},
     },
@@ -61,8 +66,14 @@ pub const DEFAULT_LOADER_COMPUTE_UNITS: u64 = 570;
 pub const DEPRECATED_LOADER_COMPUTE_UNITS: u64 = 1_140;
 pub const UPGRADEABLE_LOADER_COMPUTE_UNITS: u64 = 2_370;
 
+#[cfg(feature = "std")]
 thread_local! {
     pub static MEMORY_POOL: RefCell<VmMemoryPool> = RefCell::new(VmMemoryPool::new());
+}
+
+#[cfg(not(feature = "std"))]
+lazy_static::lazy_static! {
+    pub static ref MEMORY_POOL: SingleThreadLocal<VmMemoryPool> = SingleThreadLocal::new(VmMemoryPool::new());
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -252,7 +263,7 @@ pub fn create_vm<'a, 'b>(
     invoke_context: &'a mut InvokeContext<'b>,
     stack: &mut [u8],
     heap: &mut [u8],
-) -> Result<EbpfVm<'a, InvokeContext<'b>>, Box<dyn std::error::Error>> {
+) -> Result<EbpfVm<'a, InvokeContext<'b>>, Box<dyn core::error::Error>> {
     let stack_size = stack.len();
     let heap_size = heap.len();
     let accounts = Rc::clone(invoke_context.transaction_context.accounts());
@@ -358,7 +369,7 @@ fn create_memory_mapping<'a, 'b, C: ContextObject>(
     heap: &'b mut [u8],
     additional_regions: Vec<MemoryRegion>,
     cow_cb: Option<MemoryCowCallback>,
-) -> Result<MemoryMapping<'a>, Box<dyn std::error::Error>> {
+) -> Result<MemoryMapping<'a>, Box<dyn core::error::Error>> {
     let config = executable.get_config();
     let sbpf_version = executable.get_sbpf_version();
     let regions: Vec<MemoryRegion> = vec![
@@ -395,14 +406,14 @@ declare_builtin_function!(
         _arg3: u64,
         _arg4: u64,
         _memory_mapping: &mut MemoryMapping,
-    ) -> Result<u64, Box<dyn std::error::Error>> {
+    ) -> Result<u64, Box<dyn core::error::Error>> {
         process_instruction_inner(invoke_context)
     }
 );
 
 pub fn process_instruction_inner(
     invoke_context: &mut InvokeContext,
-) -> Result<u64, Box<dyn std::error::Error>> {
+) -> Result<u64, Box<dyn core::error::Error>> {
     let log_collector = invoke_context.get_log_collector();
     let transaction_context = &invoke_context.transaction_context;
     let instruction_context = transaction_context.get_current_instruction_context()?;
@@ -432,7 +443,7 @@ pub fn process_instruction_inner(
             Err(InstructionError::IncorrectProgramId)
         }
         .map(|_| 0)
-        .map_err(|error| Box::new(error) as Box<dyn std::error::Error>);
+        .map_err(|error| Box::new(error) as Box<dyn core::error::Error>);
     }
 
     // Program Invocation
@@ -462,10 +473,10 @@ pub fn process_instruction_inner(
         | ProgramCacheEntryType::Closed
         | ProgramCacheEntryType::DelayVisibility => {
             ic_logger_msg!(log_collector, "Program is not deployed");
-            Err(Box::new(InstructionError::InvalidAccountData) as Box<dyn std::error::Error>)
+            Err(Box::new(InstructionError::InvalidAccountData) as Box<dyn core::error::Error>)
         }
         ProgramCacheEntryType::Loaded(executable) => execute(executable, invoke_context),
-        _ => Err(Box::new(InstructionError::IncorrectProgramId) as Box<dyn std::error::Error>),
+        _ => Err(Box::new(InstructionError::IncorrectProgramId) as Box<dyn core::error::Error>),
     }
     .map(|_| 0)
 }
@@ -1341,7 +1352,7 @@ fn common_close_account(
 fn execute<'a, 'b: 'a>(
     executable: &'a Executable<InvokeContext<'static>>,
     invoke_context: &'a mut InvokeContext<'b>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn core::error::Error>> {
     // We dropped the lifetime tracking in the Executor by setting it to 'static,
     // thus we need to reintroduce the correct lifetime of InvokeContext here again.
     let executable = unsafe {
@@ -1435,7 +1446,7 @@ fn execute<'a, 'b: 'a>(
         match result {
             ProgramResult::Ok(status) if status != SUCCESS => {
                 let error: InstructionError = status.into();
-                Err(Box::new(error) as Box<dyn std::error::Error>)
+                Err(Box::new(error) as Box<dyn core::error::Error>)
             }
             ProgramResult::Err(mut error) => {
                 if direct_mapping {
@@ -1502,7 +1513,7 @@ fn execute<'a, 'b: 'a>(
     let mut deserialize_time = Measure::start("deserialize");
     let execute_or_deserialize_result = execution_result.and_then(|_| {
         deserialize_parameters(invoke_context, parameter_bytes.as_slice(), !direct_mapping)
-            .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
+            .map_err(|error| Box::new(error) as Box<dyn core::error::Error>)
     });
     deserialize_time.stop();
 

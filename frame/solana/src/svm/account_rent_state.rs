@@ -106,6 +106,7 @@ impl RentState {
 	}
 
 	fn submit_rent_state_metrics(pre_rent_state: &Self, post_rent_state: &Self) {
+		#[cfg(feature = "std")]
 		match (pre_rent_state, post_rent_state) {
 			(&RentState::Uninitialized, &RentState::RentPaying { .. }) => {
 				inc_new_counter_info!("rent_paying_err-new_account", 1);

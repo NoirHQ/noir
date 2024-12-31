@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use crate::svm::transaction_processing_callback::TransactionProcessingCallback;
-use nostd::sync::Arc;
+use nostd::{prelude::*, sync::Arc};
 use solana_program_runtime::{
 	loaded_programs::{
 		LoadProgramMetrics, ProgramCacheEntry, ProgramCacheEntryOwner, ProgramCacheEntryType,
@@ -53,7 +53,7 @@ pub(crate) fn load_program_from_bytes(
 	deployment_slot: Slot,
 	program_runtime_environment: ProgramRuntimeEnvironment,
 	reloading: bool,
-) -> std::result::Result<ProgramCacheEntry, Box<dyn std::error::Error>> {
+) -> core::result::Result<ProgramCacheEntry, Box<dyn core::error::Error>> {
 	if reloading {
 		// Safety: this is safe because the program is being reloaded in the cache.
 		unsafe {

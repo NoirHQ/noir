@@ -43,7 +43,7 @@ use frame_support::{
 	BoundedVec,
 };
 use frame_system::pallet_prelude::BlockNumberFor;
-use nostd::{marker::PhantomData, sync::Arc};
+use nostd::{marker::PhantomData, prelude::*, sync::Arc};
 use np_runtime::traits::LateInit;
 use solana_program_runtime::loaded_programs::ProgramCacheEntry;
 use solana_sdk::{

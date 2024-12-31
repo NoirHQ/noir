@@ -3,6 +3,7 @@
 use {
     byteorder::{ByteOrder, LittleEndian},
     core::mem::{self, size_of},
+    nostd::prelude::*,
     solana_program_runtime::invoke_context::SerializedAccountMetadata,
     solana_rbpf::{
         aligned_memory::{AlignedMemory, Pod},

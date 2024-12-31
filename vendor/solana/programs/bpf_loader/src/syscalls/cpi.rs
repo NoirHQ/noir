@@ -1,6 +1,7 @@
 use {
     super::*,
     crate::serialization::account_data_region_memory_state,
+    core::{mem, ptr},
     scopeguard::defer,
     solana_measure::measure::Measure,
     solana_program_runtime::invoke_context::SerializedAccountMetadata,
@@ -17,7 +18,6 @@ use {
         },
         transaction_context::BorrowedAccount,
     },
-    std::{mem, ptr},
 };
 
 fn check_account_info_pointer(
@@ -462,8 +462,8 @@ impl SyscallInvokeSigned for SyscallInvokeSignedRust {
             #[allow(clippy::indexing_slicing)]
             let account_meta = &account_metas[account_index];
             if unsafe {
-                std::ptr::read_volatile(&account_meta.is_signer as *const _ as *const u8) > 1
-                    || std::ptr::read_volatile(&account_meta.is_writable as *const _ as *const u8)
+                core::ptr::read_volatile(&account_meta.is_signer as *const _ as *const u8) > 1
+                    || core::ptr::read_volatile(&account_meta.is_writable as *const _ as *const u8)
                         > 1
             } {
                 return Err(Box::new(InstructionError::InvalidArgument));
@@ -689,8 +689,8 @@ impl SyscallInvokeSigned for SyscallInvokeSignedC {
             #[allow(clippy::indexing_slicing)]
             let account_meta = &account_metas[account_index];
             if unsafe {
-                std::ptr::read_volatile(&account_meta.is_signer as *const _ as *const u8) > 1
-                    || std::ptr::read_volatile(&account_meta.is_writable as *const _ as *const u8)
+                core::ptr::read_volatile(&account_meta.is_signer as *const _ as *const u8) > 1
+                    || core::ptr::read_volatile(&account_meta.is_writable as *const _ as *const u8)
                         > 1
             } {
                 return Err(Box::new(InstructionError::InvalidArgument));
@@ -1448,7 +1448,7 @@ fn update_caller_account(
             memory_mapping,
             caller_account
                 .vm_data_addr
-                .saturating_sub(std::mem::size_of::<u64>() as u64),
+                .saturating_sub(core::mem::size_of::<u64>() as u64),
             invoke_context.get_check_aligned(),
         )?;
         *serialized_len_ptr = post_len as u64;

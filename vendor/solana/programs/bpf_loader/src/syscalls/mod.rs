@@ -12,12 +12,13 @@ pub use self::{
 };
 #[allow(deprecated)]
 use {
-    nostd::sync::Arc,
     nostd::{
         alloc::Layout,
         mem::{align_of, size_of},
+        prelude::*,
         slice::from_raw_parts_mut,
         str::{from_utf8, Utf8Error},
+        sync::Arc,
     },
     solana_compute_budget::compute_budget::ComputeBudget,
     solana_poseidon as poseidon,
@@ -129,7 +130,7 @@ pub enum SyscallError {
     ArithmeticOverflow,
 }
 
-type Error = Box<dyn std::error::Error>;
+type Error = Box<dyn core::error::Error>;
 
 pub trait HasherImpl {
     const NAME: &'static str;
@@ -521,7 +522,19 @@ fn translate_type_inner<'a, T>(
 ) -> Result<&'a mut T, Error> {
     let host_addr = translate(memory_mapping, access_type, vm_addr, size_of::<T>() as u64)?;
     if !check_aligned {
-        Ok(unsafe { std::mem::transmute::<u64, &mut T>(host_addr) })
+        #[cfg(feature = "std")]
+        {
+            Ok(unsafe { core::mem::transmute::<u64, &mut T>(host_addr) })
+        }
+        // FIXME: Is this enough?
+        #[cfg(not(feature = "std"))]
+        {
+            if host_addr > u32::MAX.into() {
+                Err(SyscallError::InvalidPointer.into())
+            } else {
+                Ok(unsafe { core::mem::transmute::<u32, &mut T>(host_addr as u32) })
+            }
+        }
     } else if !address_is_aligned::<T>(host_addr) {
         Err(SyscallError::UnalignedPointer.into())
     } else {
@@ -806,14 +819,14 @@ declare_builtin_function!(
                     let address = translate_slice_mut::<u8>(
                         memory_mapping,
                         address_addr,
-                        std::mem::size_of::<Pubkey>() as u64,
+                        core::mem::size_of::<Pubkey>() as u64,
                         invoke_context.get_check_aligned(),
                     )?;
                     if !is_nonoverlapping(
                         bump_seed_ref as *const _ as usize,
-                        std::mem::size_of_val(bump_seed_ref),
+                        core::mem::size_of_val(bump_seed_ref),
                         address.as_ptr() as usize,
-                        std::mem::size_of::<Pubkey>(),
+                        core::mem::size_of::<Pubkey>(),
                     ) {
                         return Err(SyscallError::CopyOverlapping.into());
                     }
@@ -1392,7 +1405,7 @@ declare_builtin_function!(
                 to_slice.as_ptr() as usize,
                 length as usize,
                 program_id_result as *const _ as usize,
-                std::mem::size_of::<Pubkey>(),
+                core::mem::size_of::<Pubkey>(),
             ) {
                 return Err(SyscallError::CopyOverlapping.into());
             }
@@ -1476,36 +1489,36 @@ declare_builtin_function!(
 
                 if !is_nonoverlapping(
                     result_header as *const _ as usize,
-                    std::mem::size_of::<ProcessedSiblingInstruction>(),
+                    core::mem::size_of::<ProcessedSiblingInstruction>(),
                     program_id as *const _ as usize,
-                    std::mem::size_of::<Pubkey>(),
+                    core::mem::size_of::<Pubkey>(),
                 ) || !is_nonoverlapping(
                     result_header as *const _ as usize,
-                    std::mem::size_of::<ProcessedSiblingInstruction>(),
+                    core::mem::size_of::<ProcessedSiblingInstruction>(),
                     accounts.as_ptr() as usize,
-                    std::mem::size_of::<AccountMeta>()
+                    core::mem::size_of::<AccountMeta>()
                         .saturating_mul(result_header.accounts_len as usize),
                 ) || !is_nonoverlapping(
                     result_header as *const _ as usize,
-                    std::mem::size_of::<ProcessedSiblingInstruction>(),
+                    core::mem::size_of::<ProcessedSiblingInstruction>(),
                     data.as_ptr() as usize,
                     result_header.data_len as usize,
                 ) || !is_nonoverlapping(
                     program_id as *const _ as usize,
-                    std::mem::size_of::<Pubkey>(),
+                    core::mem::size_of::<Pubkey>(),
                     data.as_ptr() as usize,
                     result_header.data_len as usize,
                 ) || !is_nonoverlapping(
                     program_id as *const _ as usize,
-                    std::mem::size_of::<Pubkey>(),
+                    core::mem::size_of::<Pubkey>(),
                     accounts.as_ptr() as usize,
-                    std::mem::size_of::<AccountMeta>()
+                    core::mem::size_of::<AccountMeta>()
                         .saturating_mul(result_header.accounts_len as usize),
                 ) || !is_nonoverlapping(
                     data.as_ptr() as usize,
                     result_header.data_len as usize,
                     accounts.as_ptr() as usize,
-                    std::mem::size_of::<AccountMeta>()
+                    core::mem::size_of::<AccountMeta>()
                         .saturating_mul(result_header.accounts_len as usize),
                 ) {
                     return Err(SyscallError::CopyOverlapping.into());
@@ -1683,8 +1696,8 @@ declare_builtin_function!(
             return Err(Box::new(SyscallError::InvalidLength));
         }
 
-        let input_len: u64 = std::cmp::max(params.base_len, params.exponent_len);
-        let input_len: u64 = std::cmp::max(input_len, params.modulus_len);
+        let input_len: u64 = core::cmp::max(params.base_len, params.exponent_len);
+        let input_len: u64 = core::cmp::max(input_len, params.modulus_len);
 
         let budget = invoke_context.get_compute_budget();
         consume_compute_meter(
@@ -1983,7 +1996,7 @@ declare_builtin_function!(
         let hash_result = translate_slice_mut::<u8>(
             memory_mapping,
             result_addr,
-            std::mem::size_of::<H::Output>() as u64,
+            core::mem::size_of::<H::Output>() as u64,
             invoke_context.get_check_aligned(),
         )?;
         let mut hasher = H::create_hasher();

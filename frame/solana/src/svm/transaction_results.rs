@@ -16,7 +16,7 @@
 // limitations under the License.
 
 // Re-exported since these have moved to `solana_sdk`.
-use nostd::{collections::BTreeMap, sync::Arc};
+use nostd::{collections::BTreeMap, prelude::*, sync::Arc};
 use serde::{Deserialize, Serialize};
 use solana_program_runtime::loaded_programs::ProgramCacheEntry;
 #[deprecated(
