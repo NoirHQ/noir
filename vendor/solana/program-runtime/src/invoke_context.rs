@@ -1,19 +1,10 @@
-#[cfg(test)]
-use {
-    crate::loaded_programs::ProgramCacheEntry,
-    solana_sdk::{
-        account::{create_account_shared_data_for_test, AccountSharedData},
-        instruction::AccountMeta,
-        sysvar::{self, epoch_schedule::EpochSchedule},
-        transaction_context::TransactionAccount,
-    },
-};
 use {
     crate::{
         dummy::VoteAccountsHashMap,
         ic_msg,
         loaded_programs::{
-            ProgramCacheEntryType, ProgramCacheForTxBatch, ProgramRuntimeEnvironments,
+            ProgramCacheEntry, ProgramCacheEntryType, ProgramCacheForTxBatch,
+            ProgramRuntimeEnvironments,
         },
         log_collector::LogCollector,
         stable_log,
@@ -36,15 +27,19 @@ use {
         vm::{Config, ContextObject, EbpfVm},
     },
     solana_sdk::{
+        account::{create_account_shared_data_for_test, AccountSharedData},
         bpf_loader_deprecated,
         clock::Slot,
         feature_set::FeatureSet,
         hash::Hash,
-        instruction::InstructionError,
+        instruction::{AccountMeta, InstructionError},
         native_loader,
         pubkey::Pubkey,
         stable_layout::stable_instruction::StableInstruction,
-        transaction_context::{IndexOfAccount, InstructionAccount, TransactionContext},
+        sysvar::{self, epoch_schedule::EpochSchedule},
+        transaction_context::{
+            IndexOfAccount, InstructionAccount, TransactionAccount, TransactionContext,
+        },
     },
 };
 
@@ -675,59 +670,69 @@ impl<'a> InvokeContext<'a> {
 
 #[macro_export]
 macro_rules! with_mock_invoke_context {
-	(
+    (
         $invoke_context:ident,
         $transaction_context:ident,
         $transaction_accounts:expr $(,)?
     ) => {
-		use nostd::sync::Arc;
-		use solana_compute_budget::compute_budget::ComputeBudget;
-		use solana_program_runtime::{log_collector::LogCollector, sysvar_cache::SysvarCache};
-		use solana_sdk::{
-			account::ReadableAccount, feature_set::FeatureSet, hash::Hash, sysvar::rent::Rent,
-        transaction_context::TransactionContext,
+        use {
+            nostd::sync::Arc,
+            solana_compute_budget::compute_budget::ComputeBudget,
+            solana_sdk::{
+                account::ReadableAccount, feature_set::FeatureSet, hash::Hash, sysvar::rent::Rent,
+                transaction_context::TransactionContext,
+            },
+            $crate::{
+                invoke_context::{EnvironmentConfig, InvokeContext},
+                loaded_programs::ProgramCacheForTxBatch,
+                log_collector::LogCollector,
+                sysvar_cache::SysvarCache,
+            },
         };
-        use $crate::{
-            invoke_context::{EnvironmentConfig, InvokeContext},
-            loaded_programs::ProgramCacheForTxBatch,
-        };
-		let compute_budget = ComputeBudget::default();
-		let mut $transaction_context = TransactionContext::new(
-			$transaction_accounts,
-			Rent::default(),
-			compute_budget.max_instruction_stack_depth,
-			compute_budget.max_instruction_trace_length,
-		);
-		let mut sysvar_cache = SysvarCache::default();
-		sysvar_cache.fill_missing_entries(|pubkey, callback| {
-			for index in 0..$transaction_context.get_number_of_accounts() {
-				if $transaction_context.get_key_of_account_at_index(index).unwrap() == pubkey {
-					callback(
-						$transaction_context.get_account_at_index(index).unwrap().borrow().data(),
-					);
-				}
-			}
-		});
-		let environment_config = EnvironmentConfig::new(
-			Hash::default(),
-			None,
-			None,
-			Arc::new(FeatureSet::all_enabled()),
-			0,
-			&sysvar_cache,
-		);
-		let mut program_cache_for_tx_batch = ProgramCacheForTxBatch::default();
-		let mut $invoke_context = <InvokeContext::new(
-			&mut $transaction_context,
-			&mut program_cache_for_tx_batch,
-			environment_config,
-			Some(LogCollector::new_ref()),
-			compute_budget,
-		);
-	};
+        let compute_budget = ComputeBudget::default();
+        let mut $transaction_context = TransactionContext::new(
+            $transaction_accounts,
+            Rent::default(),
+            compute_budget.max_instruction_stack_depth,
+            compute_budget.max_instruction_trace_length,
+        );
+        let mut sysvar_cache = SysvarCache::default();
+        sysvar_cache.fill_missing_entries(|pubkey, callback| {
+            for index in 0..$transaction_context.get_number_of_accounts() {
+                if $transaction_context
+                    .get_key_of_account_at_index(index)
+                    .unwrap()
+                    == pubkey
+                {
+                    callback(
+                        $transaction_context
+                            .get_account_at_index(index)
+                            .unwrap()
+                            .borrow()
+                            .data(),
+                    );
+                }
+            }
+        });
+        let environment_config = EnvironmentConfig::new(
+            Hash::default(),
+            None,
+            None,
+            Arc::new(FeatureSet::all_enabled()),
+            0,
+            &sysvar_cache,
+        );
+        let mut program_cache_for_tx_batch = ProgramCacheForTxBatch::default();
+        let mut $invoke_context = InvokeContext::new(
+            &mut $transaction_context,
+            &mut program_cache_for_tx_batch,
+            environment_config,
+            Some(LogCollector::new_ref()),
+            compute_budget,
+        );
+    };
 }
 
-#[cfg(test)]
 pub fn mock_process_instruction<F: FnMut(&mut InvokeContext), G: FnMut(&mut InvokeContext)>(
     loader_id: &Pubkey,
     mut program_indices: Vec<IndexOfAccount>,
@@ -811,7 +816,7 @@ mod tests {
         super::*,
         serde::{Deserialize, Serialize},
         solana_compute_budget::compute_budget_processor,
-        solana_sdk::{instruction::Instruction, rent::Rent},
+        solana_sdk::{account::WritableAccount, instruction::Instruction, rent::Rent},
     };
 
     #[derive(Debug, Serialize, Deserialize)]
