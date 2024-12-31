@@ -777,7 +777,7 @@ pub fn mock_process_instruction<F: FnMut(&mut InvokeContext), G: FnMut(&mut Invo
     {
         transaction_accounts.push((
             sysvar::epoch_schedule::id(),
-            create_account_shared_data_for_test(&EpochSchedule::default()).into(),
+            create_account_shared_data_for_test(&EpochSchedule::default()),
         ));
         true
     } else {

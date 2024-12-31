@@ -58,6 +58,9 @@ default-members = [
 	"runtime/common",
 ]
 
+[workspace.lints.clippy]
+useless_conversion = "allow"
+
 [workspace.dependencies]
 ark-bn254 = { version = "0.4.0", default-features = false, features = ["curve"] }
 assert_matches = "1.5.0"

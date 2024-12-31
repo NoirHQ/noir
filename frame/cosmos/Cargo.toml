@@ -8,6 +8,9 @@ edition = { workspace = true }
 repository = { workspace = true }
 publish = false
 
+[lints]
+workspace = true
+
 [dependencies]
 cosmos-sdk-proto = { workspace = true }
 frame-support = { workspace = true }

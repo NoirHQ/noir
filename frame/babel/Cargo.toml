@@ -8,6 +8,9 @@ edition = { workspace = true }
 repository = { workspace = true }
 publish = false
 
+[lints]
+workspace = true
+
 [dependencies]
 bech32 = { workspace = true, optional = true }
 cosmos-sdk-proto = { workspace = true, optional = true }

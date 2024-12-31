@@ -8,6 +8,9 @@ edition = { workspace = true }
 repository = { workspace = true }
 publish = false
 
+[lints]
+workspace = true
+
 [dependencies]
 bincode = { workspace = true }
 derive-where = { workspace = true }
