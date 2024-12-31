@@ -17,6 +17,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(unexpected_cfgs, unused)]
+#![allow(clippy::too_many_arguments)]
 
 extern crate alloc;
 
@@ -79,7 +81,7 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O> for Ensure
 	}
 }
 
-#[frame_support::pallet]
+#[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
 	use crate::runtime::bank::Bank;
@@ -170,6 +172,7 @@ pub mod pallet {
 			/// Maximum permitted size of account data (10 MiB).
 			type MaxPermittedDataLength = ConstU32<{ 10 * 1024 * 1024 }>;
 			/// Timestamp at genesis block (Solana).
+			#[allow(clippy::inconsistent_digit_grouping)]
 			type GenesisTimestamp = ConstU64<1584336540_000>;
 		}
 	}

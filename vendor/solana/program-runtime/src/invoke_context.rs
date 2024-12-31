@@ -1,10 +1,19 @@
+#[cfg(test)]
+use {
+    crate::loaded_programs::ProgramCacheEntry,
+    solana_sdk::{
+        account::{create_account_shared_data_for_test, AccountSharedData},
+        instruction::AccountMeta,
+        sysvar::{self, epoch_schedule::EpochSchedule},
+        transaction_context::TransactionAccount,
+    },
+};
 use {
     crate::{
         dummy::VoteAccountsHashMap,
         ic_msg,
         loaded_programs::{
-            ProgramCacheEntry, ProgramCacheEntryType, ProgramCacheForTxBatch,
-            ProgramRuntimeEnvironments,
+            ProgramCacheEntryType, ProgramCacheForTxBatch, ProgramRuntimeEnvironments,
         },
         log_collector::LogCollector,
         stable_log,
@@ -27,19 +36,15 @@ use {
         vm::{Config, ContextObject, EbpfVm},
     },
     solana_sdk::{
-        account::{create_account_shared_data_for_test, AccountSharedData},
         bpf_loader_deprecated,
         clock::Slot,
         feature_set::FeatureSet,
         hash::Hash,
-        instruction::{AccountMeta, InstructionError},
+        instruction::InstructionError,
         native_loader,
         pubkey::Pubkey,
         stable_layout::stable_instruction::StableInstruction,
-        sysvar::{self, epoch_schedule::EpochSchedule},
-        transaction_context::{
-            IndexOfAccount, InstructionAccount, TransactionAccount, TransactionContext,
-        },
+        transaction_context::{IndexOfAccount, InstructionAccount, TransactionContext},
     },
 };
 

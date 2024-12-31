@@ -27,13 +27,13 @@ use frame_support::{
 	traits::{fungible::Inspect, Get},
 };
 use solana_sdk::{
-	bpf_loader_upgradeable::{self, UpgradeableLoaderState},
+	bpf_loader_upgradeable,
 	hash::Hash,
 	instruction::{self, Instruction},
 	message::SimpleAddressLoader,
 	reserved_account_keys::ReservedAccountKeys,
 	signature::{Keypair, Signer},
-	system_instruction, system_program, system_transaction,
+	system_program, system_transaction,
 	transaction::{MessageHash, Result, SanitizedTransaction, Transaction, VersionedTransaction},
 };
 

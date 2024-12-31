@@ -192,7 +192,7 @@ mod tests {
 	fn late_init_should_work() {
 		let mut li = <LateInit<i32>>::new();
 		let err = std::panic::catch_unwind(|| {
-			li.clone();
+			let _ = li.clone();
 		});
 		assert!(err.is_err());
 		if let Err(e) = err {

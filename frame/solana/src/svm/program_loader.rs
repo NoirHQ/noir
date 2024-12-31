@@ -258,9 +258,9 @@ pub(crate) fn get_program_modification_slot<CB: TransactionProcessingCallback>(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::svm::transaction_processor::TransactionProcessor;
+	//use crate::svm::transaction_processor::TransactionProcessor;
 	use solana_program_runtime::{
-		loaded_programs::{/* BlockRelation, ForkGraph, */ ProgramRuntimeEnvironments},
+		//loaded_programs::{BlockRelation, ForkGraph, ProgramRuntimeEnvironments},
 		solana_rbpf::program::BuiltinProgram,
 	};
 	use solana_sdk::{account::WritableAccount, bpf_loader, bpf_loader_upgradeable};
