@@ -6,9 +6,9 @@ pub mod serialization;
 pub mod syscalls;
 
 #[cfg(not(feature = "std"))]
-mod single_thread_local;
+mod single_thread;
 #[cfg(not(feature = "std"))]
-use single_thread_local::SingleThreadLocal;
+use single_thread::LocalKey;
 use {
     nostd::{
         cell::RefCell,
@@ -73,7 +73,7 @@ thread_local! {
 
 #[cfg(not(feature = "std"))]
 lazy_static::lazy_static! {
-    pub static ref MEMORY_POOL: SingleThreadLocal<VmMemoryPool> = SingleThreadLocal::new(VmMemoryPool::new());
+    pub static ref MEMORY_POOL: LocalKey<VmMemoryPool> = LocalKey::new(VmMemoryPool::new());
 }
 
 #[allow(clippy::too_many_arguments)]

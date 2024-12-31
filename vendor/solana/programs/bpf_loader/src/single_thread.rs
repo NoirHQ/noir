@@ -1,10 +1,10 @@
 use core::cell::UnsafeCell;
 
-pub struct SingleThreadLocal<T>(UnsafeCell<T>);
+pub struct LocalKey<T>(UnsafeCell<T>);
 
-unsafe impl<T> Sync for SingleThreadLocal<T> {}
+unsafe impl<T> Sync for LocalKey<T> {}
 
-impl<T> SingleThreadLocal<T> {
+impl<T> LocalKey<T> {
     pub const fn new(value: T) -> Self {
         Self(UnsafeCell::new(value))
     }
