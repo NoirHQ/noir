@@ -23,6 +23,7 @@ solana-poseidon = { workspace = true }
 solana-program-runtime = { workspace = true }
 solana-sdk = { workspace = true }
 solana_rbpf = { workspace = true }
+sp-io = { workspace = true }
 thiserror = { workspace = true }
 
 # workaround
@@ -59,6 +60,7 @@ std = [
     "solana-program-runtime/std",
     "solana-sdk/std",
     "solana_rbpf/std",
+    "sp-io/std",
     "thiserror/std",
 ]
 #shuttle-test = ["solana-type-overrides/shuttle-test", "solana-program-runtime/shuttle-test"]

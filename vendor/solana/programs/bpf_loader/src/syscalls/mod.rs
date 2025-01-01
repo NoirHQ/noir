@@ -522,12 +522,12 @@ fn translate_type_inner<'a, T>(
 ) -> Result<&'a mut T, Error> {
     let host_addr = translate(memory_mapping, access_type, vm_addr, size_of::<T>() as u64)?;
     if !check_aligned {
-        #[cfg(feature = "std")]
+        #[cfg(target_pointer_width = "64")]
         {
             Ok(unsafe { core::mem::transmute::<u64, &mut T>(host_addr) })
         }
         // FIXME: Is this enough?
-        #[cfg(not(feature = "std"))]
+        #[cfg(target_pointer_width = "32")]
         {
             if host_addr > u32::MAX.into() {
                 Err(SyscallError::InvalidPointer.into())
@@ -876,27 +876,30 @@ declare_builtin_function!(
             invoke_context.get_check_aligned(),
         )?;
 
-        let Ok(message) = libsecp256k1::Message::parse_slice(hash) else {
+        let Ok(message) = <[u8; 32]>::try_from(hash) else {
             return Ok(Secp256k1RecoverError::InvalidHash.into());
         };
-        let Ok(adjusted_recover_id_val) = recovery_id_val.try_into() else {
+        let Ok(recovery_id) = recovery_id_val.try_into() else {
             return Ok(Secp256k1RecoverError::InvalidRecoveryId.into());
         };
-        let Ok(recovery_id) = libsecp256k1::RecoveryId::parse(adjusted_recover_id_val) else {
-            return Ok(Secp256k1RecoverError::InvalidRecoveryId.into());
-        };
-        let Ok(signature) = libsecp256k1::Signature::parse_standard_slice(signature) else {
+        if signature.len() != SECP256K1_SIGNATURE_LENGTH {
             return Ok(Secp256k1RecoverError::InvalidSignature.into());
+        }
+        let signature = {
+            let mut sig = [0u8; 65];
+            sig[0..SECP256K1_SIGNATURE_LENGTH].copy_from_slice(signature);
+            sig[SECP256K1_SIGNATURE_LENGTH] = recovery_id;
+            sig
         };
 
-        let public_key = match libsecp256k1::recover(&message, &signature, &recovery_id) {
-            Ok(key) => key.serialize(),
+        let public_key = match sp_io::crypto::secp256k1_ecdsa_recover(&signature, &message) {
+            Ok(key) => key,
             Err(_) => {
                 return Ok(Secp256k1RecoverError::InvalidSignature.into());
             }
         };
 
-        secp256k1_recover_result.copy_from_slice(&public_key[1..65]);
+        secp256k1_recover_result.copy_from_slice(&public_key);
         Ok(SUCCESS)
     }
 );
@@ -2138,7 +2141,8 @@ mod tests {
             },
         },
         //solana_vote::vote_account::VoteAccount,
-        std::{collections::HashMap, mem, str::FromStr},
+        //std::collections::HashMap,
+        std::{mem, str::FromStr},
         test_case::test_case,
     };
 
@@ -4981,5 +4985,63 @@ mod tests {
         for address in 0..std::mem::size_of::<u64>() {
             assert_eq!(address_is_aligned::<u64>(address as u64), address == 0);
         }
+    }
+
+    #[test]
+    fn test_syscall_secp256k1_recover() {
+        let config = Config::default();
+        prepare_mockup!(invoke_context, program_id, bpf_loader_deprecated::id());
+
+        let hash: [u8; 32] = [
+            0xde, 0xa5, 0x66, 0xb6, 0x94, 0x3b, 0xe0, 0xe9, 0x62, 0x53, 0xc2, 0x21, 0x5b, 0x1b,
+            0xac, 0x69, 0xe7, 0xa8, 0x1e, 0xdb, 0x41, 0xc5, 0x02, 0x8b, 0x4f, 0x5c, 0x45, 0xc5,
+            0x3b, 0x49, 0x54, 0xd0,
+        ];
+        let hash_va = 0x100000000;
+        let recovery_id = 1;
+        let signature: [u8; 64] = [
+            0x97, 0xa4, 0xee, 0x31, 0xfe, 0x82, 0x65, 0x72, 0x9f, 0x4a, 0xa6, 0x7d, 0x24, 0xd4,
+            0xa7, 0x27, 0xf8, 0xc3, 0x15, 0xa4, 0xc8, 0xf9, 0x80, 0xeb, 0x4c, 0x4d, 0x4a, 0xfa,
+            0x6e, 0xc9, 0x42, 0x41, 0x5d, 0x10, 0xd9, 0xc2, 0x8a, 0x90, 0xe9, 0x92, 0x9c, 0x52,
+            0x4b, 0x2c, 0xfb, 0x65, 0xdf, 0xbc, 0xf6, 0x8c, 0xfd, 0x68, 0xdb, 0x17, 0xf9, 0x5d,
+            0x23, 0x5f, 0x96, 0xd8, 0xf0, 0x72, 0x01, 0x2d,
+        ];
+        let signature_va = 0x200000000;
+        let mut result_pubkey = [0u8; SECP256K1_PUBLIC_KEY_LENGTH];
+        let result_pubkey_va = 0x300000000;
+
+        let mut memory_mapping = MemoryMapping::new(
+            vec![
+                MemoryRegion::new_readonly(&hash, hash_va),
+                MemoryRegion::new_readonly(&signature, signature_va),
+                MemoryRegion::new_writable(&mut result_pubkey, result_pubkey_va),
+            ],
+            &config,
+            &SBPFVersion::V2,
+        )
+        .unwrap();
+
+        invoke_context
+            .mock_set_remaining(invoke_context.get_compute_budget().secp256k1_recover_cost);
+
+        let result = SyscallSecp256k1Recover::rust(
+            &mut invoke_context,
+            hash_va,
+            recovery_id,
+            signature_va,
+            result_pubkey_va,
+            0,
+            &mut memory_mapping,
+        );
+
+        assert_eq!(0, result.unwrap());
+        let expected_pubkey: [u8; 64] = [
+            0x42, 0xcd, 0x27, 0xe4, 0x0f, 0xdf, 0x7c, 0x97, 0x0a, 0xa2, 0xca, 0x0b, 0x88, 0x5b,
+            0x96, 0x0f, 0x8b, 0x62, 0x8a, 0x41, 0xa1, 0x81, 0xe7, 0xe6, 0x8e, 0x03, 0xea, 0x0b,
+            0x84, 0x20, 0x58, 0x9b, 0x32, 0x06, 0xbd, 0x66, 0x2f, 0x75, 0x65, 0xd6, 0x9d, 0xbd,
+            0x1d, 0x34, 0x29, 0x6a, 0xd9, 0x35, 0x38, 0xed, 0x86, 0x9e, 0x99, 0x20, 0x43, 0xc3,
+            0xeb, 0xad, 0x65, 0x50, 0xa0, 0x11, 0x6e, 0x5d,
+        ];
+        assert_eq!(expected_pubkey, result_pubkey);
     }
 }
