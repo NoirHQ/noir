@@ -522,12 +522,12 @@ fn translate_type_inner<'a, T>(
 ) -> Result<&'a mut T, Error> {
     let host_addr = translate(memory_mapping, access_type, vm_addr, size_of::<T>() as u64)?;
     if !check_aligned {
-        #[cfg(feature = "std")]
+        #[cfg(target_pointer_width = "64")]
         {
             Ok(unsafe { core::mem::transmute::<u64, &mut T>(host_addr) })
         }
         // FIXME: Is this enough?
-        #[cfg(not(feature = "std"))]
+        #[cfg(target_pointer_width = "32")]
         {
             if host_addr > u32::MAX.into() {
                 Err(SyscallError::InvalidPointer.into())
