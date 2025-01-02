@@ -16,11 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{
-	mock::*,
-	runtime::{bank::Bank, meta::AccountMeta as Meta},
-	*,
-};
+use crate::{mock::*, runtime::bank::Bank, *};
 
 use frame_support::{
 	sp_runtime::traits::Convert,
@@ -40,11 +36,11 @@ use solana_sdk::{
 fn before_each() -> Bank<Test> {
 	<AccountMeta<Test>>::insert(
 		&Keypair::alice().account_id(),
-		Meta { rent_epoch: u64::MAX, owner: system_program::id(), executable: false },
+		AccountMetadata { rent_epoch: u64::MAX, owner: system_program::id(), executable: false },
 	);
 	<AccountMeta<Test>>::insert(
 		&Keypair::bob().account_id(),
-		Meta { rent_epoch: u64::MAX, owner: system_program::id(), executable: false },
+		AccountMetadata { rent_epoch: u64::MAX, owner: system_program::id(), executable: false },
 	);
 
 	System::set_block_number(2);

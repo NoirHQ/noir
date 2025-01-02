@@ -30,6 +30,7 @@ extern crate derive_where;
 extern crate solana_metrics;
 
 pub use pallet::*;
+pub use types::*;
 
 pub use solana_rbpf;
 pub use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction as Transaction};
@@ -40,6 +41,7 @@ mod runtime;
 mod svm;
 #[cfg(test)]
 mod tests;
+mod types;
 
 use frame_support::{
 	dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo},
@@ -85,10 +87,12 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O> for Ensure
 pub mod pallet {
 	use super::*;
 	use crate::runtime::bank::Bank;
+	use core::marker::PhantomData;
 	use frame_support::{dispatch::DispatchInfo, pallet_prelude::*, traits::fungible};
 	use frame_system::{pallet_prelude::*, CheckWeight};
 	use np_runtime::traits::LossyInto;
 	use solana_sdk::{
+		account::Account,
 		clock,
 		fee_calculator::FeeCalculator,
 		hash::Hash,
@@ -183,20 +187,6 @@ pub mod pallet {
 	#[pallet::origin]
 	pub type Origin = RawOrigin;
 
-	#[derive(Decode, Encode, MaxEncodedLen, TypeInfo)]
-	#[scale_info(skip_type_params(T))]
-	pub struct HashInfo<T: Config> {
-		pub fee_calculator: FeeCalculator,
-		pub hash_index: BlockNumberFor<T>,
-		pub timestamp: T::Moment,
-	}
-
-	impl<T: Config> HashInfo<T> {
-		pub fn lamports_per_signature(&self) -> u64 {
-			self.fee_calculator.lamports_per_signature
-		}
-	}
-
 	#[pallet::storage]
 	#[pallet::getter(fn slot)]
 	pub type Slot<T: Config> = StorageValue<_, clock::Slot, ValueQuery>;
@@ -210,13 +200,43 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn account_meta)]
-	pub type AccountMeta<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, crate::runtime::meta::AccountMeta>;
+	pub type AccountMeta<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, AccountMetadata>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn account_data)]
 	pub type AccountData<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, BoundedVec<u8, T::MaxPermittedDataLength>>;
+
+	#[pallet::genesis_config]
+	#[derive_where(Default)]
+	pub struct GenesisConfig<T: Config> {
+		accounts: Vec<(Pubkey, Account)>,
+		_marker: PhantomData<T>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			self.accounts.iter().for_each(|(pubkey, account)| {
+				let who = T::AccountIdConversion::convert(*pubkey);
+				assert!(<frame_system::Pallet<T>>::account_exists(&who));
+				<AccountMeta<T>>::insert(
+					&who,
+					AccountMetadata {
+						rent_epoch: account.rent_epoch,
+						owner: account.owner,
+						executable: account.executable,
+					},
+				);
+				(!account.data.is_empty()).then(|| {
+					<AccountData<T>>::insert(
+						who,
+						BoundedVec::try_from(account.data.clone()).expect("valid data"),
+					);
+				});
+			});
+		}
+	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {

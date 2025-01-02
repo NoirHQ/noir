@@ -17,7 +17,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	runtime::lamports::Lamports,
 	svm::{
 		account_loader::{
 			CheckedTransactionDetails, TransactionCheckResult, TransactionLoadResult,
@@ -31,7 +30,7 @@ use crate::{
 		},
 		transaction_results::TransactionExecutionResult,
 	},
-	AccountData, AccountMeta, Config, Pallet,
+	AccountData, AccountMeta, AccountMetadata, Config, Lamports, Pallet,
 };
 use frame_support::{
 	sp_runtime::traits::{Convert, ConvertBack, SaturatedConversion},
@@ -507,7 +506,7 @@ impl<T: Config> Bank<T> {
 
 	fn store_account(&self, pubkey: &T::AccountId, account: &AccountSharedData) {
 		<AccountMeta<T>>::mutate(pubkey, |meta| {
-			*meta = Some(crate::runtime::meta::AccountMeta {
+			*meta = Some(AccountMetadata {
 				rent_epoch: account.rent_epoch(),
 				owner: *account.owner(),
 				executable: account.executable(),
