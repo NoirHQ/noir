@@ -21,12 +21,12 @@ num_enum = { workspace = true }
 solana-program = { workspace = true }
 thiserror = { workspace = true, default-features = true }
 
-#[dev-dependencies]
-#lazy_static = "1.5.0"
-#proptest = "1.6"
-#serial_test = "3.2.0"
+[dev-dependencies]
+lazy_static = "1.5.0"
+proptest = "1.6"
+serial_test = "3.2.0"
 #solana-program-test = "2.1.0"
-#solana-sdk = "2.1.0"
+solana-sdk = { workspace = true }
 
 [lib]
 crate-type = ["cdylib", "lib"]
