@@ -132,7 +132,7 @@ pub mod pallet {
 			+ LossyInto<u64>;
 
 		#[pallet::no_default]
-		type Currency: fungible::Unbalanced<Self::AccountId, Balance = Self::Balance>;
+		type Currency: fungible::Mutate<Self::AccountId, Balance = Self::Balance>;
 
 		#[pallet::constant]
 		#[pallet::no_default_bounds]
