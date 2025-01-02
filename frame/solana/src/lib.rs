@@ -204,8 +204,13 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn account_data)]
-	pub type AccountData<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, BoundedVec<u8, T::MaxPermittedDataLength>>;
+	pub type AccountData<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		BoundedVec<u8, T::MaxPermittedDataLength>,
+		ValueQuery,
+	>;
 
 	#[pallet::genesis_config]
 	#[derive_where(Default)]

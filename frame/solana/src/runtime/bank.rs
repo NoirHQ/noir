@@ -560,13 +560,10 @@ impl<T: Config> TransactionProcessingCallback for Bank<T> {
 		let account = <AccountMeta<T>>::get(&pubkey)?;
 		let lamports =
 			<Lamports<T>>::new(T::Currency::reducible_balance(&pubkey, Preserve, Polite));
-		let data = <AccountData<T>>::get(&pubkey);
+		let data = <AccountData<T>>::get(&pubkey).into();
 		Some(AccountSharedData::from(Account {
 			lamports: lamports.get(),
-			data: match data {
-				Some(data) => data.into(),
-				None => vec![],
-			},
+			data,
 			owner: account.owner,
 			executable: account.executable,
 			rent_epoch: account.rent_epoch,
