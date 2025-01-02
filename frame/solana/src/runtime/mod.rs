@@ -19,5 +19,3 @@
 #![allow(unexpected_cfgs)]
 
 pub mod bank;
-pub mod lamports;
-pub mod meta;

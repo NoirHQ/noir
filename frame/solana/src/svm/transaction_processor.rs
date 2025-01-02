@@ -402,10 +402,8 @@ impl TransactionProcessor {
 		_check_program_modification_slot: bool,
 		_limit_to_load_programs: bool,
 	) -> ProgramCacheForTxBatch {
-		let mut loaded_programs_for_tx_batch = ProgramCacheForTxBatch::default();
-
 		// FIXME: program_runtime_environments.
-		loaded_programs_for_tx_batch.environments = ProgramRuntimeEnvironments {
+		let environments = ProgramRuntimeEnvironments {
 			program_runtime_v1: Arc::new(
 				create_program_runtime_environment_v1(
 					&Default::default(),
@@ -420,6 +418,8 @@ impl TransactionProcessor {
 				false, /* debugging_features */
 			)),
 		};
+		let mut loaded_programs_for_tx_batch =
+			ProgramCacheForTxBatch::new(self.slot, environments, None, self.epoch);
 
 		// FIXME: load builtins.
 		for cached_program in self.program_cache.iter() {

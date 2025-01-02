@@ -116,13 +116,21 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
-			(Keypair::alice().account_id(), 10_000_000_000_000_000_000u128),
-			(Keypair::bob().account_id(), 10_000_000_000_000_000_000u128),
+			(Keypair::alice().account_id(), sol_into_balances(10)),
+			(Keypair::bob().account_id(), sol_into_balances(10)),
 		],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
 	t.into()
+}
+
+pub const fn sol_into_lamports(sol: u64) -> u64 {
+	sol * 10u64.pow(9)
+}
+
+pub const fn sol_into_balances(sol: u64) -> Balance {
+	(sol_into_lamports(sol) as Balance) * 10u128.pow(9)
 }
 
 pub trait KeypairExt: Sized {
@@ -137,9 +145,6 @@ pub trait KeypairExt: Sized {
 	}
 	fn bob() -> Self {
 		Self::get("Bob")
-	}
-	fn charlie() -> Self {
-		Self::get("Charlie")
 	}
 }
 

@@ -18,11 +18,38 @@
 
 use crate::{BalanceOf, Config};
 use frame_support::sp_runtime::traits::{CheckedAdd, CheckedMul, CheckedSub, Get, Saturating};
+use frame_system::pallet_prelude::BlockNumberFor;
 use nostd::cmp::Ordering;
 use np_runtime::traits::LossyInto;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use solana_sdk::instruction::InstructionError;
+use solana_sdk::{
+	clock::Epoch, fee_calculator::FeeCalculator, instruction::InstructionError, pubkey::Pubkey,
+};
+
+#[derive(Decode, Encode, MaxEncodedLen, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct HashInfo<T: Config> {
+	pub fee_calculator: FeeCalculator,
+	pub hash_index: BlockNumberFor<T>,
+	pub timestamp: T::Moment,
+}
+
+impl<T: Config> HashInfo<T> {
+	pub fn lamports_per_signature(&self) -> u64 {
+		self.fee_calculator.lamports_per_signature
+	}
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Decode, Encode, MaxEncodedLen, TypeInfo)]
+pub struct AccountMetadata {
+	/// the epoch at which this account will next owe rent
+	pub rent_epoch: Epoch,
+	/// the program that owns this account. If executable, the program that loads this account.
+	pub owner: Pubkey,
+	/// this account's data contains a loaded program (and is now read-only)
+	pub executable: bool,
+}
 
 #[derive(Clone, PartialEq, Eq, Decode, Encode, MaxEncodedLen, TypeInfo)]
 #[derive_where(Copy, Debug)]

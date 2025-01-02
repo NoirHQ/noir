@@ -50,6 +50,7 @@ members = [
 	"vendor/solana/programs/compute-budget",
 	"vendor/solana/programs/loader-v4",
 	"vendor/solana/programs/system",
+	"vendor/solana/programs/token",
 ]
 default-members = [
 	"core-primitives",
@@ -182,6 +183,7 @@ solana-metrics = { path = "vendor/solana/metrics" }
 solana-poseidon = { path = "vendor/solana/poseidon", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
 solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
+spl-token = { path = "vendor/solana/programs/token" }
 
 [profile.release]
 panic = "unwind"
