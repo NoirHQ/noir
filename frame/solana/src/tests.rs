@@ -20,20 +20,26 @@ use crate::{mock::*, runtime::bank::Bank, *};
 
 use frame_support::{
 	sp_runtime::traits::Convert,
-	traits::{fungible::Inspect, Get},
+	traits::{
+		fungible::{Inspect, Mutate},
+		Get,
+	},
+	BoundedVec,
 };
+use frame_system::pallet_prelude::BlockNumberFor;
 use solana_sdk::{
-	bpf_loader_upgradeable,
+	bpf_loader, bpf_loader_upgradeable,
 	hash::Hash,
 	instruction::{self, Instruction},
 	message::SimpleAddressLoader,
+	program_pack::Pack,
 	reserved_account_keys::ReservedAccountKeys,
 	signature::{Keypair, Signer},
-	system_program, system_transaction,
+	system_instruction, system_program, system_transaction,
 	transaction::{MessageHash, Result, SanitizedTransaction, Transaction, VersionedTransaction},
 };
 
-fn before_each() -> Bank<Test> {
+fn before_each() {
 	<AccountMeta<Test>>::insert(
 		&Keypair::alice().account_id(),
 		AccountMetadata { rent_epoch: u64::MAX, owner: system_program::id(), executable: false },
@@ -43,8 +49,8 @@ fn before_each() -> Bank<Test> {
 		AccountMetadata { rent_epoch: u64::MAX, owner: system_program::id(), executable: false },
 	);
 
-	System::set_block_number(2);
-	<Slot<Test>>::put(2);
+	set_block_number(2);
+
 	let blockhash = HashConversion::convert(Hash::default());
 	<BlockhashQueue<Test>>::insert(
 		blockhash,
@@ -54,8 +60,15 @@ fn before_each() -> Bank<Test> {
 			timestamp: <<Test as Config>::GenesisTimestamp as Get<u64>>::get() + 400,
 		},
 	);
+}
 
-	<Bank<Test>>::new(<Slot<Test>>::get())
+fn set_block_number(n: BlockNumberFor<Test>) {
+	System::set_block_number(n);
+	<Slot<Test>>::put(n);
+}
+
+fn mock_bank() -> Bank<Test> {
+	Bank::new(<Slot<Test>>::get())
 }
 
 fn process_transaction(bank: &Bank<Test>, tx: Transaction) -> Result<()> {
@@ -72,32 +85,45 @@ fn process_transaction(bank: &Bank<Test>, tx: Transaction) -> Result<()> {
 	bank.load_execute_and_commit_sanitized_transaction(sanitized_tx)
 }
 
+fn deploy_program(program_id: &Pubkey, data: Vec<u8>) {
+	let who = AccountIdConversion::convert(*program_id);
+	System::inc_providers(&who);
+	Balances::mint_into(&who, sol_into_balances(1)).unwrap();
+	<AccountMeta<Test>>::insert(
+		&who,
+		AccountMetadata { rent_epoch: u64::MAX, owner: bpf_loader::id(), executable: true },
+	);
+	<AccountData<Test>>::insert(&who, BoundedVec::try_from(data).expect("account data"));
+}
+
 #[test]
 fn create_account_tx_should_work() {
 	new_test_ext().execute_with(|| {
-		let bank = before_each();
+		before_each();
+		let bank = mock_bank();
 
 		let from = Keypair::alice();
-		let to = Keypair::charlie();
+		let to = Keypair::get("Account");
 
 		let tx = system_transaction::create_account(
 			&from,
 			&to,
 			Hash::default(),
-			1_000_000_000,
+			sol_into_lamports(1),
 			0,
 			&system_program::id(),
 		);
 
 		assert!(process_transaction(&bank, tx).is_ok());
-		assert_eq!(Balances::total_balance(&to.account_id()), 1_000_000_000_000_000_000u128);
+		assert_eq!(Balances::total_balance(&to.account_id()), sol_into_balances(1));
 	});
 }
 
 #[test]
 fn deploy_program_tx_should_work() {
 	new_test_ext().execute_with(|| {
-		let bank = before_each();
+		before_each();
+		let bank = mock_bank();
 
 		let payer = Keypair::alice();
 		let program_keypair = Keypair::get("Program");
@@ -106,9 +132,9 @@ fn deploy_program_tx_should_work() {
 		let program_data =
 			std::fs::read("tests/example-programs/simple-transfer/simple_transfer_program.so")
 				.expect("program data");
-		let program_account_balance = 1_000_000_000;
+		let program_account_balance = sol_into_lamports(1);
 		let buffer_account_space = program_data.len();
-		let buffer_account_balance = 1_000_000_000;
+		let buffer_account_balance = sol_into_lamports(1);
 
 		let create_buffer = bpf_loader_upgradeable::create_buffer(
 			&payer.pubkey(),
@@ -151,10 +177,13 @@ fn deploy_program_tx_should_work() {
 		tx.sign(&[&payer, &program_keypair], Hash::default());
 		assert!(process_transaction(&bank, tx).is_ok());
 
+		set_block_number(3);
+		let bank = mock_bank();
+
 		let recipient = Keypair::bob();
 		let simple_transfer = Instruction::new_with_bytes(
 			program_keypair.pubkey(),
-			&1_000_000_000u64.to_be_bytes(),
+			&sol_into_lamports(1).to_be_bytes(),
 			vec![
 				instruction::AccountMeta::new(payer.pubkey(), true),
 				instruction::AccountMeta::new(recipient.pubkey(), false),
@@ -165,9 +194,85 @@ fn deploy_program_tx_should_work() {
 		tx.sign(&[&payer], Hash::default());
 
 		assert!(process_transaction(&bank, tx).is_ok());
-		assert_eq!(
-			Balances::total_balance(&recipient.account_id()),
-			11_000_000_000_000_000_000u128
+		assert_eq!(Balances::total_balance(&recipient.account_id()), sol_into_balances(11));
+	});
+}
+
+#[test]
+fn spl_token_program_should_work() {
+	new_test_ext().execute_with(|| {
+		before_each();
+		let bank = mock_bank();
+
+		let authority = Keypair::alice();
+		let owner = Keypair::bob();
+		let mint = Keypair::get("Mint");
+
+		let token_program_id = Pubkey::parse("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+		let program_data =
+			std::fs::read("tests/example-programs/token/token_program.so").expect("program data");
+
+		deploy_program(&token_program_id, program_data);
+
+		let create_account = system_instruction::create_account(
+			&authority.pubkey(),
+			&mint.pubkey(),
+			sol_into_lamports(1),
+			82,
+			&token_program_id,
 		);
+		let initialize_mint = spl_token::instruction::initialize_mint2(
+			&token_program_id,
+			&mint.pubkey(),
+			&authority.pubkey(),
+			None,
+			9,
+		)
+		.expect("initialize_mint2 instruction");
+		let mut tx = Transaction::new_with_payer(
+			&[create_account, initialize_mint],
+			Some(&authority.pubkey()),
+		);
+		tx.sign(&[&authority, &mint], Hash::default());
+		assert!(process_transaction(&bank, tx).is_ok());
+
+		let account = Keypair::get("Account");
+		let create_account = system_instruction::create_account(
+			&owner.pubkey(),
+			&account.pubkey(),
+			sol_into_lamports(1),
+			165,
+			&token_program_id,
+		);
+		let initialize_account = spl_token::instruction::initialize_account(
+			&token_program_id,
+			&account.pubkey(),
+			&mint.pubkey(),
+			&owner.pubkey(),
+		)
+		.expect("initialize_account instruction");
+		let mint_to = spl_token::instruction::mint_to(
+			&token_program_id,
+			&mint.pubkey(),
+			&account.pubkey(),
+			&authority.pubkey(),
+			&[],
+			sol_into_lamports(1_000),
+		)
+		.expect("mint_to instruction");
+		let mut tx = Transaction::new_with_payer(
+			&[create_account, initialize_account, mint_to],
+			Some(&owner.pubkey()),
+		);
+		tx.sign(&[&authority, &account, &owner], Hash::default());
+		assert!(process_transaction(&bank, tx).is_ok());
+
+		let state = spl_token::state::Account::unpack_from_slice(&<AccountData<Test>>::get(
+			&account.account_id(),
+		))
+		.expect("token acccount state");
+		assert_eq!(state.mint, mint.pubkey());
+		assert_eq!(state.owner, owner.pubkey());
+		assert_eq!(state.amount, sol_into_lamports(1_000));
 	});
 }
