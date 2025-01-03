@@ -37,7 +37,7 @@ pub use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction as Transa
 
 #[cfg(test)]
 mod mock;
-mod runtime;
+pub mod runtime;
 mod svm;
 #[cfg(test)]
 mod tests;
@@ -86,20 +86,35 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O> for Ensure
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
-	use crate::runtime::bank::Bank;
+	use crate::{
+		runtime::bank::{Bank, TransactionSimulationResult},
+		svm::{
+			transaction_processor::{
+				ExecutionRecordingConfig, LoadAndExecuteSanitizedTransactionOutput,
+				TransactionProcessingConfig, TransactionProcessingEnvironment,
+				TransactionProcessor,
+			},
+			transaction_results::TransactionExecutionResult,
+		},
+	};
 	use core::marker::PhantomData;
-	use frame_support::{dispatch::DispatchInfo, pallet_prelude::*, traits::fungible};
+	use frame_support::{
+		dispatch::DispatchInfo,
+		pallet_prelude::*,
+		traits::{
+			fungible,
+			fungible::Inspect,
+			tokens::{Fortitude::Polite, Preservation::Preserve},
+		},
+	};
 	use frame_system::{pallet_prelude::*, CheckWeight};
+	use nostd::sync::Arc;
 	use np_runtime::traits::LossyInto;
 	use parity_scale_codec::Codec;
-	use runtime::{
-		bank::TransactionSimulationResult, lamports,
-		transaction_processor::LoadAndExecuteSanitizedTransactionOutput,
-		transaction_results::TransactionExecutionResult, Lamports,
-	};
 	use solana_sdk::{
 		account::Account,
 		clock,
+		feature_set::FeatureSet,
 		fee_calculator::FeeCalculator,
 		hash::Hash,
 		message::SimpleAddressLoader,
@@ -372,10 +387,9 @@ pub mod pallet {
 			let meta = AccountMeta::<T>::get(T::AccountIdConversion::convert(pubkey));
 
 			if let Some(meta) = meta {
-				let lamports = Pallet::<T>::get_balance(pubkey.clone());
-				let data: Vec<u8> = AccountData::<T>::get(T::AccountIdConversion::convert(pubkey))
-					.map(|v| v.into_inner())
-					.unwrap_or(Vec::new());
+				let lamports = Pallet::<T>::get_balance(pubkey);
+				let data: Vec<u8> =
+					AccountData::<T>::get(T::AccountIdConversion::convert(pubkey)).into();
 
 				Some(Account {
 					lamports,
@@ -400,12 +414,13 @@ pub mod pallet {
 			let account_keys = sanitized_tx.message().account_keys();
 			let number_of_accounts = account_keys.len();
 
-			let bank = <Bank<T>>::new();
+			let bank = <Bank<T>>::new(<Slot<T>>::get());
 
 			let check_result =
 				bank.check_transaction(&sanitized_tx, T::BlockhashQueueMaxAge::get());
 
-			let blockhash = T::HashConversion::convert(<frame_system::Pallet<T>>::parent_hash());
+			let blockhash =
+				T::HashConversion::convert_back(<frame_system::Pallet<T>>::parent_hash());
 			// FIXME: Update lamports_per_signature.
 			let lamports_per_signature = Default::default();
 			let processing_environment = TransactionProcessingEnvironment {
@@ -439,7 +454,7 @@ pub mod pallet {
 				..
 			} = transaction_processor.load_and_execute_sanitized_transaction(
 				&bank,
-				sanitized_tx,
+				&sanitized_tx,
 				check_result,
 				&processing_environment,
 				&processing_config,
