@@ -32,14 +32,13 @@ fn verify_transaction(
 	transaction: &SanitizedTransaction,
 	feature_set: &FeatureSet,
 ) -> Result<(), Error> {
-	#[allow(clippy::question_mark)]
-	if transaction.verify().is_err() {
-		return Err(Error::TransactionSignatureVerificationFailure);
-	}
+	transaction
+		.verify()
+		.map_err(|_| Error::TransactionSignatureVerificationFailure)?;
 
-	if let Err(_) = transaction.verify_precompiles(feature_set) {
-		return Err(Error::TransactionPrecompileVerificationFailure);
-	}
+	transaction
+		.verify_precompiles(feature_set)
+		.map_err(|_| Error::TransactionPrecompileVerificationFailure)?;
 
 	Ok(())
 }
