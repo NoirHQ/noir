@@ -882,6 +882,9 @@ declare_builtin_function!(
         let Ok(recovery_id) = recovery_id_val.try_into() else {
             return Ok(Secp256k1RecoverError::InvalidRecoveryId.into());
         };
+        if recovery_id > 3 {
+            return Ok(Secp256k1RecoverError::InvalidRecoveryId.into());
+        }
         if signature.len() != SECP256K1_SIGNATURE_LENGTH {
             return Ok(Secp256k1RecoverError::InvalidSignature.into());
         }
