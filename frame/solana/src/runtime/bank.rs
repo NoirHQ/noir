@@ -25,7 +25,7 @@ use crate::{
 		rollback_accounts::RollbackAccounts,
 		transaction_processing_callback::TransactionProcessingCallback,
 		transaction_processor::{
-			ExecutionRecordingConfig, TransactionProcessingConfig,
+			ExecutionRecordingConfig, TransactionLogMessages, TransactionProcessingConfig,
 			TransactionProcessingEnvironment, TransactionProcessor,
 		},
 		transaction_results::TransactionExecutionResult,
@@ -44,6 +44,7 @@ use frame_support::{
 use frame_system::pallet_prelude::BlockNumberFor;
 use nostd::{marker::PhantomData, prelude::*, sync::Arc};
 use np_runtime::traits::LateInit;
+use serde::{Deserialize, Serialize};
 use solana_program_runtime::loaded_programs::ProgramCacheEntry;
 use solana_sdk::{
 	account::{
@@ -55,6 +56,7 @@ use solana_sdk::{
 	epoch_schedule::EpochSchedule,
 	feature_set::FeatureSet,
 	hash::Hash,
+	inner_instruction::InnerInstructions,
 	message::SanitizedMessage,
 	native_loader,
 	nonce::{
@@ -67,7 +69,18 @@ use solana_sdk::{
 	rent_collector::RentCollector,
 	sysvar,
 	transaction::{Result, SanitizedTransaction, TransactionError},
+	transaction_context::{TransactionAccount, TransactionReturnData},
 };
+
+#[derive(Serialize, Deserialize)]
+pub struct TransactionSimulationResult {
+	pub result: Result<()>,
+	pub logs: TransactionLogMessages,
+	pub post_simulation_accounts: Vec<TransactionAccount>,
+	pub units_consumed: u64,
+	pub return_data: Option<TransactionReturnData>,
+	pub inner_instructions: Option<Vec<InnerInstructions>>,
+}
 
 #[derive_where(Default)]
 pub struct Bank<T> {

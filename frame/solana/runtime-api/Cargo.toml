@@ -1,0 +1,21 @@
+[package]
+name = "solana-runtime-api"
+version = "0.4.0"
+authors = ["Haderech Pte. Ltd."]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/noirhq/noir.git"
+publish = false
+
+[dependencies]
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+parity-scale-codec = { workspace = true, default-features = false, features = [ "derive" ] }
+scale-info = { workspace = true, default-features = false, features = [ "derive" ] }
+
+[features]
+default = ["std"]
+std = [
+    "sp-api/std", 
+    "parity-scale-codec/std",
+    "scale-info/std",
+]
