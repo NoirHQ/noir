@@ -304,7 +304,9 @@ pub mod pallet {
 			<BlockhashQueue<T>>::remove(<frame_system::Pallet<T>>::block_hash(to_remove));
 
 			let count = frame_system::Pallet::<T>::extrinsic_count() as u64;
-			TransactionCount::<T>::mutate(|total_count| *total_count += count);
+			TransactionCount::<T>::mutate(|total_count| {
+				*total_count = total_count.saturating_add(count)
+			});
 		}
 	}
 
