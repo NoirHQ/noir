@@ -122,31 +122,28 @@ test-case = "3.3.1"
 thiserror = { version = "2.0", default-features = false }
 
 # substrate
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-support = { version = "38.0.0", default-features = false }
+frame-system = { version = "38.0.0", default-features = false }
+pallet-assets = { version = "40.0.0", default-features = false }
+pallet-balances = { version = "39.0.0", default-features = false }
+pallet-sudo = { version = "38.0.0", default-features = false }
+pallet-timestamp = { version = "37.0.0", default-features = false }
+pallet-transaction-payment = { version = "38.0.0", default-features = false }
+sp-core = { version = "34.0.0", default-features = false }
+sp-io = { version = "38.0.0", default-features = false }
+sp-keyring = { version = "39.0.0", default-features = false }
+sp-runtime = { version = "39.0.1", default-features = false }
 
 # frontier
-fp-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-fp-self-contained = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+fp-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+fp-self-contained = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
 
 # noir
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }

@@ -13,6 +13,4 @@ np-runtime = { workspace = true }
 
 [features]
 default = ["std"]
-std = [
-	"np-runtime/std",
-]
+std = ["np-runtime/std"]

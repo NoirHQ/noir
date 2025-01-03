@@ -12,28 +12,19 @@ publish = false
 workspace = true
 
 [dependencies]
+# common
 bech32 = { workspace = true, optional = true }
 bincode = { workspace = true, optional = true }
-cosmos-sdk-proto = { workspace = true, optional = true }
-cosmwasm-std = { workspace = true, default-features = false, optional = true }
-cosmwasm-vm = { workspace = true, default-features = false, optional = true }
-cosmwasm-vm-wasmi = { workspace = true, default-features = false, optional = true }
+hex-literal = { workspace = true }
+num_enum = { workspace = true, optional = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
+serde-json-wasm = { workspace = true, optional = true }
+
+# ethereum
 ethereum = { workspace = true, optional = true }
 fp-evm = { workspace = true, optional = true }
-frame-support = { workspace = true }
-frame-system = { workspace = true }
-hex-literal = { workspace = true }
-np-babel = { workspace = true, default-features = false }
-np-multimap = { workspace = true, default-features = false }
-num_enum = { workspace = true, optional = true }
-pallet-assets = { workspace = true, optional = true }
-pallet-balances = { workspace = true }
-pallet-cosmos = { workspace = true, default-features = false, optional = true }
-pallet-cosmos-types = { workspace = true, default-features = false, optional = true }
-pallet-cosmos-x-auth-signing = { workspace = true, default-features = false, optional = true }
-pallet-cosmos-x-bank = { workspace = true, default-features = false, optional = true }
-pallet-cosmos-x-wasm = { workspace = true, default-features = false, optional = true }
-pallet-cosmwasm = { workspace = true, default-features = false, optional = true }
 pallet-ethereum = { workspace = true, optional = true }
 pallet-evm = { workspace = true, optional = true }
 pallet-evm-precompileset-assets-erc20 = { workspace = true, optional = true }
@@ -42,16 +33,36 @@ pallet-evm-precompile-blake2 = { workspace = true, optional = true }
 pallet-evm-precompile-bn128 = { workspace = true, optional = true }
 pallet-evm-precompile-modexp = { workspace = true, optional = true }
 pallet-evm-precompile-simple = { workspace = true, optional = true }
-pallet-solana = { workspace = true, optional = true }
-parity-scale-codec = { workspace = true }
 precompile-utils = { workspace = true, optional = true }
-scale-info = { workspace = true }
-serde = { workspace = true, optional = true }
-serde-json-wasm = { workspace = true, optional = true }
+
+# cosmos
+cosmos-sdk-proto = { workspace = true, optional = true }
+cosmwasm-std = { workspace = true, default-features = false, optional = true }
+cosmwasm-vm = { workspace = true, default-features = false, optional = true }
+cosmwasm-vm-wasmi = { workspace = true, default-features = false, optional = true }
+pallet-cosmos = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-types = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-x-auth-signing = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-x-bank = { workspace = true, default-features = false, optional = true }
+pallet-cosmos-x-wasm = { workspace = true, default-features = false, optional = true }
+pallet-cosmwasm = { workspace = true, default-features = false, optional = true }
+
+# solana
+pallet-solana = { workspace = true, optional = true }
 solana-sdk = { workspace = true, optional = true }
+
+# substrate
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-assets = { workspace = true, optional = true }
+pallet-balances = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
+
+# noir
+np-babel = { workspace = true, default-features = false }
+np-multimap = { workspace = true, default-features = false }
 
 [dev-dependencies]
 const-hex = { workspace = true, default-features = true }
@@ -149,7 +160,7 @@ nostr = ["np-babel/nostr"]
 solana = [
 	"bincode",
 	"np-babel/solana",
-	"pallet-solana", 
+	"pallet-solana",
 	"solana-sdk",
 ]
 pallet = [
