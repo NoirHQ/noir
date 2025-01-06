@@ -15,26 +15,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg_attr(not(feature = "std"), no_std)]
+use crate::{error::Error, SolanaRuntimeCall};
+use nostd::marker::PhantomData;
+use pallet_solana::Pubkey;
 
-pub mod account;
-pub mod balance;
-pub mod fee;
-pub mod transaction;
-
-use nostd::vec::Vec;
-use solana_runtime_api::error::Error;
-
-pub trait SolanaRuntimeCall<I = (), O = ()>
+pub struct Balance<T>(PhantomData<T>);
+impl<T> SolanaRuntimeCall<Pubkey, u64> for Balance<T>
 where
-	I: for<'de> serde::Deserialize<'de> + Send + Sync,
-	O: serde::Serialize + Send + Sync,
+	T: pallet_solana::Config,
 {
-	fn call_raw(params: Vec<u8>) -> Result<Vec<u8>, Error> {
-		let input: I = serde_json::from_slice(&params).map_err(|_| Error::ParseError)?;
-		let output = Self::call(input)?;
-		serde_json::to_vec(&output).map_err(|_| Error::ParseError)
+	fn call(pubkey: Pubkey) -> Result<u64, Error> {
+		Ok(pallet_solana::Pallet::<T>::get_balance(pubkey))
 	}
-
-	fn call(input: I) -> Result<O, Error>;
 }

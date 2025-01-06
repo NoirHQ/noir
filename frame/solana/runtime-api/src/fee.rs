@@ -15,10 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::SolanaRuntimeCall;
+use crate::{error::Error, SolanaRuntimeCall};
 use nostd::marker::PhantomData;
 use solana_compute_budget::compute_budget_processor::process_compute_budget_instructions;
-use solana_runtime_api::error::Error;
 use solana_sdk::{
 	feature_set::{
 		include_loaded_accounts_data_size_in_fee_calculation, remove_rounding_in_fee_calculation,

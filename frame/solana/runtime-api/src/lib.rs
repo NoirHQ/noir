@@ -17,16 +17,32 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate alloc;
-
+pub mod account;
+pub mod balance;
 pub mod error;
+pub mod fee;
+pub mod transaction;
 
-use alloc::{string::String, vec::Vec};
 use error::Error;
+use nostd::{string::String, vec::Vec};
 use sp_api::decl_runtime_apis;
 
 decl_runtime_apis! {
 	pub trait SolanaRuntimeApi {
 		fn call(method: String, params: Vec<u8>) -> Result<Vec<u8>, Error>;
 	}
+}
+
+pub trait SolanaRuntimeCall<I = (), O = ()>
+where
+	I: for<'de> serde::Deserialize<'de> + Send + Sync,
+	O: serde::Serialize + Send + Sync,
+{
+	fn call_raw(params: Vec<u8>) -> Result<Vec<u8>, Error> {
+		let input: I = serde_json::from_slice(&params).map_err(|_| Error::ParseError)?;
+		let output = Self::call(input)?;
+		serde_json::to_vec(&output).map_err(|_| Error::ParseError)
+	}
+
+	fn call(input: I) -> Result<O, Error>;
 }

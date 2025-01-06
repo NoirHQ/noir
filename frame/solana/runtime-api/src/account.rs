@@ -15,13 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::SolanaRuntimeCall;
+use crate::{error::Error, SolanaRuntimeCall};
 use frame_support::traits::Get;
 use nostd::marker::PhantomData;
 use pallet_solana::Pubkey;
 use solana_inline_spl::token::GenericTokenAccount;
 use solana_rpc_client_api::filter::RpcFilterType;
-use solana_runtime_api::error::Error;
 use solana_sdk::account::{Account, ReadableAccount};
 
 pub struct AccountInfo<T>(PhantomData<T>);

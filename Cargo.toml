@@ -22,7 +22,6 @@ members = [
 	"frame/cosmos/x/wasm/types",
 	"frame/multimap",
 	"frame/solana",
-	"frame/solana/runtime",
 	"frame/solana/runtime-api",
 	"primitives/babel",
 	"primitives/cosmos",
@@ -105,6 +104,7 @@ rustc_version = "0.4"
 scale-info = { version = "2.11", default-features = false }
 scopeguard = { version = "1.2.0", default-features = false }
 serde = { version = "1.0.203", default-features = false }
+serde_json = { version = "1.0.134", default-features = false }
 serde-json-wasm = { version = "1.0", default-features = false }
 serde_derive = { version = "1.0.203", default-features = false }
 smallvec = "1.13"
@@ -126,6 +126,7 @@ pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch =
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
@@ -193,7 +194,6 @@ solana-rpc-client-api = { path = "vendor/solana/rpc-client-api", default-feature
 solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
 spl-token = { path = "vendor/solana/programs/token" }
 
-solana-runtime = { path = "frame/solana/runtime", default-features = false }
 solana-runtime-api = { path = "frame/solana/runtime-api", default-features = false }
 
 [profile.release]

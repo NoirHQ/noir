@@ -15,10 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::SolanaRuntimeCall;
+use crate::{error::Error, SolanaRuntimeCall};
 use nostd::marker::PhantomData;
 use pallet_solana::{runtime::bank::TransactionSimulationResult, Pubkey};
-use solana_runtime_api::error::Error;
 use solana_sdk::{
 	feature_set::FeatureSet,
 	message::{SanitizedMessage, SimpleAddressLoader},
@@ -70,7 +69,7 @@ where
 			verify_transaction(&transaction, &feature_set)?;
 		}
 
-		let account_keys = get_account_keys(&transaction.message());
+		let account_keys = get_account_keys(transaction.message());
 		let simulation_result =
 			pallet_solana::Pallet::<T>::simulate_transaction(transaction, enable_cpi_recording);
 
@@ -78,9 +77,7 @@ where
 	}
 }
 
-pub fn get_account_keys(
-	message: &SanitizedMessage,
-) -> (Vec<Pubkey>, Option<(Vec<Pubkey>, Vec<Pubkey>)>) {
+pub fn get_account_keys(message: &SanitizedMessage) -> AccountRawKeys {
 	match message {
 		SanitizedMessage::Legacy(legacy_message) =>
 			(legacy_message.message.account_keys.clone(), None),
