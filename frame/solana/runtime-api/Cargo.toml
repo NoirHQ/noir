@@ -19,7 +19,6 @@ scale-info = { workspace = true, default-features = false, features = [
 ] }
 serde = { workspace = true, default-features = false }
 serde_json = { workspace = true, default-features = false }
-solana-account-decoder = { workspace = true, default-features = false }
 solana-compute-budget = { workspace = true, default-features = false }
 solana-inline-spl = { workspace = true, default-features = false }
 solana-rpc-client-api = { workspace = true, default-features = false }
@@ -35,7 +34,6 @@ std = [
     "scale-info/std",
     "serde/std",
     "serde_json/std",
-    "solana-account-decoder/std",
     "solana-compute-budget/std",
     "solana-inline-spl/std",
     "solana-rpc-client-api/std",

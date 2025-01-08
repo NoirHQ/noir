@@ -40,7 +40,6 @@ members = [
 	"vendor/composable/cosmwasm/runtime-api",
 	"vendor/moonbeam/precompiles/assets-erc20",
 	"vendor/moonbeam/precompiles/balances-erc20",
-	"vendor/solana/account-decoder",
 	"vendor/solana/compute-budget",
 	"vendor/solana/curves/curve25519",
 	"vendor/solana/inline-spl",
@@ -180,7 +179,6 @@ pallet-evm-precompileset-assets-erc20 = { path = "vendor/moonbeam/precompiles/as
 pallet-evm-precompile-balances-erc20 = { path = "vendor/moonbeam/precompiles/balances-erc20", default-features = false }
 solana-address-lookup-table-program = { path = "vendor/solana/programs/address-lookup-table", default-features = false }
 solana-bpf-loader-program = { path = "vendor/solana/programs/bpf_loader", default-features = false }
-solana-account-decoder = { path = "vendor/solana/account-decoder", default-features = false }
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
 solana-compute-budget-program = { path = "vendor/solana/programs/compute-budget", default-features = false }
 solana-curve25519 = { path = "vendor/solana/curves/curve25519", default-features = false }
