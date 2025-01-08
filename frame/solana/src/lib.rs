@@ -37,7 +37,7 @@ pub use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction as Transa
 
 #[cfg(test)]
 mod mock;
-mod runtime;
+pub mod runtime;
 mod svm;
 #[cfg(test)]
 mod tests;
@@ -86,19 +86,41 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O> for Ensure
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
-	use crate::runtime::bank::Bank;
+	use crate::{
+		runtime::bank::{Bank, TransactionSimulationResult},
+		svm::{
+			transaction_processor::{
+				ExecutionRecordingConfig, LoadAndExecuteSanitizedTransactionOutput,
+				TransactionProcessingConfig, TransactionProcessingEnvironment,
+				TransactionProcessor,
+			},
+			transaction_results::TransactionExecutionResult,
+		},
+	};
 	use core::marker::PhantomData;
-	use frame_support::{dispatch::DispatchInfo, pallet_prelude::*, traits::fungible};
+	use frame_support::{
+		dispatch::DispatchInfo,
+		pallet_prelude::*,
+		traits::{
+			fungible,
+			fungible::Inspect,
+			tokens::{Fortitude::Polite, Preservation::Preserve},
+		},
+	};
 	use frame_system::{pallet_prelude::*, CheckWeight};
+	use nostd::sync::Arc;
 	use np_runtime::traits::LossyInto;
+	use parity_scale_codec::Codec;
 	use solana_sdk::{
 		account::Account,
 		clock,
+		feature_set::FeatureSet,
 		fee_calculator::FeeCalculator,
 		hash::Hash,
 		message::SimpleAddressLoader,
 		reserved_account_keys::ReservedAccountKeys,
 		transaction::{MessageHash, SanitizedTransaction},
+		transaction_context::TransactionAccount,
 	};
 	use sp_runtime::{
 		traits::{
@@ -153,11 +175,14 @@ pub mod pallet {
 		#[pallet::constant]
 		#[pallet::no_default_bounds]
 		type GenesisTimestamp: Get<Self::Moment>;
+
+		#[pallet::constant]
+		type ScanResultsLimitBytes: Get<Option<u32>>;
 	}
 
 	pub mod config_preludes {
 		use super::*;
-		use frame_support::{derive_impl, traits::ConstU64};
+		use frame_support::{derive_impl, parameter_types, traits::ConstU64};
 
 		/// A configuration for testing.
 		pub struct TestDefaultConfig;
@@ -167,6 +192,10 @@ pub mod pallet {
 
 		#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 		impl pallet_timestamp::DefaultConfig for TestDefaultConfig {}
+
+		parameter_types! {
+			pub const ScanResultsLimitBytes: Option<u32> = None;
+		}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
@@ -178,6 +207,8 @@ pub mod pallet {
 			/// Timestamp at genesis block (Solana).
 			#[allow(clippy::inconsistent_digit_grouping)]
 			type GenesisTimestamp = ConstU64<1584336540_000>;
+			/// Maximum scan result size in bytes.
+			type ScanResultsLimitBytes = ScanResultsLimitBytes;
 		}
 	}
 
@@ -243,6 +274,10 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::storage]
+	#[pallet::getter(fn transaction_count)]
+	pub type TransactionCount<T> = StorageValue<_, u64, ValueQuery>;
+
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(now: BlockNumberFor<T>) -> Weight {
@@ -267,6 +302,11 @@ pub mod pallet {
 			let max_age = T::BlockhashQueueMaxAge::get();
 			let to_remove = now.saturating_sub(max_age).saturating_sub(One::one());
 			<BlockhashQueue<T>>::remove(<frame_system::Pallet<T>>::block_hash(to_remove));
+
+			let count = frame_system::Pallet::<T>::extrinsic_count() as u64;
+			TransactionCount::<T>::mutate(|total_count| {
+				*total_count = total_count.saturating_add(count)
+			});
 		}
 	}
 
@@ -334,6 +374,123 @@ pub mod pallet {
 			_transaction: &Transaction,
 		) -> Result<(), TransactionValidityError> {
 			Ok(())
+		}
+
+		pub fn get_balance(pubkey: Pubkey) -> u64 {
+			Lamports::<T>::new(T::Currency::reducible_balance(
+				&T::AccountIdConversion::convert(pubkey),
+				Preserve,
+				Polite,
+			))
+			.get()
+		}
+
+		pub fn get_account_info(pubkey: Pubkey) -> Option<Account> {
+			let meta = AccountMeta::<T>::get(T::AccountIdConversion::convert(pubkey));
+
+			if let Some(meta) = meta {
+				let lamports = Pallet::<T>::get_balance(pubkey);
+				let data: Vec<u8> =
+					AccountData::<T>::get(T::AccountIdConversion::convert(pubkey)).into();
+
+				Some(Account {
+					lamports,
+					data,
+					owner: meta.owner,
+					executable: meta.executable,
+					rent_epoch: meta.rent_epoch,
+				})
+			} else {
+				None
+			}
+		}
+
+		pub fn get_transaction_count() -> u64 {
+			TransactionCount::<T>::get()
+		}
+
+		pub fn simulate_transaction(
+			sanitized_tx: SanitizedTransaction,
+			enable_cpi_recording: bool,
+		) -> TransactionSimulationResult {
+			let account_keys = sanitized_tx.message().account_keys();
+			let number_of_accounts = account_keys.len();
+
+			let bank = <Bank<T>>::new(<Slot<T>>::get());
+
+			let check_result =
+				bank.check_transaction(&sanitized_tx, T::BlockhashQueueMaxAge::get());
+
+			let blockhash =
+				T::HashConversion::convert_back(<frame_system::Pallet<T>>::parent_hash());
+			// FIXME: Update lamports_per_signature.
+			let lamports_per_signature = Default::default();
+			let processing_environment = TransactionProcessingEnvironment {
+				blockhash,
+				epoch_total_stake: None,
+				epoch_vote_accounts: None,
+				feature_set: Arc::new(FeatureSet::default()),
+				fee_structure: None,
+				lamports_per_signature,
+				rent_collector: None,
+			};
+			// FIXME: Update fields.
+			let processing_config = TransactionProcessingConfig {
+				account_overrides: None,
+				check_program_modification_slot: false,
+				compute_budget: None,
+				log_messages_bytes_limit: None,
+				limit_to_load_programs: false,
+				recording_config: ExecutionRecordingConfig {
+					enable_cpi_recording,
+					enable_log_recording: true,
+					enable_return_data_recording: true,
+				},
+				transaction_account_lock_limit: None,
+			};
+
+			let transaction_processor = TransactionProcessor::default();
+			let LoadAndExecuteSanitizedTransactionOutput {
+				loaded_transaction,
+				execution_result,
+				..
+			} = transaction_processor.load_and_execute_sanitized_transaction(
+				&bank,
+				&sanitized_tx,
+				check_result,
+				&processing_environment,
+				&processing_config,
+			);
+
+			let post_simulation_accounts = loaded_transaction
+				.ok()
+				.map(|transaction| {
+					transaction
+						.accounts
+						.into_iter()
+						.take(number_of_accounts)
+						.map(|(pubkey, account)| (pubkey, Account::from(account).into()))
+						.collect::<Vec<TransactionAccount>>()
+				})
+				.unwrap_or_default();
+
+			let flattened_result = execution_result.flattened_result();
+			let (logs, return_data, inner_instructions) = match execution_result {
+				TransactionExecutionResult::Executed { details, .. } =>
+					(details.log_messages, details.return_data, details.inner_instructions),
+				TransactionExecutionResult::NotExecuted(_) => (None, None, None),
+			};
+			let logs = logs.unwrap_or_default();
+
+			// TODO: Calculate units_consumed
+			TransactionSimulationResult {
+				result: flattened_result,
+				logs,
+				post_simulation_accounts,
+				units_consumed: 0,
+				return_data,
+				inner_instructions,
+			}
 		}
 	}
 

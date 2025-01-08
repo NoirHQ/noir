@@ -22,6 +22,7 @@ members = [
 	"frame/cosmos/x/wasm/types",
 	"frame/multimap",
 	"frame/solana",
+	"frame/solana/runtime-api",
 	"primitives/babel",
 	"primitives/cosmos",
 	"primitives/ethereum",
@@ -41,6 +42,7 @@ members = [
 	"vendor/moonbeam/precompiles/balances-erc20",
 	"vendor/solana/compute-budget",
 	"vendor/solana/curves/curve25519",
+	"vendor/solana/inline-spl",
 	"vendor/solana/measure",
 	"vendor/solana/metrics",
 	"vendor/solana/poseidon",
@@ -51,6 +53,7 @@ members = [
 	"vendor/solana/programs/loader-v4",
 	"vendor/solana/programs/system",
 	"vendor/solana/programs/token",
+	"vendor/solana/rpc-client-api",
 ]
 default-members = [
 	"core-primitives",
@@ -100,6 +103,7 @@ rustc_version = "0.4"
 scale-info = { version = "2.11", default-features = false }
 scopeguard = { version = "1.2.0", default-features = false }
 serde = { version = "1.0.203", default-features = false }
+serde_json = { version = "1.0.134", default-features = false }
 serde-json-wasm = { version = "1.0", default-features = false }
 serde_derive = { version = "1.0.203", default-features = false }
 smallvec = "1.13"
@@ -121,6 +125,7 @@ pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch =
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
@@ -177,13 +182,17 @@ solana-bpf-loader-program = { path = "vendor/solana/programs/bpf_loader", defaul
 solana-compute-budget = { path = "vendor/solana/compute-budget", default-features = false }
 solana-compute-budget-program = { path = "vendor/solana/programs/compute-budget", default-features = false }
 solana-curve25519 = { path = "vendor/solana/curves/curve25519", default-features = false }
+solana-inline-spl = { path = "vendor/solana/inline-spl", default-features = false }
 solana-loader-v4-program = { path = "vendor/solana/programs/loader-v4", default-features = false }
 solana-measure = { path = "vendor/solana/measure", default-features = false }
 solana-metrics = { path = "vendor/solana/metrics" }
 solana-poseidon = { path = "vendor/solana/poseidon", default-features = false }
 solana-program-runtime = { path = "vendor/solana/program-runtime", default-features = false }
+solana-rpc-client-api = { path = "vendor/solana/rpc-client-api", default-features = false }
 solana-system-program = { path = "vendor/solana/programs/system", default-features = false }
 spl-token = { path = "vendor/solana/programs/token" }
+
+solana-runtime-api = { path = "frame/solana/runtime-api", default-features = false }
 
 [profile.release]
 panic = "unwind"
