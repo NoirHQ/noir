@@ -296,14 +296,18 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			let dest: T::AccountId = match dest {
+				#[cfg(feature = "cosmos")]
 				VarAddress::Cosmos(address) =>
 					<T as pallet_cosmos::Config>::AddressMapping::into_account_id(address.into()),
+				#[cfg(feature = "ethereum")]
 				VarAddress::Ethereum(address) =>
 					<T as pallet_evm::Config>::AddressMapping::into_account_id(address.into()),
 				VarAddress::Polkadot(address) => H256::from(<[u8; 32]>::from(address)).into(),
 				#[cfg(feature = "nostr")]
 				VarAddress::Nostr(ref address) =>
 					T::AddressMap::find_key(&dest).unwrap_or(address.into_account_truncating()),
+				#[cfg(feature = "solana")]
+				VarAddress::Solana(address) => H256::from(address).into(),
 				_ => unreachable!(),
 			};
 
