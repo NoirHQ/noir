@@ -13,6 +13,7 @@ workspace = true
 
 [dependencies]
 bech32 = { workspace = true, optional = true }
+bincode = { workspace = true }
 cosmos-sdk-proto = { workspace = true, optional = true }
 cosmwasm-std = { workspace = true, default-features = false, optional = true }
 cosmwasm-vm = { workspace = true, default-features = false, optional = true }
@@ -46,7 +47,6 @@ parity-scale-codec = { workspace = true }
 precompile-utils = { workspace = true, optional = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
-serde_json = { workspace = true, features = ["alloc"], optional = true }
 serde-json-wasm = { workspace = true, optional = true }
 solana-sdk = { workspace = true, optional = true }
 sp-core = { workspace = true }
@@ -107,7 +107,6 @@ std = [
 	"precompile-utils?/std",
 	"scale-info/std",
 	"serde?/std",
-	"serde_json/std",
 	"serde-json-wasm?/std",
 	"solana-sdk/std",
 	"sp-core/std",
@@ -146,11 +145,15 @@ ethereum = [
 	"precompile-utils",
 ]
 nostr = ["np-babel/nostr"]
-solana = ["np-babel/solana"]
+solana = [
+	"np-babel/solana", 
+	"solana-sdk"
+]
 pallet = [
 	"cosmos",
 	"ethereum",
 	"np-babel/serde",
+	"solana",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",

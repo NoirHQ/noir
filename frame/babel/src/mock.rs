@@ -65,16 +65,18 @@ use pallet_cosmos_x_wasm::msgs::{
 	MsgStoreCodeHandler, MsgUpdateAdminHandler,
 };
 use pallet_cosmwasm::instrument::CostRules;
+use pallet_solana::Pubkey;
+use solana_sdk::hash::Hash;
 use sp_core::{ConstU128, Pair, H256};
 use sp_runtime::{
-	traits::{IdentityLookup, TryConvert},
+	traits::{Convert, ConvertBack, IdentityLookup, TryConvert},
 	BoundedVec, BuildStorage,
 };
 
 pub type AccountId = AccountId32<MultiSigner>;
 pub type Balance = u128;
 pub type AssetId = u32;
-pub type Hash = H256;
+pub type Blockhash = H256;
 
 #[frame_support::runtime]
 mod runtime {
@@ -114,6 +116,9 @@ mod runtime {
 	pub type Cosmos = pallet_cosmos;
 	#[runtime::pallet_index(41)]
 	pub type Cosmwasm = pallet_cosmwasm;
+
+	#[runtime::pallet_index(50)]
+	pub type Solana = pallet_solana;
 
 	#[runtime::pallet_index(100)]
 	pub type Babel = frame_babel;
@@ -265,7 +270,7 @@ impl pallet_cosmos::Config for Test {
 parameter_types! {
 	pub const CosmwasmPalletId: PalletId = PalletId(*b"cosmwasm");
 	pub const MaxContractLabelSize: u32 = 64;
-	pub const MaxContractTrieIdSize: u32 = Hash::len_bytes() as u32;
+	pub const MaxContractTrieIdSize: u32 = Blockhash::len_bytes() as u32;
 	pub const MaxInstantiateSaltSize: u32 = 128;
 	pub const MaxFundsAssets: u32 = 32;
 	pub const CodeTableSizeLimit: u32 = 4096;
@@ -321,6 +326,40 @@ impl pallet_cosmwasm::Config for Test {
 	type NativeAssetId = NativeAssetId;
 
 	type NativeDenom = NativeDenom;
+}
+
+pub struct AccountIdConversion;
+impl Convert<Pubkey, AccountId> for AccountIdConversion {
+	fn convert(pubkey: Pubkey) -> AccountId {
+		AccountId::new(pubkey.to_bytes())
+	}
+}
+
+impl ConvertBack<Pubkey, AccountId> for AccountIdConversion {
+	fn convert_back(account_id: AccountId) -> Pubkey {
+		Pubkey::from(<[u8; 32]>::from(account_id))
+	}
+}
+
+pub struct HashConversion;
+impl Convert<Hash, Blockhash> for HashConversion {
+	fn convert(hash: Hash) -> Blockhash {
+		Blockhash::from(hash.to_bytes())
+	}
+}
+impl ConvertBack<Hash, Blockhash> for HashConversion {
+	fn convert_back(hash: Blockhash) -> Hash {
+		Hash::new_from_array(hash.0)
+	}
+}
+
+#[derive_impl(pallet_solana::config_preludes::TestDefaultConfig)]
+impl pallet_solana::Config for Test {
+	type AccountIdConversion = AccountIdConversion;
+	type HashConversion = HashConversion;
+	type Balance = <Self as pallet_balances::Config>::Balance;
+	type Currency = Balances;
+	type DecimalMultiplier = ConstU128<1_000_000_000>;
 }
 
 #[derive_impl(pallet_multimap::config_preludes::TestDefaultConfig)]

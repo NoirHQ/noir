@@ -91,9 +91,9 @@ impl Convert<Pubkey, AccountId> for AccountIdConversion {
 	}
 }
 
-impl ConvertBack<AccountId, Pubkey> for AccountIdConversion {
+impl ConvertBack<Pubkey, AccountId> for AccountIdConversion {
 	fn convert_back(account_id: AccountId) -> Pubkey {
-		Pubkey::from(account_id.into())
+		Pubkey::from(<[u8; 32]>::from(account_id))
 	}
 }
 
