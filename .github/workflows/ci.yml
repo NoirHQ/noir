@@ -5,10 +5,12 @@ on:
     paths:
       - '**.rs'
       - '**.toml'
+      - '**.yml'
   pull_request:
     paths:
       - '**.rs'
       - '**.toml'
+      - '**.yml'
 
 env:
   CARGO_TERM_COLOR: always
@@ -21,6 +23,8 @@ jobs:
         with:
           submodules: recursive
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: rustup show
       - uses: Swatinem/rust-cache@v2
       - name: Check
@@ -36,6 +40,8 @@ jobs:
         with:
           submodules: recursive
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: rustup show
       - uses: Swatinem/rust-cache@v2
       - name: Build
@@ -47,6 +53,8 @@ jobs:
         with:
           submodules: recursive
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: rustup show
       - uses: Swatinem/rust-cache@v2
       - name: Test
