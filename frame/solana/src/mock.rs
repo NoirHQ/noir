@@ -91,6 +91,12 @@ impl Convert<Pubkey, AccountId> for AccountIdConversion {
 	}
 }
 
+impl ConvertBack<AccountId, Pubkey> for AccountIdConversion {
+	fn convert_back(account_id: AccountId) -> Pubkey {
+		Pubkey::from(account_id.into())
+	}
+}
+
 pub struct HashConversion;
 impl Convert<Hash, Blockhash> for HashConversion {
 	fn convert(hash: Hash) -> Blockhash {

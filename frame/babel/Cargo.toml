@@ -41,11 +41,14 @@ pallet-evm-precompile-blake2 = { workspace = true, optional = true }
 pallet-evm-precompile-bn128 = { workspace = true, optional = true }
 pallet-evm-precompile-modexp = { workspace = true, optional = true }
 pallet-evm-precompile-simple = { workspace = true, optional = true }
+pallet-solana = { workspace = true }
 parity-scale-codec = { workspace = true }
 precompile-utils = { workspace = true, optional = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
+serde_json = { workspace = true, features = ["alloc"], optional = true }
 serde-json-wasm = { workspace = true, optional = true }
+solana-sdk = { workspace = true, optional = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
@@ -99,11 +102,14 @@ std = [
 	"pallet-evm-precompile-bn128?/std",
 	"pallet-evm-precompile-modexp?/std",
 	"pallet-evm-precompile-simple?/std",
+	"pallet-solana/std",
 	"parity-scale-codec/std",
 	"precompile-utils?/std",
 	"scale-info/std",
 	"serde?/std",
+	"serde_json/std",
 	"serde-json-wasm?/std",
+	"solana-sdk/std",
 	"sp-core/std",
 	"sp-runtime/std",
 ]
