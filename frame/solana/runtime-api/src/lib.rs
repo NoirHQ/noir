@@ -39,9 +39,9 @@ where
 	O: serde::Serialize + Send + Sync,
 {
 	fn call_raw(params: Vec<u8>) -> Result<Vec<u8>, Error> {
-		let input: I = serde_json::from_slice(&params).map_err(|_| Error::ParseError)?;
+		let input: I = bincode::deserialize(&params).map_err(|_| Error::ParseError)?;
 		let output = Self::call(input)?;
-		serde_json::to_vec(&output).map_err(|_| Error::ParseError)
+		bincode::serialize(&output).map_err(|_| Error::ParseError)
 	}
 
 	fn call(input: I) -> Result<O, Error>;
