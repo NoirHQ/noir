@@ -65,11 +65,12 @@ pub mod pallet {
 	use pallet_cosmos_types::address::acc_address_from_bech32;
 	use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 	use pallet_evm::{AddressMapping as _, FrameSystemAccountProvider};
+	use solana_sdk::transaction::VersionedTransaction;
 	use sp_core::{ecdsa, H256};
 	#[cfg(feature = "nostr")]
 	use sp_runtime::traits::AccountIdConversion;
 	use sp_runtime::traits::{
-		AtLeast32BitUnsigned, One, Saturating, StaticLookup, UniqueSaturatedInto,
+		AtLeast32BitUnsigned, ConvertBack, One, Saturating, StaticLookup, UniqueSaturatedInto,
 	};
 
 	type AccountIdLookupOf<T> = <<T as frame_system::Config>::Lookup as StaticLookup>::Source;
@@ -83,6 +84,7 @@ pub mod pallet {
 		+ pallet_cosmos::Config<AssetId = <Self as pallet_assets::Config>::AssetId>
 		+ pallet_ethereum::Config
 		+ pallet_evm::Config<AccountProvider = FrameSystemAccountProvider<Self>>
+		+ pallet_solana::Config
 	{
 		type AddressMap: UniqueMultimap<Self::AccountId, VarAddress>;
 		type AssetMap: UniqueMap<AssetIdOf<Self>, DenomOf<Self>>;
@@ -139,9 +141,12 @@ pub mod pallet {
 	impl<T: Config> Pallet<T>
 	where
 		OriginFor<T>: Into<Result<pallet_ethereum::RawOrigin, OriginFor<T>>>
-			+ Into<Result<pallet_cosmos::RawOrigin, OriginFor<T>>>,
+			+ Into<Result<pallet_cosmos::RawOrigin, OriginFor<T>>>
+			+ Into<Result<pallet_solana::RawOrigin, OriginFor<T>>>,
 		T::AccountId: TryInto<ecdsa::Public> + From<H256>,
-		T::RuntimeOrigin: From<pallet_ethereum::RawOrigin> + From<pallet_cosmos::RawOrigin>,
+		T::RuntimeOrigin: From<pallet_ethereum::RawOrigin>
+			+ From<pallet_cosmos::RawOrigin>
+			+ From<pallet_solana::RawOrigin>,
 	{
 		#[pallet::call_index(0)]
 		#[pallet::weight({
@@ -233,6 +238,25 @@ pub mod pallet {
 			pallet_cosmos::Pallet::<T>::transact(origin, tx_bytes)
 		}
 
+		// TODO: Need to adjust the call_index and weight
+		#[pallet::call_index(4)]
+		#[pallet::weight({ 1_000 })]
+		pub fn solana_transact(
+			origin: OriginFor<T>,
+			transaction: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+			let pubkey = <T as pallet_solana::Config>::AccountIdConversion::convert_back(who);
+
+			let transaction: VersionedTransaction =
+				bincode::deserialize(&transaction).map_err(|_| Error::<T>::InvalidTransaction)?;
+
+			let origin =
+				T::RuntimeOrigin::from(pallet_solana::RawOrigin::SolanaTransaction(pubkey));
+
+			pallet_solana::Pallet::<T>::transact(origin, transaction)
+		}
+
 		#[pallet::call_index(2)]
 		#[pallet::weight({
 			use pallet_assets::weights::WeightInfo;
@@ -304,6 +328,7 @@ pub mod pallet {
 				#[cfg(feature = "nostr")]
 				VarAddress::Nostr(ref address) =>
 					T::AddressMap::find_key(&dest).unwrap_or(address.into_account_truncating()),
+				VarAddress::Solana(address) => H256::from(address).into(),
 				_ => unreachable!(),
 			};
 

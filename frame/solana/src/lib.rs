@@ -136,7 +136,7 @@ pub mod pallet {
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
 		#[pallet::no_default]
-		type AccountIdConversion: Convert<Pubkey, Self::AccountId>;
+		type AccountIdConversion: ConvertBack<Pubkey, Self::AccountId>;
 
 		#[pallet::no_default]
 		type HashConversion: ConvertBack<Hash, Self::Hash>;

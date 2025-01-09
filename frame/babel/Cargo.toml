@@ -13,6 +13,7 @@ workspace = true
 
 [dependencies]
 bech32 = { workspace = true, optional = true }
+bincode = { workspace = true, optional = true }
 cosmos-sdk-proto = { workspace = true, optional = true }
 cosmwasm-std = { workspace = true, default-features = false, optional = true }
 cosmwasm-vm = { workspace = true, default-features = false, optional = true }
@@ -41,11 +42,13 @@ pallet-evm-precompile-blake2 = { workspace = true, optional = true }
 pallet-evm-precompile-bn128 = { workspace = true, optional = true }
 pallet-evm-precompile-modexp = { workspace = true, optional = true }
 pallet-evm-precompile-simple = { workspace = true, optional = true }
+pallet-solana = { workspace = true, optional = true }
 parity-scale-codec = { workspace = true }
 precompile-utils = { workspace = true, optional = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 serde-json-wasm = { workspace = true, optional = true }
+solana-sdk = { workspace = true, optional = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
@@ -72,6 +75,7 @@ pallet-multimap = { workspace = true, default-features = true }
 default = ["std", "pallet"]
 std = [
 	"bech32?/std",
+	"bincode?/std",
 	"cosmos-sdk-proto?/std",
 	"cosmwasm-std?/std",
 	"cosmwasm-vm?/std",
@@ -99,11 +103,13 @@ std = [
 	"pallet-evm-precompile-bn128?/std",
 	"pallet-evm-precompile-modexp?/std",
 	"pallet-evm-precompile-simple?/std",
+	"pallet-solana?/std",
 	"parity-scale-codec/std",
 	"precompile-utils?/std",
 	"scale-info/std",
 	"serde?/std",
 	"serde-json-wasm?/std",
+	"solana-sdk?/std",
 	"sp-core/std",
 	"sp-runtime/std",
 ]
@@ -140,11 +146,17 @@ ethereum = [
 	"precompile-utils",
 ]
 nostr = ["np-babel/nostr"]
-solana = ["np-babel/solana"]
+solana = [
+	"bincode",
+	"np-babel/solana",
+	"pallet-solana", 
+	"solana-sdk",
+]
 pallet = [
 	"cosmos",
 	"ethereum",
 	"np-babel/serde",
+	"solana",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
