@@ -17,10 +17,6 @@
 
 pub mod traits;
 
-use alloc::{
-	string::{String, ToString},
-	vec::Vec,
-};
 use cosmos_sdk_proto::{
 	cosmos::{
 		bank,
@@ -35,6 +31,10 @@ use cosmos_sdk_proto::{
 	cosmwasm::wasm,
 	traits::Message,
 	Any,
+};
+use nostd::{
+	string::{String, ToString},
+	vec::Vec,
 };
 use pallet_cosmos_types::{any_match, tx_msgs::FeeTx};
 use pallet_cosmos_x_auth_migrations::legacytx::stdsign::{LegacyMsg, StdSignDoc};
@@ -132,7 +132,7 @@ impl traits::SignModeHandler for SignModeHandler {
 #[cfg(test)]
 mod tests {
 	use crate::sign_mode_handler::{traits::SignModeHandler as _, SignModeHandler, SignerData};
-	use base64ct::{Base64, Encoding};
+	use base64::{prelude::BASE64_STANDARD, Engine};
 	use cosmos_sdk_proto::{
 		cosmos::tx::v1beta1::{
 			mode_info::{Single, Sum},
@@ -146,7 +146,7 @@ mod tests {
 	fn get_sign_bytes_test() {
 		let tx_raw = "CpMBCpABChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnAKLWNvc21vczFxZDY5bnV3ajk1Z3RhNGFramd5eHRqOXVqbXo0dzhlZG1xeXNxdxItY29zbW9zMWdtajJleGFnMDN0dGdhZnBya2RjM3Q4ODBncm1hOW53ZWZjZDJ3GhAKBXVhdG9tEgcxMDAwMDAwEnEKTgpGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQIKEJE0H+VmS/oXgtXgR3lokGjJFrBMs2XsMVN1VoTZoRIECgIIARIfChUKBXVhdG9tEgw4ODY4ODAwMDAwMDAQgMDxxZSVFBpA9+DRmMYoIcxYF8jpNfUjMIMB4pgZ9diC8ySbnhc6YU84AA3b/0RsCr+nx9AZ27FwcrKJM/yBh8lz+/A9BFn3bg==";
 
-		let tx_raw = Base64::decode_vec(tx_raw).unwrap();
+		let tx_raw = BASE64_STANDARD.decode(tx_raw).unwrap();
 		let tx = Tx::decode(&mut &*tx_raw).unwrap();
 
 		let public_key = tx
@@ -172,7 +172,7 @@ mod tests {
 
 		let sign_doc_raw =
 		"CpMBCpABChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEnAKLWNvc21vczFxZDY5bnV3ajk1Z3RhNGFramd5eHRqOXVqbXo0dzhlZG1xeXNxdxItY29zbW9zMWdtajJleGFnMDN0dGdhZnBya2RjM3Q4ODBncm1hOW53ZWZjZDJ3GhAKBXVhdG9tEgcxMDAwMDAwEnEKTgpGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQIKEJE0H+VmS/oXgtXgR3lokGjJFrBMs2XsMVN1VoTZoRIECgIIARIfChUKBXVhdG9tEgw4ODY4ODAwMDAwMDAQgMDxxZSVFBoRdGhldGEtdGVzdG5ldC0wMDEgrYou";
-		let hash = sha2_256(&Base64::decode_vec(sign_doc_raw).unwrap());
+		let hash = sha2_256(&BASE64_STANDARD.decode(sign_doc_raw).unwrap());
 
 		assert_eq!(expected_hash, hash);
 	}
@@ -180,7 +180,7 @@ mod tests {
 	#[test]
 	fn get_std_sign_bytes_test() {
 		let tx_raw =  "CpoBCpcBChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEncKLWNvc21vczFxZDY5bnV3ajk1Z3RhNGFramd5eHRqOXVqbXo0dzhlZG1xeXNxdxItY29zbW9zMW41amd4NjR6dzM4c3M3Nm16dXU0dWM3amV5cXcydmZqazYwZmR6GhcKBGFjZHQSDzEwMDAwMDAwMDAwMDAwMBJsCk4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiECChCRNB/lZkv6F4LV4Ed5aJBoyRawTLNl7DFTdVaE2aESBAoCCH8SGgoSCgRhY2R0EgoxMDQwMDAwMDAwEIDa8esEGkBgXIiPoBpecG7QpKDJPaztFogqvmxjDHF5ORfWBrOoSzf0+AAmch1CXrG4OmiKL0y8v9ITx0QzWYUc7ueXcdIm";
-		let tx_raw = Base64::decode_vec(tx_raw).unwrap();
+		let tx_raw = BASE64_STANDARD.decode(tx_raw).unwrap();
 		let tx = Tx::decode(&mut &*tx_raw).unwrap();
 
 		let public_key = tx

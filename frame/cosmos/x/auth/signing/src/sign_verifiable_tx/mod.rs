@@ -17,11 +17,11 @@
 
 pub mod traits;
 
-use alloc::{string::String, vec::Vec};
 use cosmos_sdk_proto::{
 	cosmos::{bank, tx::v1beta1::Tx},
 	cosmwasm::wasm,
 };
+use nostd::{string::String, vec::Vec};
 use pallet_cosmos_types::{
 	any_match,
 	tx_msgs::{FeeTx, Msg},

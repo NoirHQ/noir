@@ -16,8 +16,8 @@
 // limitations under the License.
 
 use super::SigVerifiableTxError;
-use alloc::{string::String, vec::Vec};
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
+use nostd::{string::String, vec::Vec};
 
 pub trait SigVerifiableTx {
 	fn get_signers(tx: &Tx) -> Result<Vec<String>, SigVerifiableTxError>;
