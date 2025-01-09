@@ -1,21 +1,22 @@
 [package]
 name = "pallet-cosmos-x-bank"
-version = "0.4.0"
-authors = ["Haderech Pte. Ltd."]
-edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/noirhq/noir.git"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 publish = false
 
 [dependencies]
-cosmos-sdk-proto = { version = "0.24", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-cosmos = { workspace = true, default-features = false }
-pallet-cosmos-types = { workspace = true, default-features = false }
-pallet-cosmos-x-bank-types = { workspace = true, default-features = false }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+cosmos-sdk-proto = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+nostd = { workspace = true }
+pallet-cosmos = { workspace = true }
+pallet-cosmos-types = { workspace = true }
+pallet-cosmos-x-bank-types = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
@@ -23,6 +24,7 @@ std = [
     "cosmos-sdk-proto/std",
     "frame-support/std",
     "frame-system/std",
+    "nostd/std",
     "pallet-cosmos/std",
     "pallet-cosmos-types/std",
     "pallet-cosmos-x-bank-types/std",

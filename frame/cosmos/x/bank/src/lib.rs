@@ -17,12 +17,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate alloc;
-
 pub mod gas;
 
-use alloc::vec;
-use core::marker::PhantomData;
 use cosmos_sdk_proto::{cosmos::bank::v1beta1::MsgSend, prost::Message, Any};
 use frame_support::{
 	ensure,
@@ -33,6 +29,7 @@ use frame_support::{
 	},
 };
 use gas::GasInfo;
+use nostd::{marker::PhantomData, vec};
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,
