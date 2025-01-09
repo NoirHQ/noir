@@ -85,6 +85,7 @@ enum-iterator = "1.5.0"
 ethereum = { version = "0.15.0", default-features = false }
 futures = "0.3"
 getrandom = { version = "0.2", default-features = false }
+hex = "0.4"
 hex-literal = "0.4"
 impl-trait-for-tuples = { version = "0.2.2" }
 itertools = { version = "0.12.1", default-features = false }
