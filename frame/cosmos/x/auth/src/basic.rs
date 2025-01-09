@@ -15,9 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::marker::PhantomData;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
 use frame_support::{ensure, traits::Get};
+use nostd::marker::PhantomData;
 use pallet_cosmos_types::{
 	errors::{CosmosError, RootError},
 	handler::AnteDecorator,
