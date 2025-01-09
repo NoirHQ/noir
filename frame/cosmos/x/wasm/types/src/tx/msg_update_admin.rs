@@ -15,8 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloc::{string::String, vec, vec::Vec};
 use cosmos_sdk_proto::{prost::Message, Any};
+use nostd::{string::String, vec, vec::Vec};
 use pallet_cosmos_types::tx_msgs::Msg;
 use pallet_cosmos_x_auth_migrations::legacytx::stdsign::LegacyMsg;
 use serde::{Deserialize, Serialize};
