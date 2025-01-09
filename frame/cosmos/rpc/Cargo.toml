@@ -1,10 +1,10 @@
 [package]
 name = "cosmos-rpc"
-version = "0.4.0"
-authors = ["Haderech Pte. Ltd."]
-edition = "2021"
-license = "Apache-2.0"
-repository = "https://github.com/noirhq/noir.git"
+license = "GPL-3.0-or-later"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 publish = false
 
 [dependencies]
