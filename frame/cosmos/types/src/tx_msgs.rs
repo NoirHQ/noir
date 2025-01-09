@@ -43,7 +43,7 @@ impl FeeTx for Tx {
 	fn fee_payer(&self) -> Option<String> {
 		self.fee().map(|fee| fee.payer.clone())
 	}
-	
+
 	fn fee_granter(&self) -> Option<String> {
 		self.fee().map(|fee| fee.granter.clone())
 	}

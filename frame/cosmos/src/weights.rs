@@ -15,9 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::marker::PhantomData;
 use frame_support::{dispatch::DispatchClass, weights::Weight};
 use frame_system::limits::BlockWeights;
+use nostd::marker::PhantomData;
 use sp_core::Get;
 
 pub trait WeightInfo {
@@ -30,8 +30,8 @@ impl WeightInfo for () {
 	}
 }
 
-pub struct CosmosWeight<T>(PhantomData<T>);
-impl<T> WeightInfo for CosmosWeight<T>
+pub struct SubstrateWeight<T>(PhantomData<T>);
+impl<T> WeightInfo for SubstrateWeight<T>
 where
 	T: frame_system::Config,
 {

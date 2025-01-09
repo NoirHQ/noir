@@ -18,8 +18,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(unreachable_patterns)]
 
-extern crate alloc;
-
 pub mod types;
 pub mod weights;
 
@@ -138,7 +136,6 @@ pub trait AddressMapping<A> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use alloc::{string::String, vec::Vec};
 	use cosmos_sdk_proto::Any;
 	use frame_support::{
 		dispatch::WithPostDispatchInfo,
@@ -148,6 +145,7 @@ pub mod pallet {
 			Contains, Currency,
 		},
 	};
+	use nostd::{string::String, vec::Vec};
 	use np_cosmos::traits::ChainInfo;
 	use pallet_cosmos_types::{
 		context::traits::MinGasPrices, errors::CosmosError, events::CosmosEvent, gas::Gas,
