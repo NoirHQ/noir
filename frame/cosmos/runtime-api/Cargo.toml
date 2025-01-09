@@ -8,16 +8,18 @@ repository = "https://github.com/noirhq/noir.git"
 publish = false
 
 [dependencies]
-pallet-cosmos-types = { workspace = true, default-features = false }
-parity-scale-codec = { version = "3.6", default-features = false, features = ["derive"] }
-scale-info = { version = "2.11", default-features = false, features = ["derive"] }
-serde = { version = "1.0.210", default-features = false, features = ["derive"] }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+nostd = { workspace = true }
+pallet-cosmos-types = { workspace = true }
+parity-scale-codec = { workspace = true, features = ["derive"] }
+scale-info = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
+sp-api = { workspace = true }
+sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
+	"nostd/std",
 	"pallet-cosmos-types/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
