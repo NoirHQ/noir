@@ -19,7 +19,7 @@ serde = { workspace = true, features = ["derive"] }
 sp-runtime = { workspace = true }
 
 [dev-dependencies]
-hex = { workspace = true }
+hex = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]

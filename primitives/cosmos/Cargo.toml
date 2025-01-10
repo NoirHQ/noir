@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 bech32 = { workspace = true, optional = true }
 buidl = { workspace = true }
+nostd = { workspace = true }
 parity-scale-codec = { workspace = true }
 ripemd = { workspace = true }
 scale-info = { workspace = true }
@@ -20,13 +21,14 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 
 [dev-dependencies]
-const-hex = { workspace = true }
+const-hex = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]
 std = [
 	"bech32/std",
 	"buidl/std",
+	"nostd/std",
 	"parity-scale-codec/std",
 	"ripemd/std",
 	"scale-info/std",

@@ -19,18 +19,15 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate alloc;
-
 pub mod traits;
 
 #[cfg(feature = "serde")]
 use crate::traits::ChainInfo;
 use crate::traits::CosmosHub;
-use alloc::string::String;
 #[cfg(feature = "serde")]
 use bech32::{Bech32, Hrp};
 use buidl::FixedBytes;
-use core::marker::PhantomData;
+use nostd::{marker::PhantomData, string::String};
 use parity_scale_codec::{Decode, Encode};
 use ripemd::{Digest, Ripemd160};
 #[cfg(feature = "serde")]
@@ -65,21 +62,21 @@ impl<T> From<ecdsa::Public> for Address<T> {
 }
 
 #[cfg(feature = "serde")]
-impl<T: ChainInfo> core::fmt::Display for Address<T> {
-	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+impl<T: ChainInfo> nostd::fmt::Display for Address<T> {
+	fn fmt(&self, f: &mut nostd::fmt::Formatter) -> nostd::fmt::Result {
 		let hrp = Hrp::parse_unchecked(T::bech32_prefix());
 		write!(f, "{}", bech32::encode::<Bech32>(hrp, &self.0).expect("bech32 encode"))
 	}
 }
 
-impl<T> core::fmt::Debug for Address<T> {
-	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+impl<T> nostd::fmt::Debug for Address<T> {
+	fn fmt(&self, f: &mut nostd::fmt::Formatter) -> nostd::fmt::Result {
 		write!(f, "{}", sp_core::hexdisplay::HexDisplay::from(&self.0))
 	}
 }
 
 #[cfg(feature = "serde")]
-impl<T: ChainInfo> core::str::FromStr for Address<T> {
+impl<T: ChainInfo> nostd::str::FromStr for Address<T> {
 	type Err = &'static str;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -98,7 +95,7 @@ impl<T: ChainInfo> Serialize for Address<T> {
 	where
 		S: serde::Serializer,
 	{
-		use alloc::string::ToString;
+		use nostd::string::ToString;
 		serializer.serialize_str(&self.to_string())
 	}
 }
@@ -109,7 +106,7 @@ impl<'de, T: ChainInfo> Deserialize<'de> for Address<T> {
 	where
 		D: serde::Deserializer<'de>,
 	{
-		use core::str::FromStr;
+		use nostd::str::FromStr;
 		let s = String::deserialize(deserializer)?;
 		Address::from_str(&s).map_err(serde::de::Error::custom)
 	}

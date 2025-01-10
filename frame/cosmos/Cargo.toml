@@ -16,11 +16,11 @@ cosmos-sdk-proto = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 nostd = { workspace = true }
-pallet-cosmos-x-auth-signing = { workspace = true, default-features = false }
-pallet-cosmos-types = { workspace = true, default-features = false }
-pallet-multimap = { workspace = true, default-features = false }
+pallet-cosmos-x-auth-signing = { workspace = true }
+pallet-cosmos-types = { workspace = true }
+pallet-multimap = { workspace = true }
 parity-scale-codec = { workspace = true }
-np-cosmos = { workspace = true, default-features = false }
+np-cosmos = { workspace = true }
 scale-info = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
