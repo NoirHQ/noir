@@ -113,7 +113,7 @@ pub mod pallet {
 	use parity_scale_codec::Codec;
 	use solana_sdk::{
 		account::Account,
-		clock,
+		bpf_loader, clock,
 		feature_set::FeatureSet,
 		fee_calculator::FeeCalculator,
 		hash::Hash,
@@ -217,6 +217,12 @@ pub mod pallet {
 
 	#[pallet::origin]
 	pub type Origin = RawOrigin;
+
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Failed to reallocate account data of this length
+		InvalidRealloc,
+	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn slot)]
@@ -328,6 +334,32 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		pub fn create_account(pubkey: Pubkey, owner: Pubkey, executable: bool) {
+			let who = T::AccountIdConversion::convert(pubkey);
+			<frame_system::Pallet<T>>::inc_sufficients(&who);
+			<AccountMeta<T>>::insert(
+				who,
+				AccountMetadata { owner, executable, rent_epoch: u64::MAX },
+			);
+		}
+
+		pub fn deploy_program(
+			pubkey: Pubkey,
+			data: Vec<u8>,
+			owner: Option<Pubkey>,
+		) -> Result<(), Error<T>> {
+			let program_id = T::AccountIdConversion::convert(pubkey);
+			let owner = owner.unwrap_or(bpf_loader::id());
+			Self::create_account(pubkey, owner, true);
+			if !data.is_empty() {
+				<AccountData<T>>::insert(
+					program_id,
+					BoundedVec::try_from(data.to_vec()).map_err(|_| Error::InvalidRealloc)?,
+				);
+			}
+			Ok(())
+		}
+
 		pub fn get_hash_info_if_valid(
 			hash: &T::Hash,
 			max_age: BlockNumberFor<T>,
