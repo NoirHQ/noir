@@ -77,7 +77,6 @@ bytemuck = "1.16.1"
 bytemuck_derive = "1.7.0"
 byteorder = { version = "1.5.0", default-features = false }
 const-hex = { version = "1.13", default-features = false }
-core2 = { version = "0.4.0", default-features = false }
 cosmos-sdk-proto = { version = "0.24", default-features = false }
 curve25519-dalek = { version = "4.1.3", features = ["digest", "rand_core"] }
 derive-where = "1.2"

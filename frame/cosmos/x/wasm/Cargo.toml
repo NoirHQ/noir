@@ -8,12 +8,12 @@ repository = { workspace = true }
 publish = false
 
 [dependencies]
-core2 = { workspace = true, features = ["alloc"] }
 cosmos-sdk-proto = { workspace = true, features = ["cosmwasm"] }
 frame-support = { workspace = true }
 const-hex = { workspace = true }
 libflate = { workspace = true }
 log = { workspace = true }
+nostd = { workspace = true }
 pallet-cosmos = { workspace = true }
 pallet-cosmos-types = { workspace = true }
 pallet-cosmos-x-wasm-types = { workspace = true }
@@ -24,12 +24,12 @@ sp-runtime = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"core2/std",
 	"cosmos-sdk-proto/std",
 	"frame-support/std",
 	"const-hex/std",
 	"libflate/std",
 	"log/std",
+	"nostd/std",
 	"pallet-cosmos/std",
 	"pallet-cosmos-types/std",
 	"pallet-cosmos-x-wasm-types/std",
