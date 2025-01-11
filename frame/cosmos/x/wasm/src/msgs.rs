@@ -105,7 +105,7 @@ where
 				},
 				EventAttribute {
 					key: ATTRIBUTE_KEY_CHECKSUM.into(),
-					value: hex::encode(code_hash.0).into(),
+					value: const_hex::encode(code_hash.0).into(),
 				},
 			],
 		};

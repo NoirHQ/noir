@@ -203,7 +203,7 @@ mod tests {
 			pub_key: public_key.clone(),
 		};
 		let hash = sha2_256(&SignModeHandler::get_sign_bytes(&mode, &data, &tx).unwrap());
-		let hash = hex::encode(hash);
+		let hash = const_hex::encode(hash);
 
 		assert_eq!(hash, "714d4bdfdbd0bd630ebdf93b1f6eba7d3c752e92bbab6c9d3d9c93e1777348bb");
 	}

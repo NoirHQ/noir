@@ -11,7 +11,7 @@ publish = false
 core2 = { workspace = true, features = ["alloc"] }
 cosmos-sdk-proto = { workspace = true, features = ["cosmwasm"] }
 frame-support = { workspace = true }
-hex = { workspace = true }
+const-hex = { workspace = true }
 libflate = { workspace = true }
 log = { workspace = true }
 pallet-cosmos = { workspace = true }
@@ -27,7 +27,7 @@ std = [
 	"core2/std",
 	"cosmos-sdk-proto/std",
 	"frame-support/std",
-	"hex/std",
+	"const-hex/std",
 	"libflate/std",
 	"log/std",
 	"pallet-cosmos/std",
