@@ -17,9 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate alloc;
-
-use alloc::{string::String, vec::Vec};
+use nostd::{string::String, vec::Vec};
 use pallet_cosmos_types::tx::SimulateResponse;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -29,7 +27,7 @@ use sp_runtime::traits::Block as BlockT;
 
 #[derive(Clone, Decode, Encode, Debug, Eq, PartialEq, TypeInfo)]
 pub enum SimulateError {
-	InvalidTx,
+	InvalidTransaction,
 	InternalError(Vec<u8>),
 }
 

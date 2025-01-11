@@ -13,7 +13,7 @@ std = ["cosmwasm-std/std"]
 cosmwasm-std = { workspace = true, default-features = false, features = [
   "iterator",
   "stargate",
-  "cosmwasm_1_4",
+  "cosmwasm_1_2",
 ] }
 log = { version = "0.4.21", default-features = false }
 num = { version = "0.4.3", default-features = false }

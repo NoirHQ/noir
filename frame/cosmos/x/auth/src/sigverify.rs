@@ -15,7 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloc::vec::Vec;
 use core::{cmp::Ordering, marker::PhantomData};
 use cosmos_sdk_proto::{
 	cosmos::{
@@ -26,6 +25,7 @@ use cosmos_sdk_proto::{
 	Any,
 };
 use frame_support::ensure;
+use nostd::vec::Vec;
 use np_cosmos::traits::ChainInfo;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{

@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloc::{
+use nostd::{
 	string::{String, ToString},
 	vec::Vec,
 };
@@ -41,7 +41,7 @@ mod tests {
 		let (hrp, address_raw) = acc_address_from_bech32(address).unwrap();
 		assert_eq!(hrp, "cosmos");
 
-		let address_raw = hex::encode(address_raw);
+		let address_raw = const_hex::encode(address_raw);
 		assert_eq!(address_raw, "037459f1d22d10bed7b6920865c8bc96c5571f2d");
 	}
 }

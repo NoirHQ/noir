@@ -15,11 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloc::{
+use cosmos_sdk_proto::cosmos::tx::v1beta1::Fee;
+use nostd::{
 	string::{String, ToString},
 	vec::Vec,
 };
-use cosmos_sdk_proto::cosmos::tx::v1beta1::Fee;
 use pallet_cosmos_types::coin::Coin;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

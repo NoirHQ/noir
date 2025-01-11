@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloc::string::String;
+use nostd::string::String;
 
 pub trait Coins {
 	type Error;

@@ -83,10 +83,14 @@ derive-where = "1.2"
 eager = "0.1.0"
 enum-iterator = "1.5.0"
 ethereum = { version = "0.15.0", default-features = false }
+futures = "0.3"
 getrandom = { version = "0.2", default-features = false }
 hex-literal = "0.4"
+impl-trait-for-tuples = { version = "0.2.2" }
 itertools = { version = "0.12.1", default-features = false }
+jsonrpsee = { version = "0.24" }
 k256 = { version = "0.13", default-features = false }
+libflate = { version = "2.1.0", default-features = false }
 libsecp256k1 = { version = "0.6.0", default-features = false }
 light-poseidon = "0.2.0"
 log = { version = "0.4", default-features = false }
@@ -125,7 +129,9 @@ pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch =
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }

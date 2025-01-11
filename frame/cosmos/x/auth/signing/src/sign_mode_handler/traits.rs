@@ -16,8 +16,8 @@
 // limitations under the License.
 
 use super::{SignModeHandlerError, SignerData};
-use alloc::vec::Vec;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{ModeInfo, Tx};
+use nostd::vec::Vec;
 
 pub trait SignModeHandler {
 	fn get_sign_bytes(

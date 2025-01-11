@@ -17,7 +17,5 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate alloc;
-
 pub mod sign_mode_handler;
 pub mod sign_verifiable_tx;

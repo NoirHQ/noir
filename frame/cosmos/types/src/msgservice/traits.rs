@@ -16,8 +16,8 @@
 // limitations under the License.
 
 use crate::errors::CosmosError;
-use alloc::boxed::Box;
 use cosmos_sdk_proto::Any;
+use nostd::boxed::Box;
 
 pub trait MsgHandler<Context> {
 	fn handle(&self, ctx: &mut Context, msg: &Any) -> Result<(), CosmosError>;

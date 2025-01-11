@@ -91,8 +91,12 @@ where
 			.simulate(at, tx_bytes.to_vec())
 			.map_err(internal_error)?
 			.map_err(|e| match e {
-				SimulateError::InvalidTx => request_error("Invalid tx"),
-				SimulateError::InternalError(e) => internal_error(String::from_utf8_lossy(&e)),
+				SimulateError::InvalidTransaction =>
+					request_error("Simulate transaction failed: Invalid transaction"),
+				SimulateError::InternalError(e) => internal_error(format!(
+					"Simulate transaction failed: {})",
+					String::from_utf8_lossy(&e)
+				)),
 			})
 	}
 

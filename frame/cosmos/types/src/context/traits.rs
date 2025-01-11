@@ -20,7 +20,7 @@ use crate::{
 	events::traits::EventManager,
 	gas::{traits::GasMeter, Gas},
 };
-use alloc::vec::Vec;
+use nostd::vec::Vec;
 
 pub trait Context {
 	type GasMeter: GasMeter;

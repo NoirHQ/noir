@@ -15,7 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloc::vec;
 use core::marker::PhantomData;
 use cosmos_sdk_proto::cosmos::tx::v1beta1::{Fee, Tx};
 use frame_support::{
@@ -26,6 +25,7 @@ use frame_support::{
 		Currency, ExistenceRequirement, WithdrawReasons,
 	},
 };
+use nostd::vec;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,

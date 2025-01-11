@@ -17,29 +17,19 @@
 
 pub mod cosmos;
 
-use jsonrpsee::{
-	core::to_json_raw_value,
-	types::{
-		error::{INTERNAL_ERROR_CODE, INVALID_REQUEST_CODE},
-		ErrorObject, ErrorObjectOwned,
-	},
+use jsonrpsee::types::{
+	error::{INTERNAL_ERROR_CODE, INVALID_REQUEST_CODE},
+	ErrorObject, ErrorObjectOwned,
 };
 
-pub fn error<T: ToString>(code: i32, message: T, data: Option<&[u8]>) -> ErrorObjectOwned {
-	ErrorObject::owned(
-		code,
-		message.to_string(),
-		data.map(|bytes| {
-			to_json_raw_value(&format!("0x{}", hex::encode(bytes)))
-				.expect("Failed to serialize data")
-		}),
-	)
+pub fn error<T: ToString>(code: i32, message: T) -> ErrorObjectOwned {
+	ErrorObject::owned(code, message.to_string(), None::<()>)
 }
 
 pub fn request_error<T: ToString>(message: T) -> ErrorObjectOwned {
-	error(INVALID_REQUEST_CODE, message, None)
+	error(INVALID_REQUEST_CODE, message)
 }
 
 pub fn internal_error<T: ToString>(message: T) -> ErrorObjectOwned {
-	error(INTERNAL_ERROR_CODE, message, None)
+	error(INTERNAL_ERROR_CODE, message)
 }

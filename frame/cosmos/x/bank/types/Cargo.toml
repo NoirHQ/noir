@@ -1,22 +1,24 @@
 [package]
 name = "pallet-cosmos-x-bank-types"
-version = "0.4.0"
-authors = ["Haderech Pte. Ltd."]
-edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/noirhq/noir.git"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 publish = false
 
 [dependencies]
-cosmos-sdk-proto = { version = "0.24", default-features = false }
-pallet-cosmos-types = { workspace = true, default-features = false }
-pallet-cosmos-x-auth-migrations = { workspace = true, default-features = false }
-serde = { version = "1.0.210", default-features = false, features = ["derive"] }
+cosmos-sdk-proto = { workspace = true }
+nostd = { workspace = true }
+pallet-cosmos-types = { workspace = true }
+pallet-cosmos-x-auth-migrations = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 
 [features]
 default = ["std"]
 std = [
 	"cosmos-sdk-proto/std",
+	"nostd/std",
 	"pallet-cosmos-types/std",
 	"pallet-cosmos-x-auth-migrations/std",
 	"serde/std",

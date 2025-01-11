@@ -17,7 +17,7 @@
 
 pub mod traits;
 
-use alloc::{
+use nostd::{
 	string::{String, ToString},
 	vec::Vec,
 };

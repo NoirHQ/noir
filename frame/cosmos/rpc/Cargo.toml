@@ -1,20 +1,19 @@
 [package]
 name = "cosmos-rpc"
-version = "0.4.0"
-authors = ["Haderech Pte. Ltd."]
-edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/noirhq/noir.git"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 publish = false
 
 [dependencies]
 cosmos-runtime-api = { workspace = true, features = ["std"] }
-futures = "0.3"
-hex = "0.4.3"
-jsonrpsee = { version = "0.24", features = ["client", "server", "macros"] }
+futures = { workspace = true }
+jsonrpsee = { workspace = true, features = ["client", "server", "macros"] }
 pallet-cosmos-types = { workspace = true, features = ["std"] }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+sc-transaction-pool-api = { workspace = true }
+sp-api = { workspace = true, features = ["std"] }
+sp-blockchain = { workspace = true }
+sp-core = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }

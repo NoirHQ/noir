@@ -1,27 +1,28 @@
 [package]
 name = "pallet-cosmos-x-auth"
-version = "0.4.0"
-authors = ["Haderech Pte. Ltd."]
-edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/noirhq/noir.git"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 publish = false
 
 [dependencies]
-cosmos-sdk-proto = { version = "0.24", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-np-cosmos = { workspace = true, default-features = false }
-pallet-cosmos = { workspace = true, default-features = false }
-pallet-cosmos-types = { workspace = true, default-features = false }
-pallet-cosmos-x-auth-signing = { workspace = true, default-features = false }
-ripemd = { version = "0.1.3", default-features = false }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+cosmos-sdk-proto = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+nostd = { workspace = true }
+np-cosmos = { workspace = true }
+pallet-cosmos = { workspace = true }
+pallet-cosmos-types = { workspace = true }
+pallet-cosmos-x-auth-signing = { workspace = true }
+ripemd = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
 
 [dev-dependencies]
-const-hex = "1.13"
+const-hex = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]

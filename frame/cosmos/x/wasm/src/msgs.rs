@@ -18,7 +18,6 @@
 use crate::error::handle_vm_error;
 use alloc::{string::ToString, vec, vec::Vec};
 use core::{marker::PhantomData, str::FromStr};
-use core2::io::Read;
 use cosmos_sdk_proto::{
 	cosmos::base::v1beta1::Coin,
 	cosmwasm::wasm::v1::{
@@ -30,6 +29,7 @@ use cosmos_sdk_proto::{
 };
 use frame_support::ensure;
 use libflate::gzip::Decoder;
+use nostd::io::Read;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,
@@ -105,7 +105,7 @@ where
 				},
 				EventAttribute {
 					key: ATTRIBUTE_KEY_CHECKSUM.into(),
-					value: hex::encode(code_hash.0).into(),
+					value: const_hex::encode(code_hash.0).into(),
 				},
 			],
 		};

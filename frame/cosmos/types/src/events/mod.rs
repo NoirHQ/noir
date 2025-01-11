@@ -17,7 +17,7 @@
 
 pub mod traits;
 
-use alloc::vec::Vec;
+use nostd::vec::Vec;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};

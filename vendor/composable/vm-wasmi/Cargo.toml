@@ -22,7 +22,7 @@ wasm-instrument = { version = "0.4.0", default-features = false }
 cosmwasm-std = { workspace = true, default-features = false, features = [
 	"iterator",
 	"stargate",
-	"cosmwasm_1_4",
+	"cosmwasm_1_2",
 ] }
 cosmwasm-vm = { workspace = true, default-features = false, features = [
 	"iterator",
