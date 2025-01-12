@@ -85,15 +85,11 @@ fn process_transaction(bank: &Bank<Test>, tx: Transaction) -> Result<()> {
 	bank.load_execute_and_commit_sanitized_transaction(sanitized_tx)
 }
 
-fn deploy_program(program_id: &Pubkey, data: Vec<u8>) {
+fn mock_deploy_program(program_id: &Pubkey, data: Vec<u8>) {
+	<Pallet<Test>>::deploy_program(*program_id, data, None).unwrap();
+
 	let who = AccountIdConversion::convert(*program_id);
-	System::inc_providers(&who);
 	Balances::mint_into(&who, sol_into_balances(1)).unwrap();
-	<AccountMeta<Test>>::insert(
-		&who,
-		AccountMetadata { rent_epoch: u64::MAX, owner: bpf_loader::id(), executable: true },
-	);
-	<AccountData<Test>>::insert(&who, BoundedVec::try_from(data).expect("account data"));
 }
 
 #[test]
@@ -212,7 +208,7 @@ fn spl_token_program_should_work() {
 		let program_data =
 			std::fs::read("tests/example-programs/token/token_program.so").expect("program data");
 
-		deploy_program(&token_program_id, program_data);
+		mock_deploy_program(&token_program_id, program_data);
 
 		let create_account = system_instruction::create_account(
 			&authority.pubkey(),
