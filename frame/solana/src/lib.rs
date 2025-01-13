@@ -181,7 +181,7 @@ pub mod pallet {
 		type ScanResultsLimitBytes: Get<Option<u32>>;
 
 		#[pallet::constant]
-		type MaxTransactionCacheLimit: Get<u32>;
+		type TransactionCacheLimit: Get<u32>;
 	}
 
 	pub mod config_preludes {
@@ -214,7 +214,7 @@ pub mod pallet {
 			/// Maximum scan result size in bytes.
 			type ScanResultsLimitBytes = ScanResultsLimitBytes;
 
-			type MaxTransactionCacheLimit = ConstU32<10000>;
+			type TransactionCacheLimit = ConstU32<10000>;
 		}
 	}
 
@@ -266,7 +266,7 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		T::Hash,
-		BoundedBTreeSet<T::Hash, T::MaxTransactionCacheLimit>,
+		BoundedBTreeSet<T::Hash, T::TransactionCacheLimit>,
 		ValueQuery,
 	>;
 
@@ -556,7 +556,7 @@ pub mod pallet {
 
 			ensure!(
 				<TransactionCache<T>>::get(blockhash).len() <
-					T::MaxTransactionCacheLimit::get() as usize,
+					T::TransactionCacheLimit::get() as usize,
 				Error::<T>::CacheLimitReached
 			);
 			<TransactionCache<T>>::mutate(blockhash, |cache| {
