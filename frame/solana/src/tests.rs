@@ -272,3 +272,27 @@ fn spl_token_program_should_work() {
 		assert_eq!(state.amount, sol_into_lamports(1_000));
 	});
 }
+
+#[test]
+fn filter_duplicated_transaction() {
+	new_test_ext().execute_with(|| {
+		before_each();
+		let bank = mock_bank();
+
+		let from = Keypair::alice();
+		let to = Keypair::bob();
+		let lamports = 100_000_000;
+
+		let transfer = system_instruction::transfer(&from.pubkey(), &to.pubkey(), lamports);
+		let mut transaction = Transaction::new_with_payer(&[transfer], Some(&from.pubkey()));
+
+		let origin = RawOrigin::SolanaTransaction(from.pubkey());
+		let versioned_tx: VersionedTransaction = transaction.into();
+		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_ok());
+
+		assert!(Pallet::<Test>::transact(origin.into(), versioned_tx.clone()).is_ok());
+
+		// A duplicated transaction was submitted, causing an error.
+		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_err());
+	});
+}

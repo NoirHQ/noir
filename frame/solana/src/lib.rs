@@ -106,6 +106,7 @@ pub mod pallet {
 			fungible::Inspect,
 			tokens::{Fortitude::Polite, Preservation::Preserve},
 		},
+		BoundedBTreeSet,
 	};
 	use frame_system::{pallet_prelude::*, CheckWeight};
 	use nostd::sync::Arc;
@@ -178,6 +179,9 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type ScanResultsLimitBytes: Get<Option<u32>>;
+
+		#[pallet::constant]
+		type MaxTransactionCacheLimit: Get<u32>;
 	}
 
 	pub mod config_preludes {
@@ -209,6 +213,8 @@ pub mod pallet {
 			type GenesisTimestamp = ConstU64<1584336540_000>;
 			/// Maximum scan result size in bytes.
 			type ScanResultsLimitBytes = ScanResultsLimitBytes;
+
+			type MaxTransactionCacheLimit = ConstU32<10000>;
 		}
 	}
 
@@ -222,6 +228,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Failed to reallocate account data of this length
 		InvalidRealloc,
+		///
+		CacheLimitReached,
 	}
 
 	#[pallet::storage]
@@ -246,6 +254,19 @@ pub mod pallet {
 		Twox64Concat,
 		T::AccountId,
 		BoundedVec<u8, T::MaxPermittedDataLength>,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn transaction_count)]
+	pub type TransactionCount<T> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
+	pub type TransactionCache<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::Hash,
+		BoundedBTreeSet<T::Hash, T::MaxTransactionCacheLimit>,
 		ValueQuery,
 	>;
 
@@ -280,10 +301,6 @@ pub mod pallet {
 		}
 	}
 
-	#[pallet::storage]
-	#[pallet::getter(fn transaction_count)]
-	pub type TransactionCount<T> = StorageValue<_, u64, ValueQuery>;
-
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(now: BlockNumberFor<T>) -> Weight {
@@ -307,7 +324,9 @@ pub mod pallet {
 		fn on_finalize(now: BlockNumberFor<T>) {
 			let max_age = T::BlockhashQueueMaxAge::get();
 			let to_remove = now.saturating_sub(max_age).saturating_sub(One::one());
-			<BlockhashQueue<T>>::remove(<frame_system::Pallet<T>>::block_hash(to_remove));
+			let blockhash = <frame_system::Pallet<T>>::block_hash(to_remove);
+			<BlockhashQueue<T>>::remove(blockhash);
+			<TransactionCache<T>>::remove(blockhash);
 
 			let count = frame_system::Pallet::<T>::extrinsic_count() as u64;
 			TransactionCount::<T>::mutate(|total_count| {
@@ -385,7 +404,9 @@ pub mod pallet {
 
 			let bank = <Bank<T>>::new(<Slot<T>>::get());
 
-			bank.load_execute_and_commit_sanitized_transaction(sanitized_tx);
+			if bank.load_execute_and_commit_sanitized_transaction(sanitized_tx.clone()).is_ok() {
+				Self::update_transaction_cache(&sanitized_tx)?;
+			};
 
 			Ok(().into())
 		}
@@ -393,9 +414,11 @@ pub mod pallet {
 		// TODO: unimplemented.
 		fn validate_transaction_in_pool(
 			_fee_payer: Pubkey,
-			_transaction: &Transaction,
+			transaction: &Transaction,
 		) -> TransactionValidity {
 			let mut builder = ValidTransactionBuilder::default();
+
+			Self::check_transaction(&transaction)?;
 
 			builder.build()
 		}
@@ -403,8 +426,10 @@ pub mod pallet {
 		// TODO: unimplemented.
 		fn validate_transaction_in_block(
 			_fee_payer: Pubkey,
-			_transaction: &Transaction,
+			transaction: &Transaction,
 		) -> Result<(), TransactionValidityError> {
+			Self::check_transaction(&transaction)?;
+
 			Ok(())
 		}
 
@@ -523,6 +548,49 @@ pub mod pallet {
 				return_data,
 				inner_instructions,
 			}
+		}
+
+		fn update_transaction_cache(sanitized_tx: &SanitizedTransaction) -> Result<(), Error<T>> {
+			let blockhash = T::HashConversion::convert(*sanitized_tx.message().recent_blockhash());
+			let message_hash = T::HashConversion::convert(*sanitized_tx.message_hash());
+
+			ensure!(
+				<TransactionCache<T>>::get(blockhash).len() <
+					T::MaxTransactionCacheLimit::get() as usize,
+				Error::<T>::CacheLimitReached
+			);
+			<TransactionCache<T>>::mutate(blockhash, |cache| {
+				cache.try_insert(message_hash).unwrap()
+			});
+
+			Ok(())
+		}
+
+		pub(crate) fn check_transaction(
+			transaction: &Transaction,
+		) -> Result<(), InvalidTransaction> {
+			// TODO: Update error code.
+			let sanitized_tx = SanitizedTransaction::try_create(
+				transaction.clone(),
+				MessageHash::Compute,
+				None,
+				SimpleAddressLoader::Disabled,
+				&ReservedAccountKeys::empty_key_set(),
+			)
+			.map_err(|_| InvalidTransaction::Custom(0))?;
+
+			if Self::is_transaction_already_processed(&sanitized_tx) {
+				return Err(InvalidTransaction::Custom(0));
+			}
+
+			Ok(())
+		}
+
+		fn is_transaction_already_processed(sanitized_tx: &SanitizedTransaction) -> bool {
+			let blockhash = T::HashConversion::convert(*sanitized_tx.message().recent_blockhash());
+			let message_hash = T::HashConversion::convert(*sanitized_tx.message_hash());
+
+			<TransactionCache<T>>::get(blockhash).contains(&message_hash)
 		}
 	}
 
