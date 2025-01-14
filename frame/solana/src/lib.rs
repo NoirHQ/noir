@@ -228,7 +228,7 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Failed to reallocate account data of this length
 		InvalidRealloc,
-		///
+		/// Transaction cache limit reached.
 		CacheLimitReached,
 	}
 
@@ -262,6 +262,7 @@ pub mod pallet {
 	pub type TransactionCount<T> = StorageValue<_, u64, ValueQuery>;
 
 	#[pallet::storage]
+	#[pallet::getter(fn transaction_cache)]
 	pub type TransactionCache<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
@@ -418,7 +419,7 @@ pub mod pallet {
 		) -> TransactionValidity {
 			let mut builder = ValidTransactionBuilder::default();
 
-			Self::check_transaction(&transaction)?;
+			Self::check_transaction(transaction)?;
 
 			builder.build()
 		}
@@ -428,7 +429,7 @@ pub mod pallet {
 			_fee_payer: Pubkey,
 			transaction: &Transaction,
 		) -> Result<(), TransactionValidityError> {
-			Self::check_transaction(&transaction)?;
+			Self::check_transaction(transaction)?;
 
 			Ok(())
 		}

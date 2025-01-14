@@ -22,7 +22,7 @@ use frame_support::{
 	sp_runtime::traits::Convert,
 	traits::{
 		fungible::{Inspect, Mutate},
-		Get,
+		Get, OnFinalize,
 	},
 	BoundedVec,
 };
@@ -284,15 +284,18 @@ fn filter_duplicated_transaction() {
 		let lamports = 100_000_000;
 
 		let transfer = system_instruction::transfer(&from.pubkey(), &to.pubkey(), lamports);
-		let mut transaction = Transaction::new_with_payer(&[transfer], Some(&from.pubkey()));
+		let mut tx = Transaction::new_with_payer(&[transfer], Some(&from.pubkey()));
 
 		let origin = RawOrigin::SolanaTransaction(from.pubkey());
-		let versioned_tx: VersionedTransaction = transaction.into();
+		let versioned_tx: VersionedTransaction = tx.into();
 		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_ok());
 
 		assert!(Pallet::<Test>::transact(origin.into(), versioned_tx.clone()).is_ok());
 
 		// A duplicated transaction was submitted, causing an error.
 		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_err());
+
+		Solana::on_finalize(22);
+		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_ok());
 	});
 }
