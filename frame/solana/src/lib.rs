@@ -136,6 +136,9 @@ pub mod pallet {
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
 		#[pallet::no_default]
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		#[pallet::no_default]
 		type AccountIdConversion: ConvertBack<Pubkey, Self::AccountId>;
 
 		#[pallet::no_default]
@@ -224,6 +227,12 @@ pub mod pallet {
 
 	#[pallet::origin]
 	pub type Origin = RawOrigin;
+
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		LoadedAccounts(Vec<Pubkey>),
+	}
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -399,6 +408,13 @@ pub mod pallet {
 
 			if bank.load_execute_and_commit_sanitized_transaction(&sanitized_tx).is_ok() {
 				Self::update_transaction_cache(&sanitized_tx)?;
+				let account_keys = sanitized_tx
+					.message()
+					.account_keys()
+					.iter()
+					.map(Clone::clone)
+					.collect::<Vec<Pubkey>>();
+				Self::deposit_event(Event::LoadedAccounts(account_keys));
 			}
 
 			Ok(().into())
