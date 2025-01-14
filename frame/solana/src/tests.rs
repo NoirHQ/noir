@@ -22,7 +22,7 @@ use frame_support::{
 	sp_runtime::traits::Convert,
 	traits::{
 		fungible::{Inspect, Mutate},
-		Get,
+		Get, OnFinalize,
 	},
 	BoundedVec,
 };
@@ -82,7 +82,7 @@ fn process_transaction(bank: &Bank<Test>, tx: Transaction) -> Result<()> {
 	)
 	.expect("Transaction must be sanitized");
 
-	bank.load_execute_and_commit_sanitized_transaction(sanitized_tx)
+	bank.load_execute_and_commit_sanitized_transaction(&sanitized_tx)
 }
 
 fn mock_deploy_program(program_id: &Pubkey, data: Vec<u8>) {
@@ -270,5 +270,32 @@ fn spl_token_program_should_work() {
 		assert_eq!(state.mint, mint.pubkey());
 		assert_eq!(state.owner, owner.pubkey());
 		assert_eq!(state.amount, sol_into_lamports(1_000));
+	});
+}
+
+#[test]
+fn filter_duplicated_transaction() {
+	new_test_ext().execute_with(|| {
+		before_each();
+		let bank = mock_bank();
+
+		let from = Keypair::alice();
+		let to = Keypair::bob();
+		let lamports = 100_000_000;
+
+		let transfer = system_instruction::transfer(&from.pubkey(), &to.pubkey(), lamports);
+		let mut tx = Transaction::new_with_payer(&[transfer], Some(&from.pubkey()));
+
+		let origin = RawOrigin::SolanaTransaction(from.pubkey());
+		let versioned_tx: VersionedTransaction = tx.into();
+		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_ok());
+
+		assert!(Pallet::<Test>::transact(origin.into(), versioned_tx.clone()).is_ok());
+
+		// A duplicated transaction was submitted, causing an error.
+		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_err());
+
+		Solana::on_finalize(22);
+		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_ok());
 	});
 }
