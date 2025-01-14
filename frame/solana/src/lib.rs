@@ -106,7 +106,6 @@ pub mod pallet {
 			fungible::Inspect,
 			tokens::{Fortitude::Polite, Preservation::Preserve},
 		},
-		BoundedBTreeSet,
 	};
 	use frame_system::{pallet_prelude::*, CheckWeight};
 	use nostd::sync::Arc;
@@ -177,9 +176,11 @@ pub mod pallet {
 		#[pallet::no_default_bounds]
 		type GenesisTimestamp: Get<Self::Moment>;
 
+		/// Maximum scan result size in bytes.
 		#[pallet::constant]
 		type ScanResultsLimitBytes: Get<Option<u32>>;
 
+		/// Maximum number of transactions to cache for tracking processed ones.
 		#[pallet::constant]
 		type TransactionCacheLimit: Get<u32>;
 	}
@@ -213,7 +214,7 @@ pub mod pallet {
 			type GenesisTimestamp = ConstU64<1584336540_000>;
 			/// Maximum scan result size in bytes.
 			type ScanResultsLimitBytes = ScanResultsLimitBytes;
-
+			/// Maximum number of transactions to cache for tracking processed ones.
 			type TransactionCacheLimit = ConstU32<10000>;
 		}
 	}
@@ -555,14 +556,8 @@ pub mod pallet {
 			let blockhash = T::HashConversion::convert(*sanitized_tx.message().recent_blockhash());
 			let message_hash = T::HashConversion::convert(*sanitized_tx.message_hash());
 
-			ensure!(
-				<TransactionCache<T>>::get(blockhash).len() <
-					T::TransactionCacheLimit::get() as usize,
-				Error::<T>::CacheLimitReached
-			);
-			<TransactionCache<T>>::mutate(blockhash, |cache| {
-				cache.try_insert(message_hash).unwrap()
-			});
+			<TransactionCache<T>>::try_mutate(blockhash, |cache| cache.try_insert(message_hash))
+				.map_err(|_| Error::<T>::CacheLimitReached)?;
 
 			Ok(())
 		}
