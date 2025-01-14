@@ -82,7 +82,7 @@ fn process_transaction(bank: &Bank<Test>, tx: Transaction) -> Result<()> {
 	)
 	.expect("Transaction must be sanitized");
 
-	bank.load_execute_and_commit_sanitized_transaction(sanitized_tx)
+	bank.load_execute_and_commit_sanitized_transaction(&sanitized_tx)
 }
 
 fn mock_deploy_program(program_id: &Pubkey, data: Vec<u8>) {

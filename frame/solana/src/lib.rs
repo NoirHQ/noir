@@ -259,10 +259,6 @@ pub mod pallet {
 	>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn transaction_count)]
-	pub type TransactionCount<T> = StorageValue<_, u64, ValueQuery>;
-
-	#[pallet::storage]
 	#[pallet::getter(fn transaction_cache)]
 	pub type TransactionCache<T: Config> = StorageMap<
 		_,
@@ -329,11 +325,6 @@ pub mod pallet {
 			let blockhash = <frame_system::Pallet<T>>::block_hash(to_remove);
 			<BlockhashQueue<T>>::remove(blockhash);
 			<TransactionCache<T>>::remove(blockhash);
-
-			let count = frame_system::Pallet::<T>::extrinsic_count() as u64;
-			TransactionCount::<T>::mutate(|total_count| {
-				*total_count = total_count.saturating_add(count)
-			});
 		}
 	}
 
@@ -406,9 +397,9 @@ pub mod pallet {
 
 			let bank = <Bank<T>>::new(<Slot<T>>::get());
 
-			if bank.load_execute_and_commit_sanitized_transaction(sanitized_tx.clone()).is_ok() {
+			if bank.load_execute_and_commit_sanitized_transaction(&sanitized_tx).is_ok() {
 				Self::update_transaction_cache(&sanitized_tx)?;
-			};
+			}
 
 			Ok(().into())
 		}
@@ -462,10 +453,6 @@ pub mod pallet {
 			} else {
 				None
 			}
-		}
-
-		pub fn get_transaction_count() -> u64 {
-			TransactionCount::<T>::get()
 		}
 
 		pub fn simulate_transaction(

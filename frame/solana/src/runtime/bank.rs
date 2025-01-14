@@ -206,9 +206,9 @@ impl<T: Config> Bank<T> {
 
 	pub fn load_execute_and_commit_sanitized_transaction(
 		&self,
-		sanitized_tx: SanitizedTransaction,
+		sanitized_tx: &SanitizedTransaction,
 	) -> Result<()> {
-		let check_result = self.check_transaction(&sanitized_tx, T::BlockhashQueueMaxAge::get());
+		let check_result = self.check_transaction(sanitized_tx, T::BlockhashQueueMaxAge::get());
 
 		let blockhash = T::HashConversion::convert_back(<frame_system::Pallet<T>>::parent_hash());
 		// FIXME: Update lamports_per_signature.
@@ -240,14 +240,14 @@ impl<T: Config> Bank<T> {
 		let mut sanitized_output =
 			self.transaction_processor.load_and_execute_sanitized_transaction(
 				self,
-				&sanitized_tx,
+				sanitized_tx,
 				check_result,
 				&processing_environment,
 				&processing_config,
 			);
 
 		self.commit_transaction(
-			&sanitized_tx,
+			sanitized_tx,
 			&mut sanitized_output.loaded_transaction,
 			sanitized_output.execution_result.clone(),
 			blockhash,
