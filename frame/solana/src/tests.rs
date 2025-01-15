@@ -266,7 +266,7 @@ fn spl_token_program_should_work() {
 		let state = spl_token::state::Account::unpack_from_slice(&<AccountData<Test>>::get(
 			&account.account_id(),
 		))
-		.expect("token acccount state");
+		.expect("token account state");
 		assert_eq!(state.mint, mint.pubkey());
 		assert_eq!(state.owner, owner.pubkey());
 		assert_eq!(state.amount, sol_into_lamports(1_000));
@@ -297,5 +297,103 @@ fn filter_duplicated_transaction() {
 
 		Solana::on_finalize(22);
 		assert!(Pallet::<Test>::check_transaction(&versioned_tx).is_ok());
+	});
+}
+
+#[test]
+fn trace_executed_transaction_events() {
+	new_test_ext().execute_with(|| {
+		before_each();
+		let bank = mock_bank();
+
+		let authority = Keypair::alice();
+		let owner = Keypair::bob();
+		let mint = Keypair::get("Mint");
+
+		let token_program_id = Pubkey::parse("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+		let program_data =
+			std::fs::read("tests/example-programs/token/token_program.so").expect("program data");
+
+		mock_deploy_program(&token_program_id, program_data);
+
+		let create_account = system_instruction::create_account(
+			&authority.pubkey(),
+			&mint.pubkey(),
+			sol_into_lamports(1),
+			82,
+			&token_program_id,
+		);
+		let initialize_mint = spl_token::instruction::initialize_mint2(
+			&token_program_id,
+			&mint.pubkey(),
+			&authority.pubkey(),
+			None,
+			9,
+		)
+		.expect("initialize_mint2 instruction");
+		let mut tx = Transaction::new_with_payer(
+			&[create_account, initialize_mint],
+			Some(&authority.pubkey()),
+		);
+		tx.sign(&[&authority, &mint], Hash::default());
+
+		let origin = RawOrigin::SolanaTransaction(authority.pubkey());
+		let versioned_tx: VersionedTransaction = tx.into();
+
+		assert!(Pallet::<Test>::transact(origin.into(), versioned_tx.clone()).is_ok());
+
+		let account = Keypair::get("Account");
+		let create_account = system_instruction::create_account(
+			&owner.pubkey(),
+			&account.pubkey(),
+			sol_into_lamports(1),
+			165,
+			&token_program_id,
+		);
+		let initialize_account = spl_token::instruction::initialize_account(
+			&token_program_id,
+			&account.pubkey(),
+			&mint.pubkey(),
+			&owner.pubkey(),
+		)
+		.expect("initialize_account instruction");
+		let mint_to = spl_token::instruction::mint_to(
+			&token_program_id,
+			&mint.pubkey(),
+			&account.pubkey(),
+			&authority.pubkey(),
+			&[],
+			sol_into_lamports(1_000),
+		)
+		.expect("mint_to instruction");
+		let mut tx = Transaction::new_with_payer(
+			&[create_account, initialize_account, mint_to],
+			Some(&owner.pubkey()),
+		);
+		tx.sign(&[&authority, &account, &owner], Hash::default());
+		let origin = RawOrigin::SolanaTransaction(authority.pubkey());
+		let versioned_tx: VersionedTransaction = tx.into();
+
+		assert!(Pallet::<Test>::transact(origin.into(), versioned_tx.clone()).is_ok());
+
+		let account_keys: Vec<Pubkey> = System::events()
+			.into_iter()
+			.filter_map(|record| match record.event {
+				RuntimeEvent::Solana(Event::LoadedAccounts(keys)) => Some(keys),
+				_ => None,
+			})
+			.flatten()
+			.collect();
+
+		let token_account = account_keys
+			.into_iter()
+			.filter_map(|account_key| Pallet::<Test>::get_account_info(account_key))
+			.filter(|account| account.owner == spl_token::id())
+			.filter_map(|account| spl_token::state::Account::unpack(&account.data).ok())
+			.next()
+			.unwrap();
+
+		assert!(token_account.owner == owner.pubkey());
+		assert!(token_account.mint == mint.pubkey());
 	});
 }
