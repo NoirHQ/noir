@@ -135,7 +135,7 @@ pub mod pallet {
 
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
-		#[pallet::no_default]
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		#[pallet::no_default]
@@ -207,6 +207,8 @@ pub mod pallet {
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
 			type DecimalMultiplier = ConstU64<1>;
 			/// Hashes older than 2 minutes (20 blocks) will be dropped from the blockhash queue.
 			type BlockhashQueueMaxAge = ConstU64<20>;

@@ -355,7 +355,6 @@ impl ConvertBack<Hash, Blockhash> for HashConversion {
 
 #[derive_impl(pallet_solana::config_preludes::TestDefaultConfig)]
 impl pallet_solana::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
 	type AccountIdConversion = AccountIdConversion;
 	type HashConversion = HashConversion;
 	type Balance = <Self as pallet_balances::Config>::Balance;
