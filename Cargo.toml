@@ -70,7 +70,7 @@ ark-bn254 = { version = "0.4.0", default-features = false, features = ["curve"] 
 assert_matches = "1.5.0"
 base64 = { version = "0.22", default-features = false }
 bech32 = { version = "0.11", default-features = false }
-bincode = { package = "solana-bincode", git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
+bincode = { package = "solana-bincode", git = "https://github.com/noirhq/solana-sdk", branch = "hashbrown-workaround", default-features = false }
 bs58 = { version = "0.5.1", default-features = false }
 buidl = { version = "0.2", default-features = false, features = ["derive"] }
 bytemuck = "1.16.1"
@@ -114,9 +114,9 @@ smallvec = "1.13"
 solana-frozen-abi = "=2.0.18"
 solana-frozen-abi-macro = "=2.0.18"
 solana-logger = "=2.0.18"
-solana-program = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
-solana-sdk = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
-solana_rbpf = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
+solana-program = { git = "https://github.com/noirhq/solana-sdk", branch = "hashbrown-workaround", default-features = false }
+solana-sdk = { git = "https://github.com/noirhq/solana-sdk", branch = "hashbrown-workaround", default-features = false }
+solana_rbpf = { git = "https://github.com/noirhq/solana-sdk", branch = "hashbrown-workaround", default-features = false }
 static_assertions = "1.1"
 test-case = "3.3.1"
 thiserror = { version = "2.0", default-features = false }
