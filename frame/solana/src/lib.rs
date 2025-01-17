@@ -108,7 +108,7 @@ pub mod pallet {
 		},
 	};
 	use frame_system::{pallet_prelude::*, CheckWeight};
-	use nostd::sync::Arc;
+	use nostd::{prelude::*, sync::Arc};
 	use np_runtime::traits::LossyInto;
 	use parity_scale_codec::Codec;
 	use solana_sdk::{

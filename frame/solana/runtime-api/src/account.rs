@@ -17,7 +17,7 @@
 
 use crate::{error::Error, SolanaRuntimeCall};
 use frame_support::traits::Get;
-use nostd::marker::PhantomData;
+use nostd::{marker::PhantomData, prelude::*};
 use pallet_solana::Pubkey;
 use solana_inline_spl::token::GenericTokenAccount;
 use solana_rpc_client_api::filter::RpcFilterType;
@@ -101,7 +101,7 @@ impl<T> ProgramAccounts<T> {
 	}
 
 	fn calc_scan_result_size(account: &Account) -> usize {
-		account.data().len() + std::mem::size_of::<Account>() + std::mem::size_of::<Pubkey>()
+		account.data().len() + core::mem::size_of::<Account>() + core::mem::size_of::<Pubkey>()
 	}
 }
 

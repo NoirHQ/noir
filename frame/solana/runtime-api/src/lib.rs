@@ -24,7 +24,7 @@ pub mod fee;
 pub mod transaction;
 
 use error::Error;
-use nostd::{string::String, vec::Vec};
+use nostd::prelude::*;
 use sp_api::decl_runtime_apis;
 
 decl_runtime_apis! {
