@@ -14,8 +14,8 @@ base64 = { version = "0.22", default-features = false, features = ["alloc"] }
 bs58 = { version = "0.5", default-features = false, features = ["alloc"] }
 nostd = "0.1"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-solana-inline-spl = { workspace = true, default-features = false }
-solana-sdk = { workspace = true, default-features = false }
+solana-inline-spl = { workspace = true }
+solana-sdk = { workspace = true }
 thiserror = { version = "2", default-features = false }
 
 [dev-dependencies]

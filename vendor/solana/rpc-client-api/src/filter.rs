@@ -30,7 +30,9 @@ impl RpcFilterType {
                         if bytes.len() > MAX_DATA_BASE58_SIZE {
                             return Err(RpcFilterError::DataTooLarge);
                         }
-                        let bytes = bs58::decode(&bytes).into_vec()?;
+                        let bytes = bs58::decode(&bytes)
+                            .into_vec()
+                            .map_err(RpcFilterError::Base58DecodeError)?;
                         if bytes.len() > MAX_DATA_SIZE {
                             Err(RpcFilterError::DataTooLarge)
                         } else {
@@ -41,7 +43,10 @@ impl RpcFilterType {
                         if bytes.len() > MAX_DATA_BASE64_SIZE {
                             return Err(RpcFilterError::DataTooLarge);
                         }
-                        let bytes = BASE64_STANDARD.decode(bytes)?;
+                        let bytes = BASE64_STANDARD
+                            .decode(bytes)
+                            .map_err(RpcFilterError::Base64DecodeError)?;
+
                         if bytes.len() > MAX_DATA_SIZE {
                             Err(RpcFilterError::DataTooLarge)
                         } else {
@@ -78,9 +83,9 @@ pub enum RpcFilterError {
     #[error("encoded binary data should be less than 129 bytes")]
     DataTooLarge,
     #[error("base58 decode error")]
-    Base58DecodeError(#[from] bs58::decode::Error),
+    Base58DecodeError(bs58::decode::Error),
     #[error("base64 decode error")]
-    Base64DecodeError(#[from] base64::DecodeError),
+    Base64DecodeError(base64::DecodeError),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
@@ -181,12 +186,16 @@ impl Memcmp {
         use MemcmpEncodedBytes::*;
         match &self.bytes {
             Base58(bytes) => {
-                let bytes = bs58::decode(bytes).into_vec()?;
+                let bytes = bs58::decode(bytes)
+                    .into_vec()
+                    .map_err(RpcFilterError::Base58DecodeError)?;
                 self.bytes = Bytes(bytes);
                 Ok(())
             }
             Base64(bytes) => {
-                let bytes = BASE64_STANDARD.decode(bytes)?;
+                let bytes = BASE64_STANDARD
+                    .decode(bytes)
+                    .map_err(RpcFilterError::Base64DecodeError)?;
                 self.bytes = Bytes(bytes);
                 Ok(())
             }
