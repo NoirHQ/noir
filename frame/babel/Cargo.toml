@@ -67,7 +67,7 @@ pallet-evm = { workspace = true, default-features = true }
 # noir
 np-runtime = { workspace = true, default-features = true }
 pallet-cosmos = { workspace = true, default-features = true }
-pallet-cosmos-x-auth = { workspace = true, default-features = false }
+pallet-cosmos-x-auth = { workspace = true, default-features = true }
 pallet-cosmwasm = { workspace = true, default-features = true }
 pallet-multimap = { workspace = true, default-features = true }
 
@@ -111,6 +111,7 @@ std = [
 	"serde-json-wasm?/std",
 	"solana-sdk?/std",
 	"sp-core/std",
+	"sp-io/std",
 	"sp-runtime/std",
 ]
 cosmos = [
@@ -149,7 +150,7 @@ nostr = ["np-babel/nostr"]
 solana = [
 	"bincode",
 	"np-babel/solana",
-	"pallet-solana", 
+	"pallet-solana",
 	"solana-sdk",
 ]
 pallet = [

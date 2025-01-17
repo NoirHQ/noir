@@ -27,6 +27,7 @@ std = [
 	"bech32/std",
 	"cosmos-sdk-proto/std",
 	"frame-support/std",
+	"nostd/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"serde/std",

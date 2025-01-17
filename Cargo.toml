@@ -90,7 +90,7 @@ impl-trait-for-tuples = { version = "0.2.2" }
 itertools = { version = "0.12.1", default-features = false }
 jsonrpsee = { version = "0.24" }
 k256 = { version = "0.13", default-features = false }
-libflate = { version = "2.1.0", default-features = false }
+libflate = { git = "https://github.com/nostd-rs/libflate", branch = "nostd", default-features = false }
 libsecp256k1 = { version = "0.6.0", default-features = false }
 light-poseidon = "0.2.0"
 log = { version = "0.4", default-features = false }

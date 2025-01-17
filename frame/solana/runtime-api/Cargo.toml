@@ -8,28 +8,25 @@ repository = { workspace = true }
 publish = false
 
 [dependencies]
-bincode = { workspace = true, default-features = false }
-frame-support = { workspace = true, default-features = false }
-nostd = { workspace = true, features = ["alloc"] }
-pallet-solana = { workspace = true, default-features = false }
-parity-scale-codec = { workspace = true, default-features = false, features = [
-    "derive",
-] }
-scale-info = { workspace = true, default-features = false, features = [
-    "derive",
-] }
-serde = { workspace = true, default-features = false }
-solana-compute-budget = { workspace = true, default-features = false }
-solana-inline-spl = { workspace = true, default-features = false }
-solana-rpc-client-api = { workspace = true, default-features = false }
-solana-sdk = { workspace = true, default-features = false }
-sp-api = { workspace = true, default-features = false }
+bincode = { workspace = true }
+frame-support = { workspace = true }
+nostd = { workspace = true }
+pallet-solana = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true }
+solana-compute-budget = { workspace = true }
+solana-inline-spl = { workspace = true }
+solana-rpc-client-api = { workspace = true }
+solana-sdk = { workspace = true }
+sp-api = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
     "bincode/std",
     "frame-support/std",
+	"nostd/std",
     "pallet-solana/std",
     "parity-scale-codec/std",
     "scale-info/std",
