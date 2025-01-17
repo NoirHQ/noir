@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use crate::{error::Error, SolanaRuntimeCall};
-use nostd::marker::PhantomData;
+use nostd::{marker::PhantomData, prelude::*};
 use pallet_solana::{runtime::bank::TransactionSimulationResult, Pubkey};
 use solana_sdk::{
 	feature_set::FeatureSet,
