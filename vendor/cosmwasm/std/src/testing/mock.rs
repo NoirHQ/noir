@@ -6,7 +6,7 @@ use bech32::{encode, primitives::decode::CheckedHrpstring, Bech32, Hrp};
 use core::marker::PhantomData;
 #[cfg(feature = "cosmwasm_1_3")]
 use core::ops::Bound;
-use rand_core::OsRng;
+use rand::rngs::OsRng;
 use serde::de::DeserializeOwned;
 #[cfg(feature = "stargate")]
 use serde::Serialize;

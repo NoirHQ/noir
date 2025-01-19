@@ -43,7 +43,7 @@ use cosmwasm_vm::{
 	transaction::Transactional,
 	vm::{VmErrorOf, VmGas, VmGasCheckpoint},
 };
-use rand_core::OsRng;
+use rand::rngs::OsRng;
 use wasm_instrument::gas_metering::{host_function, Rules};
 use wasmi::core::HostError;
 

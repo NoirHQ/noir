@@ -6,36 +6,36 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
-log = { version = "0.4", default-features = false }
-num_enum = { version = "0.7", default-features = false }
-paste = "1.0"
-slices = "0.2"
+log = { workspace = true }
+num_enum = { workspace = true }
+paste = { workspace = true }
+slices = { workspace = true }
 
 # Substrate
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-parity-scale-codec = { version = "3.6", default-features = false, features = ["max-encoded-len"] }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+parity-scale-codec = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
 
 # Frontier
-fp-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, features = ["forbid-evm-reentrancy"] }
-precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+fp-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false, features = ["forbid-evm-reentrancy"] }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.4"
-libsecp256k1 = "0.7"
-serde = "1.0"
-sha3 = "0.10"
+hex-literal = { workspace = true }
+libsecp256k1 = { workspace = true, default-features = true }
+serde = { workspace = true, default-features = true }
+sha3 = { workspace = true, default-features = true }
 
 # Moonbeam
-precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", features = ["testing"] }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", features = ["testing"] }
 
-scale-info = { version = "2.11", features = ["derive"] }
+scale-info = { workspace = true, default-features = true, features = ["derive"] }
 
 [features]
 default = ["std"]

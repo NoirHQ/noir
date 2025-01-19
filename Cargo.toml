@@ -71,45 +71,65 @@ assert_matches = "1.5.0"
 base64 = { version = "0.22", default-features = false }
 bech32 = { version = "0.11", default-features = false }
 bincode = { package = "solana-bincode", git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
+bnum = { version = "0.11.0", default-features = false }
 bs58 = { version = "0.5.1", default-features = false }
 buidl = { version = "0.2", default-features = false, features = ["derive"] }
 bytemuck = "1.16.1"
 bytemuck_derive = "1.7.0"
 byteorder = { version = "1.5.0", default-features = false }
+chrono = { version = "0.4", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false }
 const-hex = { version = "1.13", default-features = false }
 cosmos-sdk-proto = { version = "0.24", default-features = false }
+cosmwasm-core = { version = "2.1.3", default-features = false }
+cosmwasm-crypto = "2.1.3"
+cosmwasm-derive = { version = "2.1.3", default-features = false }
+cosmwasm-schema = "2.1.3"
+crc32fast = "1.3.2"
 curve25519-dalek = { version = "4.1.3", features = ["digest", "rand_core"] }
+cw20-ics20 = "2.0"
+derive_more = { version = "1.0", default-features = false }
 derive-where = "1.2"
 eager = "0.1.0"
+either = { version = "1.8", default-features = false }
 enum-iterator = "1.5.0"
+env_logger = "0.9"
 ethereum = { version = "0.15.0", default-features = false }
 futures = "0.3"
 getrandom = { version = "0.2", default-features = false }
 hex-literal = "0.4"
+ibc = { version = "0.54.0", default-features = false }
 impl-trait-for-tuples = { version = "0.2.2" }
 itertools = { version = "0.12.1", default-features = false }
 jsonrpsee = { version = "0.24" }
 k256 = { version = "0.13", default-features = false }
-libflate = { version = "2.1.0", default-features = false }
+libflate = { git = "https://github.com/nostd-rs/libflate", branch = "nostd", default-features = false }
 libsecp256k1 = { version = "0.6.0", default-features = false }
 light-poseidon = "0.2.0"
 log = { version = "0.4", default-features = false }
 memoffset = "0.9"
 nostd = "0.1.2"
+num = { version = "0.4.3", default-features = false }
 num-derive = "0.4"
 num-traits = { version = "0.2", default-features = false }
 num_enum = { version = "0.7", default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false }
+parity-wasm = { version = "0.45.0", default-features = false }
+paste = "1.0"
 percentage = "0.1.0"
 rand = { version = "0.8.5", default-features = false }
 ripemd = { version = "0.1", default-features = false }
 rustc_version = "0.4"
 scale-info = { version = "2.11", default-features = false }
+schemars = { version = "1.0.0-alpha.5", default-features = false }
 scopeguard = { version = "1.2.0", default-features = false }
 serde = { version = "1.0.203", default-features = false }
 serde_json = { version = "1.0.134", default-features = false }
 serde-json-wasm = { version = "1.0", default-features = false }
 serde_derive = { version = "1.0.203", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+sha3 = { version = "0.10", default-features = false }
+slices = "0.2"
 smallvec = "1.13"
 solana-frozen-abi = "=2.0.18"
 solana-frozen-abi-macro = "=2.0.18"
@@ -120,33 +140,39 @@ solana_rbpf = { git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", d
 static_assertions = "1.1"
 test-case = "3.3.1"
 thiserror = { version = "2.0", default-features = false }
+vec1 = { version = "*", default-features = false }
+wasmi = { version = "0.30.0", default-features = false }
+wasm-instrument = { version = "0.4.0", default-features = false }
+wasmi-validation = { version = "0.5.0", default-features = false }
+wat = "1.0"
 
 # substrate
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-support = { version = "38.2.0", default-features = false }
+frame-system = { version = "38.0.0", default-features = false }
+pallet-assets = { version = "40.0.0", default-features = false }
+pallet-balances = { version = "39.0.0", default-features = false }
+pallet-sudo = { version = "38.0.0", default-features = false }
+pallet-timestamp = { version = "37.0.0", default-features = false }
+pallet-transaction-payment = { version = "38.0.2", default-features = false }
+sc-transaction-pool-api = { version = "37.0.0" }
+sp-api = { version = "34.0.0", default-features = false }
+sp-arithmetic = { version = "26.0.0", default-features = false }
+sp-blockchain = { version = "37.0.1" }
+sp-core = { version = "34.0.0", default-features = false }
+sp-io = { version = "38.0.0", default-features = false }
+sp-keyring = { version = "39.0.0", default-features = false }
+sp-runtime = { version = "39.0.5", default-features = false }
 
 # frontier
-fp-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-fp-self-contained = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+fp-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+fp-self-contained = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
 
 # noir
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }

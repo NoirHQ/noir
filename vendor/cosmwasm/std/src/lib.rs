@@ -10,6 +10,8 @@
 #[macro_use]
 extern crate alloc;
 
+extern crate const_hex as hex;
+
 // Exposed on all platforms
 
 mod __internal;
@@ -146,7 +148,8 @@ pub use crate::imports::{ExternalApi, ExternalQuerier, ExternalStorage};
 /// Exposed for testing only
 /// Both unit tests and integration tests are compiled to native code, so everything in here does
 /// not need to compile to Wasm.
-#[cfg(not(target_arch = "wasm32"))]
+//#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "std")]
 pub mod testing;
 
 pub use cosmwasm_core::{BLS12_381_G1_GENERATOR, BLS12_381_G2_GENERATOR};
