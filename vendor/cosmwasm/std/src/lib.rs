@@ -146,8 +146,7 @@ pub use crate::imports::{ExternalApi, ExternalQuerier, ExternalStorage};
 /// Exposed for testing only
 /// Both unit tests and integration tests are compiled to native code, so everything in here does
 /// not need to compile to Wasm.
-//#[cfg(not(target_arch = "wasm32"))]
-#[cfg(feature = "std")]
+#[cfg(not(target_arch = "wasm32"))]
 pub mod testing;
 
 pub use cosmwasm_core::{BLS12_381_G1_GENERATOR, BLS12_381_G2_GENERATOR};
