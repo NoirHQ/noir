@@ -277,7 +277,7 @@ mod tests {
 		// odd
 		match HexBinary::from_hex("123").unwrap_err() {
 			StdError::InvalidHex { msg, .. } => {
-				assert_eq!(msg, "Odd number of digits")
+				assert_eq!(msg, "odd number of digits")
 			},
 			_ => panic!("Unexpected error type"),
 		}
