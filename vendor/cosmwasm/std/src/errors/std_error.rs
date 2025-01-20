@@ -499,7 +499,7 @@ mod tests {
 		let error = StdError::invalid_hex(original);
 		match error {
 			StdError::InvalidHex { msg, .. } => {
-				assert_eq!(msg, "odd number of digits");
+				assert_eq!(msg, "Odd number of digits");
 			},
 			_ => panic!("expect different error"),
 		}
