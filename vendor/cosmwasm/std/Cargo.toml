@@ -54,10 +54,10 @@ cosmwasm_2_1 = ["cosmwasm_2_0"]
 [dependencies]
 base64 = { workspace = true }
 bnum = { workspace = true }
-const-hex = { workspace = true }
 cosmwasm-core = { workspace = true }
 cosmwasm-derive = { workspace = true }
 derive_more = { workspace = true, features = ["debug"] }
+hex = { workspace = true, features = ["alloc"] }
 schemars = { workspace = true, features = ["derive"] }
 sha2 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

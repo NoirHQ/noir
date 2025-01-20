@@ -10,8 +10,6 @@
 #[macro_use]
 extern crate alloc;
 
-extern crate const_hex as hex;
-
 // Exposed on all platforms
 
 mod __internal;
