@@ -41,11 +41,11 @@ use solana_sdk::{
 
 fn before_each() {
 	<AccountMeta<Test>>::insert(
-		&Keypair::alice().account_id(),
+		Keypair::alice().account_id(),
 		AccountMetadata { rent_epoch: u64::MAX, owner: system_program::id(), executable: false },
 	);
 	<AccountMeta<Test>>::insert(
-		&Keypair::bob().account_id(),
+		Keypair::bob().account_id(),
 		AccountMetadata { rent_epoch: u64::MAX, owner: system_program::id(), executable: false },
 	);
 
@@ -264,7 +264,7 @@ fn spl_token_program_should_work() {
 		assert!(process_transaction(&bank, tx).is_ok());
 
 		let state = spl_token::state::Account::unpack_from_slice(&<AccountData<Test>>::get(
-			&account.account_id(),
+			account.account_id(),
 		))
 		.expect("token account state");
 		assert_eq!(state.mint, mint.pubkey());
@@ -387,7 +387,7 @@ fn trace_executed_transaction_events() {
 
 		let token_account = account_keys
 			.into_iter()
-			.filter_map(|account_key| Pallet::<Test>::get_account_info(account_key))
+			.filter_map(Pallet::<Test>::get_account_info)
 			.filter(|account| account.owner == spl_token::id())
 			.filter_map(|account| spl_token::state::Account::unpack(&account.data).ok())
 			.next()

@@ -300,7 +300,7 @@ impl EntrypointCall for QueryFn {
 
 impl QueryFn {
 	pub fn new() -> Result<Self, serde_json::Error> {
-		let encoded_result = hex::encode("{}");
+		let encoded_result = const_hex::encode("{}");
 		Ok(QueryFn(Self::plain(ContractResult::Ok(encoded_result))?))
 	}
 }

@@ -29,6 +29,7 @@ use frame_support::{
 	pallet_prelude::*,
 };
 use frame_system::{pallet_prelude::*, CheckWeight};
+use nostd::prelude::*;
 use pallet_cosmos_types::{
 	address::acc_address_from_bech32,
 	context::traits::Context,
@@ -145,7 +146,6 @@ pub mod pallet {
 			Contains, Currency,
 		},
 	};
-	use nostd::{string::String, vec::Vec};
 	use np_cosmos::traits::ChainInfo;
 	use pallet_cosmos_types::{
 		context::traits::MinGasPrices, errors::CosmosError, events::CosmosEvent, gas::Gas,

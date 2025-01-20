@@ -9,36 +9,30 @@ version = "1.0.0"
 doctest = false
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6", default-features = false }
-scale-info = { default-features = false, version = "2.11", features = [
-    "derive",
-] }
+codec = { workspace = true }
+scale-info = { workspace = true, features = ["derive"] }
 
-hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
-hex-literal = "0.4.1"
-ibc = { version = "0.54.0", default-features = false }
-libsecp256k1 = { version = "0.7.0", default-features = false }
-log = { version = "0.4.21", default-features = false }
-parity-wasm = { version = "0.45.0", default-features = false }
-serde = { version = "1.0.210", default-features = false, features = ["derive"] }
-serde_json = { version = "1.0.127", default-features = false, features = [
-    "alloc",
-] }
-sha2 = { version = "0.10", default-features = false }
-sha3 = { version = "0.10", default-features = false }
-vec1 = { version = "*", default-features = false, features = ["smallvec-v1"] }
-wasmi = { version = "0.30.0", default-features = false }
-wasm-instrument = { version = "0.4.0", default-features = false }
-wasmi-validation = { version = "0.5.0", default-features = false }
+ibc = { workspace = true }
+libsecp256k1 = { workspace = true }
+log = { workspace = true }
+parity-wasm = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["alloc"] }
+sha2 = { workspace = true }
+sha3 = { workspace = true }
+vec1 = { workspace = true, features = ["smallvec-v1"] }
+wasmi = { workspace = true }
+wasm-instrument = { workspace = true }
+wasmi-validation = { workspace = true }
 
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-assets = { workspace = true }
+pallet-balances = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
 
 composable-support = { workspace = true, default-features = false }
 cosmwasm-std = { workspace = true, default-features = false, features = [
@@ -63,7 +57,6 @@ default = ["std"]
 std = [
     "codec/std",
     "scale-info/std",
-    "hex/std",
     "ibc/std",
     "libsecp256k1/std",
     "log/std",
