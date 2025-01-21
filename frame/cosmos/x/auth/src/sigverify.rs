@@ -29,7 +29,7 @@ use nostd::vec::Vec;
 use np_cosmos::traits::ChainInfo;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32,
+	address::{acc_address_from_bech32, AUTH_ADDRESS_LEN},
 	any_match,
 	errors::{CosmosError, RootError},
 	handler::AnteDecorator,
@@ -63,7 +63,7 @@ where
 
 			let (_hrp, signer_addr_raw) =
 				acc_address_from_bech32(signer).map_err(|_| RootError::InvalidAddress)?;
-			ensure!(signer_addr_raw.len() == 20, RootError::InvalidAddress);
+			ensure!(signer_addr_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 			let who = T::AddressMapping::into_account_id(H160::from_slice(&signer_addr_raw));
 
 			let sequence = frame_system::Pallet::<T>::account_nonce(&who).saturated_into();
@@ -115,7 +115,7 @@ where
 
 					let (_hrp, signer_addr_raw) =
 						acc_address_from_bech32(&signer_data.address).map_err(|_| RootError::InvalidAddress)?;
-					ensure!(signer_addr_raw.len() == 20, RootError::InvalidAddress);
+					ensure!(signer_addr_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 
 					ensure!(H160::from_slice(&signer_addr_raw) == address, RootError::Unauthorized);
 
@@ -204,7 +204,7 @@ where
 		for signer in signers.iter() {
 			let (_hrp, address_raw) =
 				acc_address_from_bech32(signer).map_err(|_| RootError::InvalidAddress)?;
-			ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+			ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 
 			let account = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 			frame_system::pallet::Pallet::<T>::inc_account_nonce(account);

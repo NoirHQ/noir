@@ -29,7 +29,7 @@ use frame_support::{
 	PalletId,
 };
 use pallet_cosmos::AddressMapping;
-use pallet_cosmos_types::address::acc_address_from_bech32;
+use pallet_cosmos_types::address::{acc_address_from_bech32, AUTH_ADDRESS_LEN};
 use pallet_cosmwasm::{
 	pallet_hook::PalletHook,
 	runtimes::vm::{CosmwasmVM, CosmwasmVMError},
@@ -95,7 +95,7 @@ where
 					let sender = vm.0.data().cosmwasm_message_info.sender.clone().into_string();
 					let (_hrp, address_raw) = acc_address_from_bech32(&sender)
 						.map_err(|_| CosmwasmVMError::AccountConvert)?;
-					if address_raw.len() != 20 {
+					if address_raw.len() != AUTH_ADDRESS_LEN {
 						return Err(CosmwasmVMError::AccountConvert);
 					}
 					let origin = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));

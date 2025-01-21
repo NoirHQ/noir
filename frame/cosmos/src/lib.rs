@@ -31,7 +31,7 @@ use frame_support::{
 use frame_system::{pallet_prelude::*, CheckWeight};
 use nostd::prelude::*;
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32,
+	address::{acc_address_from_bech32, AUTH_ADDRESS_LEN},
 	context::traits::Context,
 	errors::{CosmosError, RootError},
 	events::traits::EventManager,
@@ -85,7 +85,7 @@ where
 					T::SigVerifiableTx::fee_payer(&tx).map_err(|_| InvalidTransaction::Call)?;
 				let (_hrp, address_raw) = acc_address_from_bech32(&fee_payer)
 					.map_err(|_| InvalidTransaction::BadSigner)?;
-				ensure!(address_raw.len() == 20, InvalidTransaction::BadSigner);
+				ensure!(address_raw.len() == AUTH_ADDRESS_LEN, InvalidTransaction::BadSigner);
 
 				Ok(H160::from_slice(&address_raw))
 			};

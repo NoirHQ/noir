@@ -22,7 +22,9 @@ use bech32::{Bech32, Hrp};
 use core::marker::PhantomData;
 use np_babel::cosmos::{traits::ChainInfo, Address as CosmosAddress};
 use np_multimap::traits::UniqueMultimap;
-use pallet_cosmos_types::address::acc_address_from_bech32;
+use pallet_cosmos_types::address::{
+	acc_address_from_bech32, AUTH_ADDRESS_LEN, CONTRACT_ADDRESS_LEN,
+};
 use pallet_cosmwasm::types::AccountIdOf;
 use sp_core::{H160, H256};
 use sp_runtime::traits::{AccountIdConversion, Convert, MaybeConvert, TryConvert};
@@ -75,11 +77,11 @@ where
 {
 	fn maybe_convert(address: Vec<u8>) -> Option<AccountIdOf<T>> {
 		match address.len() {
-			20 => {
+			AUTH_ADDRESS_LEN => {
 				let address = CosmosAddress::from(H160::from_slice(&address));
 				T::AddressMap::find_key(VarAddress::Cosmos(address))
 			},
-			32 => Some(H256::from_slice(&address).into()),
+			CONTRACT_ADDRESS_LEN => Some(H256::from_slice(&address).into()),
 			_ => None,
 		}
 	}

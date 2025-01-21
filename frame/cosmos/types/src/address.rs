@@ -26,6 +26,9 @@ pub enum Error {
 	DecodeError(DecodeError),
 }
 
+pub const AUTH_ADDRESS_LEN: usize = 20;
+pub const CONTRACT_ADDRESS_LEN: usize = 32;
+
 pub fn acc_address_from_bech32(address: &str) -> Result<(String, Vec<u8>), Error> {
 	bech32::decode(address)
 		.map(|(hrp, data)| (hrp.to_string(), data))

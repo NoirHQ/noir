@@ -28,7 +28,7 @@ use frame_support::{
 use nostd::vec;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32,
+	address::{acc_address_from_bech32, AUTH_ADDRESS_LEN},
 	coin::traits::Coins,
 	context::traits::MinGasPrices,
 	errors::{CosmosError, RootError},
@@ -88,7 +88,7 @@ where
 
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&fee_payer).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let deduct_fees_from = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		if !fee.amount.is_empty() {

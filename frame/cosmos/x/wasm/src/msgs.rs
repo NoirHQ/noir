@@ -32,7 +32,7 @@ use libflate::gzip::Decoder;
 use nostd::io::Read;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32,
+	address::{acc_address_from_bech32, AUTH_ADDRESS_LEN},
 	context,
 	errors::{CosmosError, RootError},
 	events::{traits::EventManager, CosmosEvent, EventAttribute},
@@ -79,7 +79,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		ctx.gas_meter()
@@ -136,7 +136,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		let gas = ctx.gas_meter().gas_remaining();
@@ -217,7 +217,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		let gas = ctx.gas_meter().gas_remaining();
@@ -292,7 +292,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		let gas = ctx.gas_meter().gas_remaining();
@@ -355,7 +355,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		let gas = ctx.gas_meter().gas_remaining();

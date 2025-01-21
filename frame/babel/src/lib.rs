@@ -62,7 +62,7 @@ pub mod pallet {
 		types::{AssetIdOf, DenomOf},
 		AddressMapping as _,
 	};
-	use pallet_cosmos_types::address::acc_address_from_bech32;
+	use pallet_cosmos_types::address::{acc_address_from_bech32, AUTH_ADDRESS_LEN};
 	use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 	use pallet_evm::{AddressMapping as _, FrameSystemAccountProvider};
 	use solana_sdk::transaction::VersionedTransaction;
@@ -228,7 +228,7 @@ pub mod pallet {
 			let (_hrp, address_raw) =
 				acc_address_from_bech32(signer).map_err(|_| Error::<T>::InvalidTransaction)?;
 			ensure!(
-				address_raw.len() == 20 && address.to_vec() == address_raw,
+				address_raw.len() == AUTH_ADDRESS_LEN && address.to_vec() == address_raw,
 				Error::<T>::InvalidTransaction
 			);
 
