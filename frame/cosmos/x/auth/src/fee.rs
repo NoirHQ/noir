@@ -41,7 +41,7 @@ use pallet_cosmos_types::{
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 use sp_core::{Get, H160};
 use sp_runtime::{
-	traits::{TryConvert, Zero},
+	traits::{TryConvertBack, Zero},
 	SaturatedConversion,
 };
 
@@ -126,7 +126,7 @@ where
 
 				// TODO: Resolve imbalance
 			} else {
-				let asset_id = T::AssetToDenom::try_convert(amt.denom.clone())
+				let asset_id = T::AssetToDenom::try_convert_back(amt.denom.clone())
 					.map_err(|_| RootError::InsufficientFunds)?;
 				let _imbalance = T::Assets::withdraw(
 					asset_id,

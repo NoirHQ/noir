@@ -46,7 +46,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::H160;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable},
+	traits::{Convert, ConvertBack, DispatchInfoOf, Dispatchable},
 	transaction_validity::ValidTransactionBuilder,
 	RuntimeDebug, SaturatedConversion,
 };
@@ -152,7 +152,7 @@ pub mod pallet {
 		handler::PostDecorator,
 	};
 	use pallet_cosmos_x_auth_signing::sign_mode_handler::traits::SignModeHandler;
-	use sp_runtime::traits::{Convert, TryConvert};
+	use sp_runtime::traits::TryConvertBack;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -207,14 +207,14 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		/// Converter between Weight and Gas.
-		type WeightToGas: Convert<Weight, Gas> + Convert<Gas, Weight>;
+		type WeightToGas: ConvertBack<Weight, Gas>;
 
 		#[pallet::no_default]
 		type MinGasPrices: MinGasPrices;
 
 		/// Converter between AssetId and Denom.
 		#[pallet::no_default]
-		type AssetToDenom: TryConvert<Self::AssetId, String> + TryConvert<String, Self::AssetId>;
+		type AssetToDenom: TryConvertBack<Self::AssetId, String>;
 
 		/// Context for executing transactions.
 		type Context: Context;
@@ -271,8 +271,8 @@ pub mod pallet {
 				weight.ref_time()
 			}
 		}
-		impl Convert<Gas, Weight> for WeightToGas {
-			fn convert(gas: Gas) -> Weight {
+		impl ConvertBack<Weight, Gas> for WeightToGas {
+			fn convert_back(gas: Gas) -> Weight {
 				Weight::from_parts(gas, 0)
 			}
 		}
@@ -324,7 +324,7 @@ pub mod pallet {
 				.and_then(|tx| tx.auth_info)
 				.and_then(|auth_info| auth_info.fee)
 				.map_or(T::WeightInfo::base_weight(), |fee| {
-					T::WeightToGas::convert(fee.gas_limit)
+					T::WeightToGas::convert_back(fee.gas_limit)
 				})
 		 })]
 		pub fn transact(origin: OriginFor<T>, tx_bytes: Vec<u8>) -> DispatchResultWithPostInfo {
@@ -381,12 +381,12 @@ impl<T: Config> Pallet<T> {
 		let mut ctx = T::Context::new(gas_limit);
 		Self::run_tx(&mut ctx, &tx).map_err(|e| {
 			Error::<T>::CosmosError(e)
-				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
+				.with_weight(T::WeightToGas::convert_back(ctx.gas_meter().consumed_gas()))
 		})?;
 
 		T::PostHandler::post_handle(&mut ctx, &tx, false).map_err(|e| {
 			Error::<T>::CosmosError(e)
-				.with_weight(T::WeightToGas::convert(ctx.gas_meter().consumed_gas()))
+				.with_weight(T::WeightToGas::convert_back(ctx.gas_meter().consumed_gas()))
 		})?;
 
 		Self::deposit_event(Event::Executed {
@@ -396,7 +396,7 @@ impl<T: Config> Pallet<T> {
 		});
 
 		Ok(PostDispatchInfo {
-			actual_weight: Some(T::WeightToGas::convert(ctx.gas_meter().consumed_gas())),
+			actual_weight: Some(T::WeightToGas::convert_back(ctx.gas_meter().consumed_gas())),
 			pays_fee: Pays::Yes,
 		})
 	}

@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use bech32::DecodeError;
 use nostd::{
 	string::{String, ToString},
 	vec::Vec,
@@ -22,7 +23,7 @@ use nostd::{
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Error {
-	DecodeError(bech32::DecodeError),
+	DecodeError(DecodeError),
 }
 
 pub fn acc_address_from_bech32(address: &str) -> Result<(String, Vec<u8>), Error> {

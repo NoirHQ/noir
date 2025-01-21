@@ -196,14 +196,14 @@ pub mod pallet {
 			use cosmos_sdk_proto::traits::Message;
 			use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
 			use pallet_cosmos::weights::WeightInfo;
-			use sp_runtime::traits::Convert;
+			use sp_runtime::traits::ConvertBack;
 
 			Tx::decode(&mut &tx_bytes[..])
 				.ok()
 				.and_then(|tx| tx.auth_info)
 				.and_then(|auth_info| auth_info.fee)
 				.map_or(<T as pallet_cosmos::Config>::WeightInfo::base_weight(), |fee| {
-					<T as pallet_cosmos::Config>::WeightToGas::convert(fee.gas_limit)
+					<T as pallet_cosmos::Config>::WeightToGas::convert_back(fee.gas_limit)
 				})
 		})]
 		pub fn cosmos_transact(
