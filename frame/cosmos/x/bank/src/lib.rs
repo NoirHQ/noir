@@ -32,7 +32,7 @@ use gas::GasInfo;
 use nostd::{marker::PhantomData, vec};
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32,
+	address::{acc_address_from_bech32, AUTH_ADDRESS_LEN},
 	coin::traits::Coins,
 	context,
 	errors::{CosmosError, RootError},
@@ -46,7 +46,7 @@ use pallet_cosmos_types::{
 use pallet_cosmos_x_bank_types::events::{ATTRIBUTE_KEY_RECIPIENT, EVENT_TYPE_TRANSFER};
 use sp_core::{Get, H160};
 use sp_runtime::{
-	traits::{TryConvert, Zero},
+	traits::{TryConvertBack, Zero},
 	SaturatedConversion,
 };
 
@@ -69,12 +69,12 @@ where
 
 		let (_hrp, from_address_raw) =
 			acc_address_from_bech32(&from_address).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(from_address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(from_address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let from_account = T::AddressMapping::into_account_id(H160::from_slice(&from_address_raw));
 
 		let (_hrp, to_address_raw) =
 			acc_address_from_bech32(&to_address).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(to_address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(to_address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let to_account = T::AddressMapping::into_account_id(H160::from_slice(&to_address_raw));
 
 		for amt in amount.iter() {
@@ -101,7 +101,7 @@ where
 				if frame_system::Account::<T>::get(&to_account).nonce.is_zero() {
 					return Err(RootError::UnknownAddress.into());
 				}
-				let asset_id = T::AssetToDenom::try_convert(amt.denom.clone())
+				let asset_id = T::AssetToDenom::try_convert_back(amt.denom.clone())
 					.map_err(|_| RootError::InvalidCoins)?;
 				T::Assets::transfer(
 					asset_id,

@@ -69,7 +69,7 @@ use pallet_solana::Pubkey;
 use solana_sdk::hash::Hash;
 use sp_core::{ConstU128, Pair, H256};
 use sp_runtime::{
-	traits::{Convert, ConvertBack, IdentityLookup, TryConvert},
+	traits::{Convert, ConvertBack, IdentityLookup, TryConvert, TryConvertBack},
 	BoundedVec, BuildStorage,
 };
 
@@ -192,17 +192,6 @@ impl context::traits::MinGasPrices for MinGasPrices {
 }
 
 pub struct AssetToDenom;
-impl TryConvert<String, AssetId> for AssetToDenom {
-	fn try_convert(denom: String) -> Result<AssetId, String> {
-		if denom == NativeDenom::get() {
-			Ok(NativeAssetId::get())
-		} else {
-			let denom_raw: BoundedVec<u8, MaxDenomLimit> =
-				denom.as_bytes().to_vec().try_into().map_err(|_| denom.clone())?;
-			<Test as frame_babel::Config>::AssetMap::find_key(denom_raw).ok_or(denom.clone())
-		}
-	}
-}
 impl TryConvert<AssetId, String> for AssetToDenom {
 	fn try_convert(asset_id: AssetId) -> Result<String, AssetId> {
 		if asset_id == NativeAssetId::get() {
@@ -210,6 +199,17 @@ impl TryConvert<AssetId, String> for AssetToDenom {
 		} else {
 			let denom = <Test as frame_babel::Config>::AssetMap::get(asset_id).ok_or(asset_id)?;
 			String::from_utf8(denom.into()).map_err(|_| asset_id)
+		}
+	}
+}
+impl TryConvertBack<AssetId, String> for AssetToDenom {
+	fn try_convert_back(denom: String) -> Result<AssetId, String> {
+		if denom == NativeDenom::get() {
+			Ok(NativeAssetId::get())
+		} else {
+			let denom_raw: BoundedVec<u8, MaxDenomLimit> =
+				denom.as_bytes().to_vec().try_into().map_err(|_| denom.clone())?;
+			<Test as frame_babel::Config>::AssetMap::find_key(denom_raw).ok_or(denom.clone())
 		}
 	}
 }

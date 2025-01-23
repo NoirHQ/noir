@@ -28,7 +28,7 @@ use frame_support::{
 use nostd::vec;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32,
+	address::{acc_address_from_bech32, AUTH_ADDRESS_LEN},
 	coin::traits::Coins,
 	context::traits::MinGasPrices,
 	errors::{CosmosError, RootError},
@@ -41,7 +41,7 @@ use pallet_cosmos_types::{
 use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 use sp_core::{Get, H160};
 use sp_runtime::{
-	traits::{TryConvert, Zero},
+	traits::{TryConvertBack, Zero},
 	SaturatedConversion,
 };
 
@@ -88,7 +88,7 @@ where
 
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&fee_payer).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let deduct_fees_from = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		if !fee.amount.is_empty() {
@@ -126,7 +126,7 @@ where
 
 				// TODO: Resolve imbalance
 			} else {
-				let asset_id = T::AssetToDenom::try_convert(amt.denom.clone())
+				let asset_id = T::AssetToDenom::try_convert_back(amt.denom.clone())
 					.map_err(|_| RootError::InsufficientFunds)?;
 				let _imbalance = T::Assets::withdraw(
 					asset_id,

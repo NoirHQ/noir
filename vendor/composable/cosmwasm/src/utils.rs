@@ -1,9 +1,3 @@
-use alloc::{string::String, vec::Vec};
-use cosmwasm_std::Coin;
-use cosmwasm_vm::system::CosmwasmContractMeta;
-use sp_core::storage::ChildInfo;
-use sp_runtime::traits::{Convert, Hash, TryConvert};
-
 use crate::{
 	runtimes::{
 		abstraction::{CanonicalCosmwasmAccount, CosmwasmAccount, VMPallet},
@@ -12,6 +6,11 @@ use crate::{
 	types::{AccountIdOf, AssetIdOf, BalanceOf, ContractInfoOf, ContractTrieIdOf},
 	Config, ContractToInfo, Error, Pallet,
 };
+use alloc::{string::String, vec::Vec};
+use cosmwasm_std::Coin;
+use cosmwasm_vm::system::CosmwasmContractMeta;
+use sp_core::storage::ChildInfo;
+use sp_runtime::traits::{Convert, Hash, MaybeConvert, TryConvert, TryConvertBack};
 
 impl<T: Config> Pallet<T> {
 	pub(crate) fn derive_contract_address(
@@ -65,14 +64,14 @@ impl<T: Config> Pallet<T> {
 	pub(crate) fn canonical_addr_to_account(
 		canonical: Vec<u8>,
 	) -> Result<AccountIdOf<T>, <T as VMPallet>::VmError> {
-		T::AccountToAddr::convert(canonical).map_err(|()| CosmwasmVMError::AccountConvert)
+		T::AccountToAddr::maybe_convert(canonical).ok_or(CosmwasmVMError::AccountConvert)
 	}
 
 	/// Try to convert from a CosmWasm address to a native AccountId.
 	pub(crate) fn cosmwasm_addr_to_account(
 		cosmwasm_addr: String,
 	) -> Result<AccountIdOf<T>, <T as VMPallet>::VmError> {
-		T::AccountToAddr::convert(cosmwasm_addr).map_err(|()| CosmwasmVMError::AccountConvert)
+		T::AccountToAddr::try_convert(cosmwasm_addr).map_err(|_| CosmwasmVMError::AccountConvert)
 	}
 
 	/// Convert from a native ahttps://app.clickup.com/20465559/v/l/6-210281072-1ccount to a CosmWasm address.
@@ -91,7 +90,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Try to convert from a CosmWasm denom to a native [`AssetIdOf<T>`].
 	pub(crate) fn cosmwasm_asset_to_native_asset(denom: String) -> Result<AssetIdOf<T>, Error<T>> {
-		T::AssetToDenom::try_convert(denom).map_err(|_| Error::<T>::UnknownDenom)
+		T::AssetToDenom::try_convert_back(denom).map_err(|_| Error::<T>::UnknownDenom)
 	}
 
 	/// Build a [`ChildInfo`] out of a contract trie id.

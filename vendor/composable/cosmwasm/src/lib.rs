@@ -133,7 +133,7 @@ pub mod pallet {
 		transactional, PalletId, Twox64Concat,
 	};
 	use frame_system::{ensure_signed, pallet_prelude::OriginFor};
-	use sp_runtime::traits::{Convert, MaybeDisplay, TryConvert};
+	use sp_runtime::traits::{Convert, MaybeConvert, MaybeDisplay, TryConvert, TryConvertBack};
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -290,8 +290,8 @@ pub mod pallet {
 
 		/// A way to convert from our native account to cosmwasm `Addr`.
 		type AccountToAddr: Convert<AccountIdOf<Self>, String>
-			+ Convert<String, Result<AccountIdOf<Self>, ()>>
-			+ Convert<Vec<u8>, Result<AccountIdOf<Self>, ()>>;
+			+ TryConvert<String, AccountIdOf<Self>>
+			+ MaybeConvert<Vec<u8>, AccountIdOf<Self>>;
 
 		/// Type of an account balance.
 		type Balance: Balance + Into<u128>;
@@ -302,7 +302,7 @@ pub mod pallet {
 		type AssetId: AssetId + Ord;
 
 		/// A way to convert from our native currency to cosmwasm `Denom`.
-		type AssetToDenom: TryConvert<Self::AssetId, String> + TryConvert<String, AssetIdOf<Self>>;
+		type AssetToDenom: TryConvertBack<Self::AssetId, String>;
 
 		/// Interface used to pay when uploading code.
 		type NativeAsset: ReservableCurrency<AccountIdOf<Self>, Balance = BalanceOf<Self>>
@@ -1033,7 +1033,6 @@ impl<T: Config> Pallet<T> {
 					CosmwasmAccount::new(contract),
 					new_admin.map(CosmwasmAccount::new),
 				)
-				.map_err(Into::into)
 			},
 		)
 	}

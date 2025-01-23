@@ -62,7 +62,7 @@ pub mod pallet {
 		types::{AssetIdOf, DenomOf},
 		AddressMapping as _,
 	};
-	use pallet_cosmos_types::address::acc_address_from_bech32;
+	use pallet_cosmos_types::address::{acc_address_from_bech32, AUTH_ADDRESS_LEN};
 	use pallet_cosmos_x_auth_signing::sign_verifiable_tx::traits::SigVerifiableTx;
 	use pallet_evm::{AddressMapping as _, FrameSystemAccountProvider};
 	use solana_sdk::transaction::VersionedTransaction;
@@ -196,14 +196,14 @@ pub mod pallet {
 			use cosmos_sdk_proto::traits::Message;
 			use cosmos_sdk_proto::cosmos::tx::v1beta1::Tx;
 			use pallet_cosmos::weights::WeightInfo;
-			use sp_runtime::traits::Convert;
+			use sp_runtime::traits::ConvertBack;
 
 			Tx::decode(&mut &tx_bytes[..])
 				.ok()
 				.and_then(|tx| tx.auth_info)
 				.and_then(|auth_info| auth_info.fee)
 				.map_or(<T as pallet_cosmos::Config>::WeightInfo::base_weight(), |fee| {
-					<T as pallet_cosmos::Config>::WeightToGas::convert(fee.gas_limit)
+					<T as pallet_cosmos::Config>::WeightToGas::convert_back(fee.gas_limit)
 				})
 		})]
 		pub fn cosmos_transact(
@@ -228,7 +228,7 @@ pub mod pallet {
 			let (_hrp, address_raw) =
 				acc_address_from_bech32(signer).map_err(|_| Error::<T>::InvalidTransaction)?;
 			ensure!(
-				address_raw.len() == 20 && address.to_vec() == address_raw,
+				address_raw.len() == AUTH_ADDRESS_LEN && address.to_vec() == address_raw,
 				Error::<T>::InvalidTransaction
 			);
 

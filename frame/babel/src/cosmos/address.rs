@@ -22,10 +22,12 @@ use bech32::{Bech32, Hrp};
 use core::marker::PhantomData;
 use np_babel::cosmos::{traits::ChainInfo, Address as CosmosAddress};
 use np_multimap::traits::UniqueMultimap;
-use pallet_cosmos_types::address::acc_address_from_bech32;
+use pallet_cosmos_types::address::{
+	acc_address_from_bech32, AUTH_ADDRESS_LEN, CONTRACT_ADDRESS_LEN,
+};
 use pallet_cosmwasm::types::AccountIdOf;
 use sp_core::{H160, H256};
-use sp_runtime::traits::{AccountIdConversion, Convert};
+use sp_runtime::traits::{AccountIdConversion, Convert, MaybeConvert, TryConvert};
 
 pub struct AddressMapping<T>(PhantomData<T>);
 impl<T> pallet_cosmos::AddressMapping<T::AccountId> for AddressMapping<T>
@@ -46,41 +48,41 @@ where
 {
 	fn convert(account: AccountIdOf<T>) -> String {
 		let addresses = T::AddressMap::get(&account);
-		let address: Option<&CosmosAddress> = addresses.iter().find_map(|address| match address {
-			VarAddress::Cosmos(address) => Some(address),
-			_ => None,
-		});
-		let address_raw = match address {
-			Some(address) => address.as_ref(),
-			None => account.as_ref(),
-		};
+		let address_raw = addresses
+			.iter()
+			.find_map(|address| match address {
+				VarAddress::Cosmos(addr) => Some(addr.as_ref()),
+				_ => None,
+			})
+			.unwrap_or_else(|| account.as_ref());
+
 		let hrp = Hrp::parse(T::ChainInfo::bech32_prefix()).unwrap();
 		bech32::encode::<Bech32>(hrp, address_raw).unwrap()
 	}
 }
 
-impl<T> Convert<String, Result<AccountIdOf<T>, ()>> for AccountToAddr<T>
+impl<T> TryConvert<String, AccountIdOf<T>> for AccountToAddr<T>
 where
 	T: pallet_cosmwasm::Config + unify_account::Config<AccountId = AccountIdOf<T>>,
 {
-	fn convert(address: String) -> Result<AccountIdOf<T>, ()> {
-		let (_hrp, address_raw) = acc_address_from_bech32(&address).map_err(|_| ())?;
-		Self::convert(address_raw)
+	fn try_convert(address: String) -> Result<AccountIdOf<T>, String> {
+		let (_hrp, data) = acc_address_from_bech32(&address).map_err(|_| address.clone())?;
+		Self::maybe_convert(data).ok_or(address)
 	}
 }
 
-impl<T> Convert<Vec<u8>, Result<AccountIdOf<T>, ()>> for AccountToAddr<T>
+impl<T> MaybeConvert<Vec<u8>, AccountIdOf<T>> for AccountToAddr<T>
 where
 	T: pallet_cosmwasm::Config + unify_account::Config<AccountId = AccountIdOf<T>>,
 {
-	fn convert(address: Vec<u8>) -> Result<AccountIdOf<T>, ()> {
+	fn maybe_convert(address: Vec<u8>) -> Option<AccountIdOf<T>> {
 		match address.len() {
-			20 => {
+			AUTH_ADDRESS_LEN => {
 				let address = CosmosAddress::from(H160::from_slice(&address));
-				T::AddressMap::find_key(VarAddress::Cosmos(address)).ok_or(())
+				T::AddressMap::find_key(VarAddress::Cosmos(address))
 			},
-			32 => Ok(H256::from_slice(&address).into()),
-			_ => Err(()),
+			CONTRACT_ADDRESS_LEN => Some(H256::from_slice(&address).into()),
+			_ => None,
 		}
 	}
 }

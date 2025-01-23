@@ -32,7 +32,7 @@ use libflate::gzip::Decoder;
 use nostd::io::Read;
 use pallet_cosmos::AddressMapping;
 use pallet_cosmos_types::{
-	address::acc_address_from_bech32,
+	address::{acc_address_from_bech32, AUTH_ADDRESS_LEN},
 	context,
 	errors::{CosmosError, RootError},
 	events::{traits::EventManager, CosmosEvent, EventAttribute},
@@ -55,7 +55,7 @@ use pallet_cosmwasm::{
 };
 use sp_core::H160;
 use sp_runtime::{
-	traits::{Convert, TryConvert},
+	traits::{Convert, TryConvert, TryConvertBack},
 	SaturatedConversion,
 };
 
@@ -79,7 +79,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		ctx.gas_meter()
@@ -136,7 +136,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		let gas = ctx.gas_meter().gas_remaining();
@@ -148,7 +148,7 @@ where
 
 		let admin_account = if !admin.is_empty() {
 			let admin_account =
-				T::AccountToAddr::convert(admin).map_err(|_| RootError::InvalidAddress)?;
+				T::AccountToAddr::try_convert(admin).map_err(|_| RootError::InvalidAddress)?;
 			Some(admin_account)
 		} else {
 			None
@@ -160,7 +160,7 @@ where
 		let funds = convert_funds::<T>(&funds)?;
 		let message: ContractMessageOf<T> = msg.try_into().map_err(|_| RootError::TxDecodeError)?;
 
-		let contract = pallet_cosmwasm::Pallet::<T>::do_instantiate(
+		let contract_account = pallet_cosmwasm::Pallet::<T>::do_instantiate(
 			&mut shared,
 			who,
 			code_identifier,
@@ -175,13 +175,16 @@ where
 			.consume_gas(gas.saturating_sub(shared.gas.remaining()), "")
 			.map_err(|_| RootError::OutOfGas)?;
 
-		let contract = T::AccountToAddr::convert(contract);
+		let contract_address = T::AccountToAddr::convert(contract_account);
 
 		// TODO: Same events emitted pallet_cosmos and pallet_cosmwasm
 		let msg_event = CosmosEvent {
 			r#type: EVENT_TYPE_INSTANTIATE.into(),
 			attributes: vec![
-				EventAttribute { key: ATTRIBUTE_KEY_CONTRACT_ADDR.into(), value: contract.into() },
+				EventAttribute {
+					key: ATTRIBUTE_KEY_CONTRACT_ADDR.into(),
+					value: contract_address.into(),
+				},
 				EventAttribute {
 					key: ATTRIBUTE_KEY_CODE_ID.into(),
 					value: code_id.to_string().into(),
@@ -214,7 +217,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		let gas = ctx.gas_meter().gas_remaining();
@@ -223,8 +226,8 @@ where
 			InitialStorageMutability::ReadWrite,
 		);
 
-		let contract_account =
-			T::AccountToAddr::convert(contract.clone()).map_err(|_| RootError::TxDecodeError)?;
+		let contract_account = T::AccountToAddr::try_convert(contract.clone())
+			.map_err(|_| RootError::TxDecodeError)?;
 		let funds: FundsOf<T> = convert_funds::<T>(&funds)?;
 		let message: ContractMessageOf<T> = msg.try_into().map_err(|_| RootError::TxDecodeError)?;
 
@@ -257,7 +260,7 @@ where
 fn convert_funds<T: pallet_cosmwasm::Config>(coins: &[Coin]) -> Result<FundsOf<T>, CosmosError> {
 	let mut funds = FundsOf::<T>::default();
 	for coin in coins.iter() {
-		let asset_id = T::AssetToDenom::try_convert(coin.denom.clone())
+		let asset_id = T::AssetToDenom::try_convert_back(coin.denom.clone())
 			.map_err(|_| RootError::TxDecodeError)?;
 		let amount = u128::from_str(&coin.amount).map_err(|_| RootError::TxDecodeError)?;
 
@@ -289,7 +292,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		let gas = ctx.gas_meter().gas_remaining();
@@ -298,8 +301,8 @@ where
 			InitialStorageMutability::ReadWrite,
 		);
 
-		let contract_account =
-			T::AccountToAddr::convert(contract.clone()).map_err(|_| RootError::TxDecodeError)?;
+		let contract_account = T::AccountToAddr::try_convert(contract.clone())
+			.map_err(|_| RootError::TxDecodeError)?;
 		let new_code_identifier = CodeIdentifier::CodeId(code_id);
 		let message: ContractMessageOf<T> = msg.try_into().map_err(|_| RootError::TxDecodeError)?;
 
@@ -352,7 +355,7 @@ where
 		ensure!(!sender.is_empty(), WasmError::Empty);
 		let (_hrp, address_raw) =
 			acc_address_from_bech32(&sender).map_err(|_| RootError::InvalidAddress)?;
-		ensure!(address_raw.len() == 20, RootError::InvalidAddress);
+		ensure!(address_raw.len() == AUTH_ADDRESS_LEN, RootError::InvalidAddress);
 		let who = T::AddressMapping::into_account_id(H160::from_slice(&address_raw));
 
 		let gas = ctx.gas_meter().gas_remaining();
@@ -362,14 +365,14 @@ where
 		);
 
 		let new_admin_account = if !new_admin.is_empty() {
-			let new_admin_account = T::AccountToAddr::convert(new_admin.clone())
+			let new_admin_account = T::AccountToAddr::try_convert(new_admin.clone())
 				.map_err(|_| RootError::InvalidAddress)?;
 			Some(new_admin_account)
 		} else {
 			None
 		};
-		let contract_account =
-			T::AccountToAddr::convert(contract.clone()).map_err(|_| RootError::TxDecodeError)?;
+		let contract_account = T::AccountToAddr::try_convert(contract.clone())
+			.map_err(|_| RootError::TxDecodeError)?;
 
 		pallet_cosmwasm::Pallet::<T>::do_update_admin(
 			&mut shared,
