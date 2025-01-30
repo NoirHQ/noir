@@ -1,6 +1,6 @@
 // This file is part of Noir.
 
-// Copyright (c) Anza Maintainers <maintainers@anza.xyz>
+// Copyright (C) Anza Maintainers <maintainers@anza.xyz>
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");

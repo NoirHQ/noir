@@ -124,11 +124,19 @@ impl VerifyMut for MultiSignature {
 		match self {
 			Self::Ed25519(sig) => {
 				let who = who.into();
-				sig.verify(msg, &who).then(|| signer.check(who)).unwrap_or(false)
+				if sig.verify(msg, &who) {
+					signer.check(who)
+				} else {
+					false
+				}
 			},
 			Self::Sr25519(sig) => {
 				let who = who.into();
-				sig.verify(msg, &who).then(|| signer.check(who)).unwrap_or(false)
+				if sig.verify(msg, &who) {
+					signer.check(who)
+				} else {
+					false
+				}
 			},
 			Self::Ecdsa(sig) => {
 				let m = sp_io::hashing::blake2_256(msg.get());
