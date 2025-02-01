@@ -61,7 +61,7 @@ members = [
 	"vendor/solana/rpc-client-api",
 ]
 default-members = [
-	"client/consensus/pow",
+	"client/*",
 	"core-primitives",
 	"frame/*",
 	"primitives/*",
