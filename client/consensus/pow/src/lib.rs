@@ -1,4 +1,4 @@
-// This file is part of Substrate.
+// This file is part of Noir.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Proof of work consensus for Substrate.
+//! Noir Proof of work consensus.
 //!
 //! To use this engine, you can need to have a struct that implements
 //! [`PowAlgorithm`]. After that, pass an instance of the struct, along
@@ -44,10 +44,10 @@ mod worker;
 pub use crate::worker::{MiningBuild, MiningHandle, MiningMetadata};
 
 use crate::worker::UntilImportedOrTimeout;
-use codec::{Decode, Encode};
 use futures::{Future, StreamExt};
 use log::*;
-use prometheus_endpoint::Registry;
+use np_consensus_pow::{Seal, POW_ENGINE_ID};
+use parity_scale_codec::{Decode, Encode};
 use sc_client_api::{self, backend::AuxStore, BlockOf, BlockchainEvents};
 use sc_consensus::{
 	BasicQueue, BlockCheckParams, BlockImport, BlockImportParams, BoxBlockImport,
@@ -57,7 +57,6 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Error as ConsensusError, Proposer, SelectChain, SyncOracle};
-use sp_consensus_pow::{Seal, TotalDifficulty, POW_ENGINE_ID};
 use sp_inherents::{CreateInherentDataProviders, InherentDataProvider};
 use sp_runtime::{
 	generic::{BlockId, Digest, DigestItem},
@@ -65,6 +64,7 @@ use sp_runtime::{
 	RuntimeString,
 };
 use std::{cmp::Ordering, marker::PhantomData, sync::Arc, time::Duration};
+use substrate_prometheus_endpoint::Registry;
 
 const LOG_TARGET: &str = "pow";
 
@@ -106,7 +106,7 @@ pub enum Error<B: BlockT> {
 	#[error(transparent)]
 	Client(sp_blockchain::Error),
 	#[error(transparent)]
-	Codec(codec::Error),
+	Codec(parity_scale_codec::Error),
 	#[error("{0}")]
 	Environment(String),
 	#[error("{0}")]
@@ -172,7 +172,13 @@ where
 /// Algorithm used for proof of work.
 pub trait PowAlgorithm<B: BlockT> {
 	/// Difficulty for the algorithm.
-	type Difficulty: TotalDifficulty + Default + Encode + Decode + Ord + Clone + Copy;
+	type Difficulty: core::ops::AddAssign<Self::Difficulty>
+		+ Default
+		+ Encode
+		+ Decode
+		+ Ord
+		+ Clone
+		+ Copy;
 
 	/// Get the next block's difficulty.
 	///
@@ -372,7 +378,7 @@ where
 		}
 
 		aux.difficulty = difficulty;
-		aux.total_difficulty.increment(difficulty);
+		aux.total_difficulty += difficulty;
 
 		let key = aux_key(&block.post_hash());
 		block.auxiliary.push((key, Some(aux.encode())));
