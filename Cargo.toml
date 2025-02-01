@@ -23,6 +23,7 @@ members = [
 	"frame/multimap",
 	"frame/solana",
 	"frame/solana/runtime-api",
+	"frame/wtema",
 	"primitives/babel",
 	"primitives/cosmos",
 	"primitives/ethereum",
@@ -199,6 +200,7 @@ pallet-cosmos-x-wasm = { path = "frame/cosmos/x/wasm", default-features = false 
 pallet-cosmos-x-wasm-types = { path = "frame/cosmos/x/wasm/types", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 pallet-solana = { path = "frame/solana", default-features = false }
+pallet-wtema = { path = "frame/wtema", default-features = false }
 
 # vendor
 composable-support = { path = "vendor/composable/composable-support", default-features = false }
