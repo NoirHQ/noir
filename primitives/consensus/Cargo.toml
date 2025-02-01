@@ -1,0 +1,4 @@
+[package]
+name = "np-consensus"
+edition = { workspace = true }
+publish = false

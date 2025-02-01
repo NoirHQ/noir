@@ -1,0 +1,26 @@
+[package]
+name = "np-consensus-pow"
+description = "Noir primitive types for PoW consensus"
+license = "Apache-2.0"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+publish = false
+
+[dependencies]
+parity-scale-codec = { workspace = true, features = ["derive"] }
+sp-api = { workspace = true }
+sp-arithmetic = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"parity-scale-codec/std",
+	"sp-api/std",
+	"sp-arithmetic/std",
+	"sp-core/std",
+	"sp-runtime/std",
+]

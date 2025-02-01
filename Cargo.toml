@@ -7,6 +7,8 @@ repository = "https://github.com/noirhq/noir.git"
 [workspace]
 resolver = "2"
 members = [
+	"client/consensus",
+	"client/consensus/pow",
 	"core-primitives",
 	"frame/babel",
 	"frame/cosmos",
@@ -23,7 +25,10 @@ members = [
 	"frame/multimap",
 	"frame/solana",
 	"frame/solana/runtime-api",
+	"frame/wtema",
 	"primitives/babel",
+	"primitives/consensus", # dummy
+	"primitives/consensus/pow",
 	"primitives/cosmos",
 	"primitives/ethereum",
 	"primitives/multimap",
@@ -56,6 +61,7 @@ members = [
 	"vendor/solana/rpc-client-api",
 ]
 default-members = [
+	"client/*",
 	"core-primitives",
 	"frame/*",
 	"primitives/*",
@@ -68,6 +74,7 @@ useless_conversion = "allow"
 [workspace.dependencies]
 ark-bn254 = { version = "0.4.0", default-features = false, features = ["curve"] }
 assert_matches = "1.5.0"
+async-trait = "0.1"
 base64 = { version = "0.22", default-features = false }
 bech32 = { version = "0.11", default-features = false }
 bincode = { package = "solana-bincode", git = "https://github.com/noirhq/solana-sdk", branch = "v2.0", default-features = false }
@@ -96,6 +103,7 @@ enum-iterator = "1.5.0"
 env_logger = "0.9"
 ethereum = { version = "0.15.0", default-features = false }
 futures = "0.3"
+futures-timer = "3.0"
 getrandom = { version = "0.2", default-features = false }
 hex = { version = "0.4.3", default-features = false }
 hex-literal = "0.4"
@@ -116,6 +124,7 @@ num-traits = { version = "0.2", default-features = false }
 num_enum = { version = "0.7", default-features = false }
 parity-scale-codec = { version = "3.6", default-features = false }
 parity-wasm = { version = "0.45.0", default-features = false }
+parking_lot = "0.12"
 paste = "1.0"
 percentage = "0.1.0"
 rand = { version = "0.8.5", default-features = false }
@@ -148,6 +157,8 @@ wasmi-validation = { version = "0.5.0", default-features = false }
 wat = "1.0"
 
 # substrate
+sc-client-api = { version = "37.0.0" }
+sc-consensus = { version = "0.44.0" }
 frame-support = { version = "38.2.0", default-features = false }
 frame-system = { version = "38.0.0", default-features = false }
 pallet-assets = { version = "40.0.0", default-features = false }
@@ -158,11 +169,15 @@ pallet-transaction-payment = { version = "38.0.2", default-features = false }
 sc-transaction-pool-api = { version = "37.0.0" }
 sp-api = { version = "34.0.0", default-features = false }
 sp-arithmetic = { version = "26.0.0", default-features = false }
+sp-block-builder = { version = "34.0.0", default-features = false }
 sp-blockchain = { version = "37.0.1" }
+sp-consensus = { version = "0.40.0", default-features = false }
 sp-core = { version = "34.0.0", default-features = false }
+sp-inherents = { version = "34.0.0", default-features = false }
 sp-io = { version = "38.0.0", default-features = false }
 sp-keyring = { version = "39.0.0", default-features = false }
 sp-runtime = { version = "39.0.5", default-features = false }
+substrate-prometheus-endpoint = { version = "0.17.0", default-features = false }
 
 # frontier
 fp-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
@@ -179,9 +194,12 @@ precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "crate
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
 frame-babel = { path = "frame/babel", default-features = false }
+nc-consensus = { path = "client/consensus" }
+nc-consensus-pow = { path = "client/consensus/pow" }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }
 np-babel = { path = "primitives/babel", default-features = false }
+np-consensus-pow = { path = "primitives/consensus/pow", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-multimap = { path = "primitives/multimap", default-features = false }
@@ -199,6 +217,7 @@ pallet-cosmos-x-wasm = { path = "frame/cosmos/x/wasm", default-features = false 
 pallet-cosmos-x-wasm-types = { path = "frame/cosmos/x/wasm/types", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
 pallet-solana = { path = "frame/solana", default-features = false }
+pallet-wtema = { path = "frame/wtema", default-features = false }
 
 # vendor
 composable-support = { path = "vendor/composable/composable-support", default-features = false }
