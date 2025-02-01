@@ -16,6 +16,7 @@ parity-scale-codec = { workspace = true, default-features = true, features = ["d
 parking_lot = { workspace = true, default-features = true }
 thiserror = { workspace = true, default-features = true }
 
+nc-consensus = { workspace = true }
 np-consensus-pow = { workspace = true, default-features = true }
 sc-client-api = { workspace = true }
 sc-consensus = { workspace = true }

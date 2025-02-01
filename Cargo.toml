@@ -7,6 +7,7 @@ repository = "https://github.com/noirhq/noir.git"
 [workspace]
 resolver = "2"
 members = [
+	"client/consensus",
 	"client/consensus/pow",
 	"core-primitives",
 	"frame/babel",
@@ -193,6 +194,7 @@ precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "crate
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }
 cosmos-runtime-api = { path = "frame/cosmos/runtime-api", default-features = false }
 frame-babel = { path = "frame/babel", default-features = false }
+nc-consensus = { path = "client/consensus" }
 nc-consensus-pow = { path = "client/consensus/pow" }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }

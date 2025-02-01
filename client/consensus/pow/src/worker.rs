@@ -22,13 +22,13 @@ use futures::{
 };
 use futures_timer::Delay;
 use log::*;
-use parking_lot::Mutex;
+use parking_lot::RwLock;
 use sc_client_api::ImportNotifications;
-use sc_consensus::{BlockImportParams, BoxBlockImport, StateAction, StorageChanges};
+use sc_consensus::{BlockImport, BlockImportParams, StateAction, StorageChanges};
 use sp_consensus::{BlockOrigin, Proposal};
 use sp_runtime::{
 	generic::BlockId,
-	traits::{Block as BlockT, Header as HeaderT},
+	traits::{Block as BlockT, Header},
 	DigestItem,
 };
 use std::{
@@ -50,7 +50,7 @@ pub struct MiningMetadata<H, D> {
 	/// Mining pre-hash.
 	pub pre_hash: H,
 	/// Pre-runtime digest item.
-	pub pre_runtime: Option<Vec<u8>>,
+	pub pre_digest: Option<Vec<u8>>,
 	/// Mining target difficulty.
 	pub difficulty: D,
 }
@@ -67,53 +67,51 @@ pub struct MiningBuild<Block: BlockT, Algorithm: PowAlgorithm<Block>, Proof> {
 #[derive(Eq, PartialEq, Clone, Copy)]
 pub struct Version(usize);
 
-/// Mining worker that exposes structs to query the current mining build and submit mined blocks.
-pub struct MiningHandle<
+/// PoW worker that exposes structs to query the current mining build and submit mined blocks.
+pub struct PowWorker<
 	Block: BlockT,
 	Algorithm: PowAlgorithm<Block>,
 	L: sc_consensus::JustificationSyncLink<Block>,
 	Proof,
+	I: BlockImport<Block>,
 > {
 	version: Arc<AtomicUsize>,
 	algorithm: Arc<Algorithm>,
 	justification_sync_link: Arc<L>,
-	build: Arc<Mutex<Option<MiningBuild<Block, Algorithm, Proof>>>>,
-	block_import: Arc<Mutex<BoxBlockImport<Block>>>,
+	build: Arc<RwLock<Option<MiningBuild<Block, Algorithm, Proof>>>>,
+	block_import: Arc<I>,
 }
 
-impl<Block, Algorithm, L, Proof> MiningHandle<Block, Algorithm, L, Proof>
+impl<Block, Algorithm, L, Proof, I> PowWorker<Block, Algorithm, L, Proof, I>
 where
 	Block: BlockT,
 	Algorithm: PowAlgorithm<Block>,
 	Algorithm::Difficulty: 'static + Send,
 	L: sc_consensus::JustificationSyncLink<Block>,
+	I: BlockImport<Block>,
 {
 	fn increment_version(&self) {
 		self.version.fetch_add(1, Ordering::SeqCst);
 	}
 
-	pub(crate) fn new(
-		algorithm: Algorithm,
-		block_import: BoxBlockImport<Block>,
-		justification_sync_link: L,
-	) -> Self {
+	pub fn new(algorithm: Algorithm, block_import: I, justification_sync_link: L) -> Self {
 		Self {
 			version: Arc::new(AtomicUsize::new(0)),
 			algorithm: Arc::new(algorithm),
 			justification_sync_link: Arc::new(justification_sync_link),
-			build: Arc::new(Mutex::new(None)),
-			block_import: Arc::new(Mutex::new(block_import)),
+			build: Arc::new(RwLock::new(None)),
+			block_import: Arc::new(block_import),
 		}
 	}
 
-	pub(crate) fn on_major_syncing(&self) {
-		let mut build = self.build.lock();
+	pub fn on_major_syncing(&self) {
+		let mut build = self.build.write();
 		*build = None;
 		self.increment_version();
 	}
 
-	pub(crate) fn on_build(&self, value: MiningBuild<Block, Algorithm, Proof>) {
-		let mut build = self.build.lock();
+	pub fn on_build(&self, value: MiningBuild<Block, Algorithm, Proof>) {
+		let mut build = self.build.write();
 		*build = Some(value);
 		self.increment_version();
 	}
@@ -129,12 +127,12 @@ where
 	/// Get the current best hash. `None` if the worker has just started or the client is doing
 	/// major syncing.
 	pub fn best_hash(&self) -> Option<Block::Hash> {
-		self.build.lock().as_ref().map(|b| b.metadata.best_hash)
+		self.build.read().as_ref().map(|b| b.metadata.best_hash)
 	}
 
 	/// Get a copy of the current mining metadata, if available.
 	pub fn metadata(&self) -> Option<MiningMetadata<Block::Hash, Algorithm::Difficulty>> {
-		self.build.lock().as_ref().map(|b| b.metadata.clone())
+		self.build.read().as_ref().map(|b| b.metadata.clone())
 	}
 
 	/// Submit a mined seal. The seal will be validated again. Returns true if the submission is
@@ -144,12 +142,12 @@ where
 			match self.algorithm.verify(
 				&BlockId::Hash(metadata.best_hash),
 				&metadata.pre_hash,
-				metadata.pre_runtime.as_ref().map(|v| &v[..]),
+				metadata.pre_digest.as_ref().map(|v| &v[..]),
 				&seal,
 				metadata.difficulty,
 			) {
-				Ok(true) => (),
-				Ok(false) => {
+				Ok(Some(_)) => (),
+				Ok(None) => {
 					warn!(target: LOG_TARGET, "Unable to import mined block: seal is invalid",);
 					return false
 				},
@@ -164,7 +162,7 @@ where
 		}
 
 		let build = if let Some(build) = {
-			let mut build = self.build.lock();
+			let mut build = self.build.write();
 			let value = build.take();
 			if value.is_some() {
 				self.increment_version();
@@ -192,9 +190,8 @@ where
 		import_block.insert_intermediate(INTERMEDIATE_KEY, intermediate);
 
 		let header = import_block.post_header();
-		let block_import = self.block_import.lock();
 
-		match block_import.import_block(import_block).await {
+		match self.block_import.import_block(import_block).await {
 			Ok(res) => {
 				res.handle_justification(
 					&header.hash(),
@@ -216,11 +213,12 @@ where
 	}
 }
 
-impl<Block, Algorithm, L, Proof> Clone for MiningHandle<Block, Algorithm, L, Proof>
+impl<Block, Algorithm, L, Proof, I> Clone for PowWorker<Block, Algorithm, L, Proof, I>
 where
 	Block: BlockT,
 	Algorithm: PowAlgorithm<Block>,
 	L: sc_consensus::JustificationSyncLink<Block>,
+	I: BlockImport<Block>,
 {
 	fn clone(&self) -> Self {
 		Self {
