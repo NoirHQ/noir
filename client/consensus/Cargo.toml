@@ -1,0 +1,14 @@
+[package]
+name = "nc-consensus"
+description = "Noir common types for consensus"
+license = "Apache-2.0"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+publish = false
+
+[dependencies]
+async-trait = { workspace = true }
+sp-blockchain = { workspace = true, default-features = true }
+sp-runtime = { workspace = true, default-features = true }
