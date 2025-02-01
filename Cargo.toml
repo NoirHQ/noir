@@ -25,6 +25,8 @@ members = [
 	"frame/solana/runtime-api",
 	"frame/wtema",
 	"primitives/babel",
+	"primitives/consensus", # dummy
+	"primitives/consensus/pow",
 	"primitives/cosmos",
 	"primitives/ethereum",
 	"primitives/multimap",
@@ -183,6 +185,7 @@ frame-babel = { path = "frame/babel", default-features = false }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }
 np-babel = { path = "primitives/babel", default-features = false }
+np-consensus-pow = { path = "primitives/consensus/pow", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-multimap = { path = "primitives/multimap", default-features = false }
