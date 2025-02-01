@@ -20,7 +20,7 @@
 //!
 //! <https://github.com/zawy12/difficulty-algorithms/issues/76>
 //!
-//! ```
+//! ```text
 //! target = prior_target * (1 + t/T/N - 1/N)
 //! where
 //!   N = smoothing constant aka filter
