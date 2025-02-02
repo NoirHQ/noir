@@ -22,9 +22,9 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 
 # Frontier
-fp-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
-pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false, features = ["forbid-evm-reentrancy"] }
-precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", default-features = false }
+fp-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false, features = ["forbid-evm-reentrancy"] }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
 
 [dev-dependencies]
 hex-literal = { workspace = true }
@@ -33,7 +33,7 @@ serde = { workspace = true, default-features = true }
 sha3 = { workspace = true, default-features = true }
 
 # Moonbeam
-precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "crates.io/stable2409", features = ["testing"] }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", features = ["testing"] }
 
 scale-info = { workspace = true, default-features = true, features = ["derive"] }
 
