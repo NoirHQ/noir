@@ -1,0 +1,28 @@
+[package]
+name = "np-rewards"
+description = "Noir primitive types for rewards distribution"
+license = "Apache-2.0"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+publish = false
+
+[dependencies]
+async-trait = { workspace = true, optional = true }
+np-arithmetic = { workspace = true }
+parity-scale-codec = { workspace = true }
+sp-inherents = { workspace = true }
+sp-runtime = { workspace = true }
+thiserror = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+std = [
+	"async-trait",
+	"np-arithmetic/std",
+	"parity-scale-codec/std",
+	"sp-inherents/std",
+	"sp-runtime/std",
+	"thiserror"
+]

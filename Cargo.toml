@@ -34,6 +34,7 @@ members = [
 	"primitives/ethereum",
 	"primitives/multimap",
 	"primitives/nostr",
+	"primitives/rewards",
 	"primitives/runtime",
 	"primitives/solana",
 	"runtime/common",
@@ -206,6 +207,7 @@ np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-multimap = { path = "primitives/multimap", default-features = false }
 np-nostr = { path = "primitives/nostr", default-features = false }
+np-rewards = { path = "primitives/rewards", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
 np-solana = { path = "primitives/solana", default-features = false }
 pallet-cosmos = { path = "frame/cosmos", default-features = false }
