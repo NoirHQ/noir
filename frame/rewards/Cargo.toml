@@ -1,0 +1,45 @@
+[package]
+name = "pallet-rewards"
+description = "FRAME rewards for block reward distribution"
+license = "GPL-3.0-or-later"
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+publish = false
+
+[dependencies]
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+np-arithmetic = { workspace = true }
+np-rewards = { workspace = true }
+parity-scale-codec = { workspace = true, features = ["derive"] }
+scale-info = { workspace = true, features = ["derive"] }
+sp-inherents = { workspace = true }
+
+[dev-dependencies]
+pallet-balances = { workspace = true, default-features = true }
+sp-io = { workspace = true, default-features = true }
+
+[features]
+default = ["std"]
+std = [
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"np-arithmetic/std",
+	"np-rewards/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-inherents/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+]

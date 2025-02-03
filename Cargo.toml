@@ -23,9 +23,11 @@ members = [
 	"frame/cosmos/x/wasm",
 	"frame/cosmos/x/wasm/types",
 	"frame/multimap",
+	"frame/rewards",
 	"frame/solana",
 	"frame/solana/runtime-api",
 	"frame/wtema",
+	"primitives/arithmetic",
 	"primitives/babel",
 	"primitives/consensus", # dummy
 	"primitives/consensus/pow",
@@ -33,6 +35,7 @@ members = [
 	"primitives/ethereum",
 	"primitives/multimap",
 	"primitives/nostr",
+	"primitives/rewards",
 	"primitives/runtime",
 	"primitives/solana",
 	"runtime/common",
@@ -159,6 +162,7 @@ wat = "1.0"
 # substrate
 sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
 sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
+frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
 pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
@@ -198,12 +202,14 @@ nc-consensus = { path = "client/consensus" }
 nc-consensus-pow = { path = "client/consensus/pow" }
 noir-core-primitives = { path = "core-primitives", default-features = false }
 noir-runtime-common = { path = "runtime/common", default-features = false }
+np-arithmetic = { path = "primitives/arithmetic", default-features = false }
 np-babel = { path = "primitives/babel", default-features = false }
 np-consensus-pow = { path = "primitives/consensus/pow", default-features = false }
 np-cosmos = { path = "primitives/cosmos", default-features = false }
 np-ethereum = { path = "primitives/ethereum", default-features = false }
 np-multimap = { path = "primitives/multimap", default-features = false }
 np-nostr = { path = "primitives/nostr", default-features = false }
+np-rewards = { path = "primitives/rewards", default-features = false }
 np-runtime = { path = "primitives/runtime", default-features = false }
 np-solana = { path = "primitives/solana", default-features = false }
 pallet-cosmos = { path = "frame/cosmos", default-features = false }
@@ -216,6 +222,7 @@ pallet-cosmos-x-bank-types = { path = "frame/cosmos/x/bank/types", default-featu
 pallet-cosmos-x-wasm = { path = "frame/cosmos/x/wasm", default-features = false }
 pallet-cosmos-x-wasm-types = { path = "frame/cosmos/x/wasm/types", default-features = false }
 pallet-multimap = { path = "frame/multimap", default-features = false }
+pallet-rewards = { path = "frame/rewards", default-features = false }
 pallet-solana = { path = "frame/solana", default-features = false }
 pallet-wtema = { path = "frame/wtema", default-features = false }
 
