@@ -1,6 +1,6 @@
 [package]
 name = "pallet-cosmos-x-auth"
-license = "Apache-2.0"
+license = "GPL-3.0-or-later"
 authors = { workspace = true }
 version = { workspace = true }
 edition = { workspace = true }
