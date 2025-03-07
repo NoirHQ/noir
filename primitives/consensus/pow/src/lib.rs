@@ -54,7 +54,7 @@ where
 	Hash: AsRef<[u8]>,
 	Difficulty: Into<U256>,
 {
-	let hash = U256::from(hash.as_ref());
+	let hash = U256::from_big_endian(hash.as_ref());
 	let (_, overflowed) = hash.overflowing_mul(difficulty.into());
 
 	!overflowed
@@ -69,7 +69,7 @@ where
 	let is_zero = hash.as_ref().iter().all(|&x| x == 0);
 
 	if !is_zero {
-		Difficulty::saturated_from(U256::max_value() / U256::from(hash.as_ref()))
+		Difficulty::saturated_from(U256::max_value() / U256::from_big_endian(hash.as_ref()))
 	} else {
 		Difficulty::max_value()
 	}

@@ -52,6 +52,7 @@ solana-sdk = { workspace = true, optional = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
+sp-weights = { workspace = true }
 
 [dev-dependencies]
 const-hex = { workspace = true, default-features = true }
@@ -112,6 +113,7 @@ std = [
 	"solana-sdk?/std",
 	"sp-core/std",
 	"sp-runtime/std",
+	"sp-weights/std",
 ]
 cosmos = [
 	"bech32",
@@ -149,7 +151,7 @@ nostr = ["np-babel/nostr"]
 solana = [
 	"bincode",
 	"np-babel/solana",
-	"pallet-solana", 
+	"pallet-solana",
 	"solana-sdk",
 ]
 pallet = [

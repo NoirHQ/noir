@@ -643,7 +643,10 @@ pub mod pallet {
 			len: usize,
 		) -> Option<Result<(), TransactionValidityError>> {
 			if let Call::transact { transaction } = self {
-				if let Err(e) = CheckWeight::<T>::do_pre_dispatch(dispatch_info, len) {
+				if let Err(e) =
+					CheckWeight::<T>::do_validate(dispatch_info, len).and_then(|(_, next_len)| {
+						CheckWeight::<T>::do_prepare(dispatch_info, len, next_len)
+					}) {
 					return Some(Err(e));
 				}
 

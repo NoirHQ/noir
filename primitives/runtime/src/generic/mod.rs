@@ -24,27 +24,31 @@ use frame_support::{
 	traits::ExtrinsicCall,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::SignedExtension;
+use sp_runtime::traits::{Dispatchable, TransactionExtension};
 
-impl<Address, Call, Signature, Extra> GetDispatchInfo
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address, Call, Signature, Extension> GetDispatchInfo
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
-	Call: GetDispatchInfo,
-	Extra: SignedExtension,
+	Call: GetDispatchInfo + Dispatchable,
+	Extension: TransactionExtension<Call>,
 {
 	fn get_dispatch_info(&self) -> DispatchInfo {
-		self.function.get_dispatch_info()
+		let mut info = self.function.get_dispatch_info();
+		info.extension_weight = self.extension_weight();
+		info
 	}
 }
 
-impl<Address, Call, Signature, Extra> ExtrinsicCall
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address, Call, Signature, Extension> ExtrinsicCall
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
 	Address: TypeInfo,
 	Call: TypeInfo,
 	Signature: TypeInfo,
-	Extra: SignedExtension + TypeInfo,
+	Extension: TypeInfo,
 {
+	type Call = Call;
+
 	fn call(&self) -> &Self::Call {
 		&self.function
 	}
