@@ -863,13 +863,9 @@ mod tests {
 	#[test]
 	fn signed_check_should_work() {
 		let sig_payload = {
-      DummyExtension.implicit().unwrap();
-      SignedPayload::from_raw(
-      			FakeDispatchable::from(vec![0u8; 0]),
-      			DummyExtension,
-      			(),
-      		)
-  };
+			DummyExtension.implicit().unwrap();
+			SignedPayload::from_raw(FakeDispatchable::from(vec![0u8; 0]), DummyExtension, ())
+		};
 		let ux = Ex::new_signed(
 			vec![0u8; 0].into(),
 			TEST_ACCOUNT,
@@ -951,10 +947,8 @@ mod tests {
 		let signed = TEST_ACCOUNT;
 		let extension = DummyExtension;
 		extension.implicit().unwrap();
-		let signature = TestSig(
-			TEST_ACCOUNT,
-			blake2_256(&(&call, DummyExtension, &()).encode()[..]).to_vec(),
-		);
+		let signature =
+			TestSig(TEST_ACCOUNT, blake2_256(&(&call, DummyExtension, &()).encode()[..]).to_vec());
 
 		let old_ux =
 			UncheckedExtrinsicV4::<TestAccountId, TestCall, TestSig, DummyExtension>::new_signed(
