@@ -145,7 +145,7 @@ mod tests {
 	}
 	impl UpperBounded for CustomNumeric {
 		fn max_value() -> Self {
-			CustomNumeric(u8::max_value())
+			CustomNumeric(u8::MAX)
 		}
 	}
 	impl core::ops::Mul for CustomNumeric {

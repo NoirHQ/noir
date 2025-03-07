@@ -837,7 +837,7 @@ mod tests {
 		let ux = Ex::new_signed(
 			vec![0u8; 0].into(),
 			TEST_ACCOUNT,
-			TestSig(TEST_ACCOUNT, vec![0u8; 0].into()),
+			TestSig(TEST_ACCOUNT, vec![0u8; 0]),
 			DummyExtension,
 		);
 		assert!(!ux.is_inherent());
@@ -862,11 +862,14 @@ mod tests {
 
 	#[test]
 	fn signed_check_should_work() {
-		let sig_payload = SignedPayload::from_raw(
-			FakeDispatchable::from(vec![0u8; 0]),
-			DummyExtension,
-			DummyExtension.implicit().unwrap(),
-		);
+		let sig_payload = {
+      DummyExtension.implicit().unwrap();
+      SignedPayload::from_raw(
+      			FakeDispatchable::from(vec![0u8; 0]),
+      			DummyExtension,
+      			(),
+      		)
+  };
 		let ux = Ex::new_signed(
 			vec![0u8; 0].into(),
 			TEST_ACCOUNT,
@@ -913,8 +916,8 @@ mod tests {
 		let call: TestCall = vec![0u8; 4].into();
 		let signed = TEST_ACCOUNT;
 		let extension = DummyExtension;
-		let implicit = extension.implicit().unwrap();
-		let legacy_signature = TestSig(TEST_ACCOUNT, (&call, &extension, &implicit).encode());
+		extension.implicit().unwrap();
+		let legacy_signature = TestSig(TEST_ACCOUNT, (&call, &extension, &()).encode());
 
 		let old_ux =
 			UncheckedExtrinsicV4::<TestAccountId, TestCall, TestSig, DummyExtension>::new_signed(
@@ -947,10 +950,10 @@ mod tests {
 		let call: TestCall = vec![0u8; 257].into();
 		let signed = TEST_ACCOUNT;
 		let extension = DummyExtension;
-		let implicit = extension.implicit().unwrap();
+		extension.implicit().unwrap();
 		let signature = TestSig(
 			TEST_ACCOUNT,
-			blake2_256(&(&call, DummyExtension, &implicit).encode()[..]).to_vec(),
+			blake2_256(&(&call, DummyExtension, &()).encode()[..]).to_vec(),
 		);
 
 		let old_ux =
