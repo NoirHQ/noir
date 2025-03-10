@@ -20,7 +20,7 @@ use crate::traits::AccountIdProvider;
 use core::marker::PhantomData;
 use frame_support::traits::{
 	tokens::{fungible, Fortitude, Preservation},
-	OnKilledAccount as OnKilledAccountT,
+	OnKilledAccount as OnKilledAccountT, OriginTrait,
 };
 use np_babel::VarAddress;
 use np_multimap::traits::UniqueMultimap;
@@ -28,9 +28,11 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{ecdsa, H256};
 use sp_runtime::{
-	traits::{AccountIdConversion, DispatchInfoOf, One, SignedExtension, Zero},
-	transaction_validity::{TransactionValidityError, ValidTransaction},
+	impl_tx_ext_default,
+	traits::{AccountIdConversion, DispatchInfoOf, TransactionExtension, Zero},
+	transaction_validity::TransactionSource,
 };
+use sp_weights::Weight;
 
 type AccountIdOf<T> = <T as AccountIdProvider>::AccountId;
 
@@ -119,47 +121,40 @@ impl<T> core::fmt::Debug for UnifyAccount<T> {
 	}
 }
 
-impl<T> SignedExtension for UnifyAccount<T>
+impl<T> TransactionExtension<T::RuntimeCall> for UnifyAccount<T>
 where
 	T: Config + frame_system::Config<AccountId = AccountIdOf<T>>,
 {
-	type AccountId = AccountIdOf<T>;
-	type Call = T::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "UnifyAccount";
+	type Implicit = ();
+	type Val = ();
+	type Pre = ();
 
-	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
-		Ok(())
+	fn weight(&self, _: &T::RuntimeCall) -> Weight {
+		// FIXME
+		Weight::from_parts(0, 0)
 	}
 
 	fn validate(
 		&self,
-		who: &Self::AccountId,
-		_: &Self::Call,
-		_: &DispatchInfoOf<Self::Call>,
-		_: usize,
-	) -> Result<ValidTransaction, TransactionValidityError> {
-		let account = frame_system::Account::<T>::get(who);
-		if account.nonce.is_zero() {
-			let _ = Self::unify_ecdsa(who);
+		origin: <T as frame_system::Config>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> sp_runtime::traits::ValidateResult<Self::Val, T::RuntimeCall> {
+		if let Some(who) = origin.as_signer() {
+			let account = frame_system::Account::<T>::get(who);
+			if account.nonce.is_zero() {
+				let _ = Self::unify_ecdsa(who);
+			}
 		}
-		Ok(ValidTransaction::default())
+		Ok((Default::default(), (), origin))
 	}
 
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		_: &Self::Call,
-		_: &DispatchInfoOf<Self::Call>,
-		_: usize,
-	) -> Result<Self::Pre, TransactionValidityError> {
-		let account = frame_system::Account::<T>::get(who);
-		if account.nonce.is_one() {
-			let _ = Self::unify_ecdsa(who);
-		}
-		Ok(())
-	}
+	impl_tx_ext_default!(T::RuntimeCall; prepare);
 }
 
 pub trait DrainBalance<AccountId> {

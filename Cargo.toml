@@ -104,7 +104,7 @@ eager = "0.1.0"
 either = { version = "1.8", default-features = false }
 enum-iterator = "1.5.0"
 env_logger = "0.9"
-ethereum = { version = "0.15.0", default-features = false }
+ethereum = { git = "https://github.com/rust-ethereum/ethereum", rev = "3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba", default-features = false }
 futures = "0.3"
 futures-timer = "3.0"
 getrandom = { version = "0.2", default-features = false }
@@ -160,39 +160,40 @@ wasmi-validation = { version = "0.5.0", default-features = false }
 wat = "1.0"
 
 # substrate
-sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409" }
-sp-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2409", default-features = false }
+sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
+sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
+frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
+sp-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-weights = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
 
 # frontier
-fp-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-fp-self-contained = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
-precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2409", default-features = false }
+fp-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
+fp-self-contained = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
+pallet-ethereum = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
+pallet-evm = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
+pallet-evm-precompile-blake2 = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
+pallet-evm-precompile-bn128 = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
+pallet-evm-precompile-modexp = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
+precompile-utils = { git = "https://github.com/noirhq/frontier", branch = "stable2412", default-features = false }
 
 # noir
 cosmos-rpc = { path = "frame/cosmos/rpc", default-features = false }

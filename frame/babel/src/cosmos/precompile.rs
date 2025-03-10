@@ -87,7 +87,7 @@ where
 				if let Ok(ExecuteMsg::Dispatch { input }) = serde_json_wasm::from_slice(message) {
 					let call = T::RuntimeCall::decode_with_depth_limit(DECODE_LIMIT, &mut &*input)
 						.map_err(|_| CosmwasmVMError::ExecuteDeserialize)?;
-					let weight = call.get_dispatch_info().weight;
+					let weight = call.get_dispatch_info().total_weight();
 					vm.0.data_mut()
 						.charge_raw(T::WeightToGas::convert(weight))
 						.map_err(|_| CosmwasmVMError::OutOfGas)?;
